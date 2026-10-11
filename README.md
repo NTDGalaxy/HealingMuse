@@ -1,1 +1,89 @@
 # HealingMuse
+
+HealingMuse is a Vietnamese-first, English-supported music and wellbeing PWA for adult cancer patients.
+It offers recreational listening and emotional support without treatment claims.
+The application contains no AI models, generation, chatbots, transcription, or AI APIs.
+Recordings are human-created instrumentals and recorded nature sounds.
+
+## Run locally
+
+Use Node.js 22 and npm.
+Copy `.env.example` to `.env.local` when configuring an existing Supabase project.
+Keep credentials out of Git and chat.
+Guest listening works locally with prepared recordings before cloud credentials are configured.
+Account features require a real Supabase project and passwordless email setup.
+Use `npm run dev` for the configured cloud app and `npm run dev:preview` for isolated local listening without changing `.env.local`.
+
+```bash
+npm ci
+npm run audio:import
+npm run audio:verify
+npm run dev:preview
+```
+
+Open `http://localhost:3000/vi` or `http://localhost:3000/en`.
+The import runs outside the application runtime and retains originals and license evidence under `media/`.
+If Wikimedia requests a cooldown, wait for that interval and rerun the import.
+Completed source downloads are reused.
+Do not publish the local preview catalog to patients before completing the subjective listening review.
+Production uploads create drafts with the review flag off.
+
+## Features
+
+- Guest browsing, search, listening goals, hosted playback, recording credits, and eligible downloads.
+- Persistent native audio player, seeking, queue navigation, repeat, Media Session controls, and sleep timer.
+- Optional email-code accounts, favorites, revision-protected playlists, and private synchronization.
+- Separate consent for optional paired mood check-ins, immediate deletion, and 90-day retention.
+- Device-local IndexedDB recordings with attribution, download progress, removal, and offline startup.
+- Content studio for draft, preview, publication, retirement, rights review, order, and curated collections.
+- Vietnamese and English interface, keyboard controls, accessible dialogs, reduced motion, and calm mode.
+- User-initiated visible YouTube embeds and ordinary Spotify links when an administrator adds them.
+
+## Validate
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm test
+npm run db:test
+npm run build
+npm run security:client
+npx playwright install chromium
+npm run test:e2e
+npm run test:load
+```
+
+Browser tests use prepared local recordings and an isolated preview server.
+For production-mode browser checks, run `npm run build:preview` and start with `npm run start:preview`.
+These commands isolate public Supabase configuration without changing `.env.local`.
+Use `E2E_BASE_URL` to select that server explicitly.
+The personal-feature browser harness renders the actual components with synthetic Auth and API fixtures.
+It tests forms, playlist conflicts and ordering, paired check-ins, deletion, and accessibility without sending email or changing cloud data.
+CI uses explicitly synthetic audio fixtures in an isolated, unconfigured environment.
+Never deploy CI fixtures.
+Database tests apply the actual SQL migration to portable PostgreSQL with synthetic Auth, Storage, and Broadcast infrastructure.
+Those tests verify SQL behavior but do not replace a live Supabase acceptance run.
+Actual NVDA, VoiceOver, TalkBack, Android, iPhone, screen-lock playback, SMTP delivery, production load, and managed backup restoration are release gates.
+
+## Delivery milestones
+
+| Milestone | Implementation | Remaining validation |
+| --- | --- | --- |
+| Accessible listening | Listening screens, two languages, native player, navigation, search | Representative usability review and actual screen readers |
+| Personal features | Passwordless Auth integration, library, paired check-ins, consent, recent summaries, applied owner RLS, Broadcast | SMTP, live authenticated API and channel journeys |
+| Offline and administration | IndexedDB library, shell, recovery, content studio, imports | Human audio review, external-source/device checks, live publishing |
+| Production delivery | CI, migrations, deployment configuration, load tools, recovery tools, runbook | User's GitHub/Vercel deployment, staging restoration, cloud load targets, participant rollout |
+
+See [deployment instructions](docs/deployment.md), [maintenance and recovery](docs/runbook.md), [acceptance checks](docs/acceptance.md), and [architecture](docs/architecture.md).
+See [recorded validation evidence](docs/verification.md) for completed local checks and live Supabase verification.
+Project rules are recorded in [AGENTS.md](AGENTS.md) and the editable [aas-stack.json](aas-stack.json) matches the AI-free product.
+
+## Recording rights
+
+The selected 20 sources and provenance are in `content/audio-sources.json`.
+They include 10 instrumentals and 10 nature recordings under Creative Commons licenses or a recorded public-domain dedication.
+Keep the exact attribution, license links, transformation notes, original audio, source evidence, and checksums.
+Share-alike recording licenses apply to the prepared audio adaptations and must remain attached to distributed copies.
+The import report distinguishes technical decoding and loudness preparation from the administrator's subjective listening review.
+The public application shell and downloaded recordings are separate from private account data.

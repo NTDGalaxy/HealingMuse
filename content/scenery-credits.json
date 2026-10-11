@@ -1,0 +1,758 @@
+[
+  {
+    "id": "lake",
+    "title": "Bình minh trên hồ",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: a still freshwater lake inspired by northern Vietnam at lavender dawn.\nScene: a wide glassy lake reflecting a pale pink and blue sky; softly rounded limestone karst hills surround the distant shore, with a low bank of translucent silver mist resting on the water. A few soft grasses and small smooth stones touch the lower outer corners. The main rounded mountain sits behind the central open reflective water, smaller distant ridges fading in luminous mist. A delicate blush glow is reflected across the lake. Calm expansive space, fine natural shoreline texture and believable reflections.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:03:04.910Z",
+    "focalPosition": "50% 56%",
+    "original": {
+      "path": ".local/sanctuary-originals/lake.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2268059,
+      "checksumAlgorithm": "sha256",
+      "checksum": "43e304f17c145e1b66489aaacd19a3082edca42457fe457e7b3f21d322dac77d",
+      "metadataCopyPath": ".local/sanctuary-originals/lake.png",
+      "metadataCopyBytes": 3281588,
+      "metadataCopyChecksum": "b2dc607c8268dcd2db8bd71c38061a61754386aa4da799da3ab08b17a6d4fa5c",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/lake-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 18546,
+        "sha256": "cd2a7c51d1af03d64f82f71f8eecff917379ce9aa757b1d7cb6df42aeaf4055d",
+        "quality": 76,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/lake-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 12906,
+        "sha256": "bfa61270a08589b33830b458d6c79d1771c5ec8a0fca17427a95dcb04ba099ca",
+        "quality": 50,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/lake-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 62628,
+        "sha256": "ed9bfd60f7cf11ae3faa40bc8b66ade380d1f82b9ef8b4564eb190598d0e4fa2",
+        "quality": 80,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/lake-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 39253,
+        "sha256": "c98fafc33f1ea1727121e497f1313621bb33eb1c5bbb27d4a8a4a7113b6b1866",
+        "quality": 54,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/lake-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 128346,
+        "sha256": "138b12ce65a0837d8380aab0566348dbae989f8071c14f5b490f14062ff03202",
+        "quality": 80,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/lake-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 81500,
+        "sha256": "4a1e5c6859d95cff16f2a50aa2a0f3c05da21062299fb2f80eee487ec5759a82",
+        "quality": 54,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/lake-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "valley",
+    "title": "Thung lũng trong sương",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: a spacious northern Vietnamese mountain valley with soft dawn mist.\nScene: gently folded green and lavender mountains frame a broad central valley, a slender pale-blue stream meanders into the center distance, and overlapping limestone ridges become progressively lighter in the far distance. Quiet wild grasses soften the foreground lower edges. Low translucent mist curls between the hills beneath a pale blush sky. Keep the central river bend and layered distant mountain opening visible in a tall center crop. Rich but subtle spatial depth, no cultivated fields or structures.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:03:34.700Z",
+    "focalPosition": "50% 54%",
+    "original": {
+      "path": ".local/sanctuary-originals/valley.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2496185,
+      "checksumAlgorithm": "sha256",
+      "checksum": "72e7e0e8dbbf8b4df2603f4752d267db8ac335c8c118cb42ec2081a10c6c5166",
+      "metadataCopyPath": ".local/sanctuary-originals/valley.png",
+      "metadataCopyBytes": 3430130,
+      "metadataCopyChecksum": "63fabdc1735f1ff171800e1bff7a29a7f71d60d692e7f2b5f9c86a30a7a9b166",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/valley-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 21108,
+        "sha256": "64d7bdd838f0f137b0058553d62824cebdae2c577e962912673ce0707b5588c7",
+        "quality": 76,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/valley-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 14394,
+        "sha256": "a0f04c1c3aa751edfd41b6af31909f0c6b8e1d1fcf608ec89054186b778b1261",
+        "quality": 50,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/valley-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 80784,
+        "sha256": "a621aaef2ee699e410e41d134e8c6f8e19cb53dd8a767ced138079215a0672a4",
+        "quality": 80,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/valley-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 48612,
+        "sha256": "4165cfa631e3a9de57412cfb519d3e8d6f39dc9e35f3144307acf11ca39b0223",
+        "quality": 54,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/valley-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 172216,
+        "sha256": "0a38e88063433760f025948e02468cf0197077d34d05f4d084b17bd04fffb359",
+        "quality": 80,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/valley-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 106501,
+        "sha256": "b0531fa7e40acffc3eafd048b6650c5bf7fe863d12de8470fbf46803e7925db7",
+        "quality": 54,
+        "focalPosition": "50% 54%",
+        "provenanceSidecar": "/scenery/valley-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "forest",
+    "title": "Rừng sớm yên ả",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: an inviting Vietnamese mountain forest opening in delicate lavender morning mist.\nScene: broadleaf forest and a few slender upright trunks frame the two sides, their leaves softly tinted violet and muted sage by dawn; the center opens onto a small quiet fern clearing with a slender natural stream and lighter layers of trees receding into translucent pale-blue mist. Soft wet moss and a few smooth stones form the lower foreground. Diffuse blush morning light reaches the central opening without harsh sunbeams. Let the foliage have delicate believable organic detail, while the center remains airy and uncluttered. No footpath or manmade elements.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:04:24.510Z",
+    "focalPosition": "50% 55%",
+    "original": {
+      "path": ".local/sanctuary-originals/forest.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 3314703,
+      "checksumAlgorithm": "sha256",
+      "checksum": "d5034fc358627aee027a200a8c5da53a85fe2ab14fd2f4c90022dba78b543cd6",
+      "metadataCopyPath": ".local/sanctuary-originals/forest.png",
+      "metadataCopyBytes": 3931205,
+      "metadataCopyChecksum": "5172febaa137eab25edc258b5fd257dff102784eed94c210bf178d3f66cadb50",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/forest-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 36610,
+        "sha256": "cf417a12d1528ca73b9a1b5cf1ab4e54fe89aeb76906c4f848ed15d384e43db6",
+        "quality": 76,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/forest-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 20459,
+        "sha256": "9298faea69b79a0dec48ab81a6e020b406e4d64e451ce475966acfa6cb2575d3",
+        "quality": 50,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/forest-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 145176,
+        "sha256": "8c393df360ed6ffcaf8fd6f20d1be09988afc430885dfa3c31117c71fea30076",
+        "quality": 80,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/forest-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 78135,
+        "sha256": "941a5cdaf03a7c101709f9fba6797dd03497b852a6477b4caacf8b55e504b9b0",
+        "quality": 54,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/forest-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 317178,
+        "sha256": "faa81f5900e1cfc78d071fb2db414d14e0992b5a671b226ccc437df030f3c3fb",
+        "quality": 80,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/forest-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 170361,
+        "sha256": "69473af2bd5980d2a88eb0379d85c161dfe9e20f969b554b8af673872ddc4d73",
+        "quality": 54,
+        "focalPosition": "50% 55%",
+        "provenanceSidecar": "/scenery/forest-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "coast",
+    "title": "Bờ biển đón ngày",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: a gentle central Vietnamese coast with shallow water at lavender dawn.\nScene: a smooth curving sandy shoreline sweeps from the lower left towards the middle distance, with two thin delicate lines of white sea foam and translucent pale-blue shallows. Low rounded violet headlands fade at the distant horizon under a pale blush cloud sky. A few rounded warm-grey stones lie near the lower edge, the broad central sea reflecting the lavender morning glow. Quiet believable small ripples, no dramatic surf. The curve of the shoreline and a distant headland remain legible in a tall center crop.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:04:00.410Z",
+    "focalPosition": "50% 58%",
+    "original": {
+      "path": ".local/sanctuary-originals/coast.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2485710,
+      "checksumAlgorithm": "sha256",
+      "checksum": "bedec9459afa15bd7ca06cf7bd082dde5b99b9aa2038052ff6f71009c0ee11c3",
+      "metadataCopyPath": ".local/sanctuary-originals/coast.png",
+      "metadataCopyBytes": 3445228,
+      "metadataCopyChecksum": "70f26e3ae4c92986ac6fbc77a19a0b494ea292ad17323abf348d0b0bc81cbf74",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/coast-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 18612,
+        "sha256": "4ba686c1385bef7a03ddafac8671a0118ebc26a5885fb8a9c0dd486210007b9d",
+        "quality": 76,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/coast-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 12502,
+        "sha256": "43a456508dd1a6227e57e4105b250d6b13732eebb99c0b034a2e06fd44a8f221",
+        "quality": 50,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/coast-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 72902,
+        "sha256": "06437f2fa657e9ed6d55a9b03a02a8a32ea1f347a256671fc9faf4074d374a25",
+        "quality": 80,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/coast-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 41769,
+        "sha256": "d2e2b17a50ecff7e74788506ef15862ec4337a35c31c1132231420b7b7e27720",
+        "quality": 54,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/coast-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 158704,
+        "sha256": "ba767e0e29fb51304cd6cd73fe89cf9f139ad631b91c61eb26b56777fca35114",
+        "quality": 80,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/coast-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 93576,
+        "sha256": "caa1daf2bf20bb1b891024385937b42847a14b34a36a9e4c504cc21919970426",
+        "quality": 54,
+        "focalPosition": "50% 58%",
+        "provenanceSidecar": "/scenery/coast-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pool",
+    "title": "Mặt nước lặng",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: a secluded natural freshwater pool inspired by a Vietnamese mountain glade at lavender dawn.\nScene: a shallow clear still pool occupies the central foreground and middle distance, its glassy surface reflecting a lavender sky and faint pale-pink dawn clouds; rounded natural stones and soft low ferns gently frame the outside lower corners. Layered softly wooded hills rise behind the pool in pale-blue morning mist, with a few delicate reeds near the far bank. The center is luminous open water and a subtle ripple, spatially distinct from a lake, intimate and quietly sheltered. No waterfall, no architectural pool edge, no ornamental garden.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:04:53.050Z",
+    "focalPosition": "50% 56%",
+    "original": {
+      "path": ".local/sanctuary-originals/pool.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2884332,
+      "checksumAlgorithm": "sha256",
+      "checksum": "4b2a8d0c4711417038989237202998b6f94cf6e31ae41a5fe47344b4ff33199a",
+      "metadataCopyPath": ".local/sanctuary-originals/pool.png",
+      "metadataCopyBytes": 3729791,
+      "metadataCopyChecksum": "fbb2bea1075fd022b36becaa5958a94f496c4a6b009e27e0f50fdb25d37b20d1",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/pool-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 29354,
+        "sha256": "68a59b8769ddfe80eb613251f9f142a05dd21636d8a07b33bf1f74545a7b5fc8",
+        "quality": 76,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/pool-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 17391,
+        "sha256": "4ed0a3906a6a5b590d3102febde689be2e3f18bdd4565cf2f34165c2a8adbee1",
+        "quality": 50,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/pool-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 115182,
+        "sha256": "e6bf73835838d10d966ba7beaa7d2a31d8adeae9e75b116df8532f28723376f9",
+        "quality": 80,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/pool-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 62411,
+        "sha256": "5dbbc9e24f35b0fbaf111ad53369b614f616fd076d6672ba7162c971f97c47a1",
+        "quality": 54,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/pool-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 248268,
+        "sha256": "9c35494b5ad1ffcfc2a1654f48e5d218649fa0ab0cca4c23aad3afea93970d05",
+        "quality": 80,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/pool-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 135065,
+        "sha256": "63033e49eb764d8db1586b19e0318891b1210ce46708445d12426fb54baa444a",
+        "quality": 54,
+        "focalPosition": "50% 56%",
+        "provenanceSidecar": "/scenery/pool-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hills",
+    "title": "Đồi mây buổi sớm",
+    "origin": "AI-generated decorative landscape",
+    "intendedUse": "Decorative background artwork produced during development.",
+    "prompt": "Use case: stylized-concept.\nAsset type: decorative landscape image for a Vietnamese emotional wellbeing web app.\nStyle and medium: restrained dreamy painterly realism, a very subtle matte painted finish over believable natural textures, atmospheric depth, premium editorial landscape artwork.\nLighting and palette: misty lavender dawn, soft blush sky, pale blue distance, muted violet shadows, restrained natural green, gentle diffuse light, soft contrast and delicate color transitions. Natural and serene, neither oversaturated nor grey and muddy.\nComposition and framing: wide 16:9 landscape, one complete edge-to-edge scene, three clear layers of foreground, middle distance and far distance. Keep the scenic identity in the central third so a tall mobile center crop still feels complete. Place intricate details near the outer lower edges; keep the central area and upper sky quiet enough to sit behind app controls. No large hard black silhouettes.\nConstraints: landscape artwork only, no interface or frame, no text, no lettering, no typography, no people, no faces, no animals, no buildings, no boats, no roads, no poles, no logos, no watermark. This is invented decorative scenery inspired by Vietnam, not a claim to document a real place.\nPrimary request: gently rolling Vietnamese highland hills partly wrapped in low dawn clouds.\nScene: undulating soft grassy hills recede into alternating pale-blue and lavender layers; broad delicate cloud banks drift through the central valleys, beneath a luminous blush and pale-violet morning sky. A gently sloping foreground ridge with a few soft grasses provides scale at the outer lower edge, the central rounded hill crest emerging through light silver mist is the calm focal point. Fine believable distant vegetation texture, smoothly layered aerial perspective, tranquil grounded scenery. No steep dramatic peaks and no fields, farms or structures.",
+    "generationTool": "Built-in image_gen.imagegen",
+    "generatedAt": "2026-10-10T20:05:11.290Z",
+    "focalPosition": "50% 53%",
+    "original": {
+      "path": ".local/sanctuary-originals/hills.original.png",
+      "format": "png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 2339035,
+      "checksumAlgorithm": "sha256",
+      "checksum": "8288d5abdba8e20ac03265228eb181c9741c4a0e40c2534c6f7fce8c8bbb3e00",
+      "metadataCopyPath": ".local/sanctuary-originals/hills.png",
+      "metadataCopyBytes": 3209001,
+      "metadataCopyChecksum": "e4ce5ec3abcdc4dca835ee87c5d864ab33972a759d2b273256644f8857fddb8e",
+      "transformations": [
+        "Unmodified original generation output archived privately.",
+        "Separate lossless PNG archival copy with the exact generation prompt embedded in XMP; pixels verified identical.",
+        "Exact prompt additionally embedded as PNG tEXt with Impeccable 0.1.14."
+      ]
+    },
+    "mobileByteBudget": 81920,
+    "variants": [
+      {
+        "path": "/scenery/hills-480.webp",
+        "format": "webp",
+        "width": 480,
+        "height": 270,
+        "bytes": 20298,
+        "sha256": "1cf5d72f861c480df9150abe053f70db66a955d427e8243ba88ed53a9404ef9b",
+        "quality": 76,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-480.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy WebP encoding, quality 76, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/hills-480.avif",
+        "format": "avif",
+        "width": 480,
+        "height": 270,
+        "bytes": 13624,
+        "sha256": "91da479a269ad9ffc962d18667a1f3b75bb72e0eedd153e8fa6f3c5b5e897fee",
+        "quality": 50,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-480.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 480 x 270 using Lanczos3.",
+          "Lossy AVIF encoding, quality 50, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/hills-960.webp",
+        "format": "webp",
+        "width": 960,
+        "height": 540,
+        "bytes": 73252,
+        "sha256": "3d8701322a62183d2bfa44921f366e5322b1d906c162559ffddd3d0db015b400",
+        "quality": 80,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-960.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/hills-960.avif",
+        "format": "avif",
+        "width": 960,
+        "height": 540,
+        "bytes": 43059,
+        "sha256": "81028e9b05e6a6d5c00863f96709db127ade32b33dbd434931a8923433601844",
+        "quality": 54,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-960.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 960 x 540 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/hills-1600.webp",
+        "format": "webp",
+        "width": 1600,
+        "height": 900,
+        "bytes": 153220,
+        "sha256": "d5aa43966c8c327237cb87098802df1b0bfecb7fee2e245a61835c590a694b42",
+        "quality": 80,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-1600.webp.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy WebP encoding, quality 80, effort 6, smart chroma subsampling.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      },
+      {
+        "path": "/scenery/hills-1600.avif",
+        "format": "avif",
+        "width": 1600,
+        "height": 900,
+        "bytes": 91731,
+        "sha256": "e772d03bf5f0c0f6604ccc31de1d42800d09c4cbaf23eda9d775142fd08572df",
+        "quality": 54,
+        "focalPosition": "50% 53%",
+        "provenanceSidecar": "/scenery/hills-1600.avif.json",
+        "transformations": [
+          "Centered cover resize from 1672 x 941 to 1600 x 900 using Lanczos3.",
+          "Lossy AVIF encoding, quality 54, effort 4, chroma subsampling 4:2:0.",
+          "Exact generation prompt and decorative origin embedded in XMP metadata."
+        ]
+      }
+    ]
+  }
+]
