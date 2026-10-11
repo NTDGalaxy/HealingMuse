@@ -30,3 +30,5 @@ AGENTS.md
 PRODUCT.md
 DESIGN.md
 aas-stack.json
+.env.example
+.nvmrc
