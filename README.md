@@ -74,16 +74,3 @@ Actual NVDA, VoiceOver, TalkBack, Android, iPhone, screen-lock playback, SMTP de
 | Personal features | Passwordless Auth integration, library, paired check-ins, consent, recent summaries, applied owner RLS, Broadcast | SMTP, live authenticated API and channel journeys |
 | Offline and administration | IndexedDB library, shell, recovery, content studio, imports | Human audio review, external-source/device checks, live publishing |
 | Production delivery | CI, migrations, deployment configuration, load tools, recovery tools, runbook | User's GitHub/Vercel deployment, staging restoration, cloud load targets, participant rollout |
-
-See [deployment instructions](docs/deployment.md), [maintenance and recovery](docs/runbook.md), [acceptance checks](docs/acceptance.md), and [architecture](docs/architecture.md).
-See [recorded validation evidence](docs/verification.md) for completed local checks and live Supabase verification.
-Project rules are recorded in [AGENTS.md](AGENTS.md) and the editable [aas-stack.json](aas-stack.json) matches the AI-free product.
-
-## Recording rights
-
-The selected 20 sources and provenance are in `content/audio-sources.json`.
-They include 10 instrumentals and 10 nature recordings under Creative Commons licenses or a recorded public-domain dedication.
-Keep the exact attribution, license links, transformation notes, original audio, source evidence, and checksums.
-Share-alike recording licenses apply to the prepared audio adaptations and must remain attached to distributed copies.
-The import report distinguishes technical decoding and loudness preparation from the administrator's subjective listening review.
-The public application shell and downloaded recordings are separate from private account data.
