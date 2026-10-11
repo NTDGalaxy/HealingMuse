@@ -24,3 +24,9 @@ media/evidence/
 backups/
 .local/
 *.log
+.impeccable
+docs/
+AGENTS.md
+PRODUCT.md
+DESIGN.md
+aas-stack.json
