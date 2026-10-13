@@ -6,6 +6,7 @@ try {
   await db.query("begin read only");
   for (const table of [
     "audio_deliveries",
+    "b2_audio_deliveries",
     "catalogue_releases",
     "catalogue_release_items",
     "catalogue_publications",
@@ -28,7 +29,7 @@ try {
     });
   }
   const publish = "public.publish_catalogue_release(uuid,text,text,text)";
-  const delivery = "public.record_audio_delivery(uuid,text,bigint)";
+  const delivery = "public.record_b2_audio_delivery(uuid,text,text,text,text,text,bigint,text)";
   for (const [role, canPublish, canDeliver] of [
     ["anon", false, false],
     ["authenticated", true, false],
@@ -44,6 +45,7 @@ try {
   await db.query("select set_config('request.jwt.claim.sub','',true)");
   for (const table of [
     "audio_deliveries",
+    "b2_audio_deliveries",
     "catalogue_releases",
     "catalogue_release_items",
     "catalogue_publications",

@@ -2,7 +2,7 @@ import { stat } from "node:fs/promises";
 import { join } from "node:path";
 import { getTrack, localCatalogEnabled } from "@/lib/server/catalog";
 import { HttpError, json, safeHandler, rateLimit } from "@/lib/server/http";
-import { privilegedClient } from "@/lib/supabase/admin";
+import { audioGrant } from "@/lib/server/audio-storage";
 import { uuid } from "@/lib/validation";
 export function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   return safeHandler(async () => {
@@ -28,15 +28,6 @@ export function GET(request: Request, context: { params: Promise<{ id: string }>
       download ? 150 : 300,
     );
     // Track lookup uses publication RLS before any privileged URL issuance.
-    const { data, error } = await privilegedClient()
-      .storage.from("audio")
-      .createSignedUrl(track.source.path, 600);
-    if (error || !data) throw new HttpError(503, "unavailable");
-    return json({
-      url: data.signedUrl,
-      expiresAt: new Date(Date.now() + 600_000).toISOString(),
-      bytes: track.bytes,
-      sha256: track.sha256,
-    });
+    return json(await audioGrant(track));
   });
 }

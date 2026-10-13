@@ -40,7 +40,7 @@ try {
     [release, manifest],
   );
   await db.query(
-    "insert into catalogue_release_items select $1,id,release_track_metadata(tracks) from tracks",
+    "insert into catalogue_release_items(release_id,track_id,expected_metadata) select $1,id,release_track_metadata(tracks) from tracks",
     [release],
   );
   for (const [id, role] of [

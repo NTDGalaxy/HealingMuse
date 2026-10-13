@@ -817,3 +817,80 @@ for (const count of [1000, 10000])
     await expect(page.getByRole("alert")).toHaveCount(0);
     expect(responses.every((n) => n <= 24)).toBe(true);
   });
+
+for (const locale of ["en", "vi"])
+  test(`B2 release review explains why offline publication is disabled in ${locale}`, async ({
+    page,
+    context,
+  }) => {
+    await page.route("**/api/me", (route) =>
+      route.fulfill({
+        json: {
+          profile: { id: owner, locale, calm_mode: false, mood_consent_at: null },
+          favorites: [],
+          playlists: [],
+          checkins: [],
+          isAdmin: true,
+        },
+      }),
+    );
+    await page.route("**/api/admin/tracks*", (route) =>
+      route.fulfill({ json: { items: [], total: 0, nextCursor: null } }),
+    );
+    await page.route("**/api/admin/collections", (route) => route.fulfill({ json: [] }));
+    await page.route("**/api/admin/releases", (route) =>
+      route.fulfill({
+        json: {
+          items: [
+            {
+              id,
+              title: "Synthetic B2 release",
+              manifestHash: "a".repeat(64),
+              expectedCount: 1000,
+              matchingCount: 1000,
+              deliveredCount: 1000,
+              storageProvider: "b2",
+              publishedAt: null,
+              reviewerName: null,
+            },
+          ],
+        },
+      }),
+    );
+    await page.goto(`${origin}tests/browser-fixtures/index.html?locale=${locale}`);
+    await page.getByRole("button", { name: "admin", exact: true }).click();
+    await expect(
+      page.getByRole("button", {
+        name:
+          locale === "en"
+            ? "Attest and publish 1000 recordings"
+            : "Xác nhận và công bố 1000 bản thu",
+      }),
+    ).toBeEnabled();
+    await expect(page.getByText("Backblaze B2", { exact: true })).toBeVisible();
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await context.setOffline(true);
+    await expect(
+      page.getByRole("button", {
+        name:
+          locale === "en"
+            ? "Attest and publish 1000 recordings"
+            : "Xác nhận và công bố 1000 bản thu",
+      }),
+    ).toBeDisabled();
+    await expect(
+      page.getByText(
+        locale === "en"
+          ? "Reconnect to review and publish this release."
+          : "Kết nối lại để xem xét và công bố đợt phát hành này.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await context.setOffline(false);
+  });

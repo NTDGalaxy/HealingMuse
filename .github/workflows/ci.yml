@@ -23,6 +23,8 @@ jobs:
       - run: npm run db:test
       - run: npm run db:test:catalog
       - run: npm run db:test:release
+      - run: npm run db:test:b2
+      - run: npm run security:repository
       - run: npm run build
       - run: npm run security:client
       - run: node scripts/test-fixtures.mjs

@@ -369,7 +369,10 @@
       "identity": "Tài khoản quản trị đang đăng nhập và tên của bạn sẽ được lưu trong hồ sơ phát hành.",
       "publishing": "Đang công bố...",
       "publish": "Xác nhận và công bố {count} bản thu",
-      "changed": "Bản kê, thông tin hoặc âm thanh đã thay đổi. Hãy tải lại và đánh giá đợt phát hành."
+      "changed": "Bản kê, thông tin hoặc âm thanh đã thay đổi. Hãy tải lại và đánh giá đợt phát hành.",
+      "storage": "Kho lưu âm thanh",
+      "offline": "Kết nối lại để xem xét và công bố đợt phát hành này.",
+      "refresh": "Tải lại đợt phát hành"
     }
   },
   "privacy": {
@@ -378,7 +381,7 @@
     "accounts": "Tài khoản dùng email để đăng nhập không cần mật khẩu. Yêu thích và danh sách phát thuộc tài khoản của bạn.",
     "mood": "Nhật ký cảm xúc cần sự đồng ý riêng, chỉ chủ tài khoản có thể truy cập qua ứng dụng và được tự động xóa sau 90 ngày. Bạn có thể xóa sớm hơn trong Nhật ký cảm xúc hoặc Cài đặt.",
     "offline": "Bản thu đã tải và thông tin ghi công được lưu trên thiết bị. Dữ liệu tài khoản và cảm xúc không được lưu để dùng ngoại tuyến. Hãy gỡ riêng các bản tải khi dùng thiết bị chung.",
-    "providers": "Tài khoản và dịch vụ âm thanh sử dụng Supabase cùng Vercel. Nếu bạn chọn tải trình phát YouTube hoặc mở Spotify, dịch vụ đó xử lý thông tin theo điều khoản và chính sách riêng tư của họ.",
+    "providers": "Dịch vụ tài khoản và nội dung sử dụng Supabase, Backblaze B2 và Vercel. Nếu bạn chọn tải trình phát YouTube hoặc mở Spotify, dịch vụ đó xử lý thông tin theo điều khoản và chính sách quyền riêng tư của họ.",
     "logs": "Nhật ký vận hành chỉ dùng nhóm lỗi, không chứa cảm xúc, email, URL phát nhạc có chữ ký hay nội dung yêu cầu.",
     "delete": "Xóa tài khoản trong Cài đặt để gỡ dữ liệu cá nhân của ứng dụng. Bản sao lưu của nhà cung cấp hết hạn theo chính sách lưu giữ; khi khôi phục phải áp dụng lại các yêu cầu xóa trước khi sử dụng.",
     "termsTitle": "Điều khoản lắng nghe",

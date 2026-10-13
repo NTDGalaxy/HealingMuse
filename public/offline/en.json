@@ -369,7 +369,10 @@
       "identity": "Your signed-in administrator account and name will be retained in the release audit.",
       "publishing": "Publishing...",
       "publish": "Attest and publish {count} recordings",
-      "changed": "The manifest, metadata or delivery changed. Refresh and review the release again."
+      "changed": "The manifest, metadata or delivery changed. Refresh and review the release again.",
+      "storage": "Audio storage",
+      "offline": "Reconnect to review and publish this release.",
+      "refresh": "Refresh releases"
     }
   },
   "privacy": {
@@ -378,7 +381,7 @@
     "accounts": "Accounts use your email address for passwordless sign-in. Favorites and playlists belong to your account.",
     "mood": "Mood check-ins require separate consent, are accessible only to their owner through the application, and are automatically removed after 90 days. You can delete them sooner in Mood History or Settings.",
     "offline": "Downloaded recordings and their credits are stored on your device. Account data and mood values are not stored for offline use. Remove device downloads separately when using a shared device.",
-    "providers": "Account and media services use Supabase and Vercel. If you choose to load a YouTube player or open Spotify, that service processes information under its own terms and privacy policy.",
+    "providers": "Account and media services use Supabase, Backblaze B2 and Vercel. If you choose to load a YouTube player or open Spotify, that service processes information under its own terms and privacy policy.",
     "logs": "Operational logs use error categories and do not contain mood values, emails, signed playback URLs, or request bodies.",
     "delete": "Delete your account in Settings to remove personal application records. Provider backups expire under their retention policies, and restorations must reapply deletions before being used.",
     "termsTitle": "Listening terms",

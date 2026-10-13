@@ -1,5 +1,5 @@
 import { assertDb, HttpError, json, safeHandler, requireAdmin } from "@/lib/server/http";
-import { privilegedClient } from "@/lib/supabase/admin";
+import { audioGrant } from "@/lib/server/audio-storage";
 import { fromRow } from "@/lib/server/catalog";
 import { uuid } from "@/lib/validation";
 export function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -12,10 +12,6 @@ export function GET(_request: Request, context: { params: Promise<{ id: string }
     const track = fromRow(result.data);
     if (track.source.kind !== "hosted" || track.status === "retired")
       throw new HttpError(404, "not_found");
-    const { data, error } = await privilegedClient()
-      .storage.from("audio")
-      .createSignedUrl(track.source.path, 300);
-    assertDb(error);
-    return json({ url: data?.signedUrl, expiresAt: new Date(Date.now() + 300_000).toISOString() });
+    return json(await audioGrant(track));
   });
 }

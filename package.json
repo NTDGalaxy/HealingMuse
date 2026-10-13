@@ -46,9 +46,19 @@
     "db:test:release": "node scripts/test-release-database.mjs",
     "release:verify:cloud": "node scripts/verify-release-cloud.mjs",
     "content:admin": "node scripts/content-admin.mjs",
-    "test:performance": "node scripts/measure-browser.mjs"
+    "test:performance": "node scripts/measure-browser.mjs",
+    "b2:preflight": "node scripts/b2-audio.mjs preflight",
+    "b2:upload": "node scripts/b2-audio.mjs upload",
+    "b2:verify": "node scripts/b2-audio.mjs verify",
+    "db:test:b2": "node scripts/test-b2-database.mjs",
+    "security:repository": "node scripts/check-repository-secrets.mjs",
+    "b2:account": "node scripts/b2-account-confirm.mjs",
+    "release:register:b2": "node scripts/prepare-release.mjs --register --provider=b2",
+    "b2:connection": "node scripts/b2-connection.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1150.0",
+    "@aws-sdk/s3-request-presigner": "3.1150.0",
     "@fontsource/be-vietnam-pro": "5.3.0",
     "@radix-ui/react-dialog": "1.2.0",
     "@supabase/ssr": "0.12.7",

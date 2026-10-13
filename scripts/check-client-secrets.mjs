@@ -3,7 +3,15 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 config({ path: ".env.local", quiet: true });
-const names = ["SUPABASE_SECRET_KEY", "SUPABASE_DB_URL", "RATE_LIMIT_SALT"];
+const names = [
+  "SUPABASE_SECRET_KEY",
+  "SUPABASE_DB_URL",
+  "RATE_LIMIT_SALT",
+  "B2_READ_KEY_ID",
+  "B2_READ_APPLICATION_KEY",
+  "B2_UPLOAD_KEY_ID",
+  "B2_UPLOAD_APPLICATION_KEY",
+];
 const secrets = names.flatMap((name) => {
   const value = process.env[name];
   return value ? [value, JSON.stringify(value).slice(1, -1), encodeURIComponent(value)] : [];

@@ -15,9 +15,11 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run dev:preview",
+        command: process.env.CI
+          ? "npm run build:preview && npm run start:preview"
+          : "npm run dev:preview",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
-        timeout: 120000,
+        timeout: process.env.CI ? 300000 : 120000,
       },
 });

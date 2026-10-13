@@ -134,3 +134,41 @@ test("quota denial never commits a partial offline recording", async ({ page }) 
   await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
   await expect.poll(() => page.locator(".downloaded-badge").count()).toBe(1);
 });
+
+for (const locale of ["en", "vi"])
+  test(`B2 quota failure announces recovery in ${locale} and retries with a fresh grant`, async ({
+    page,
+  }) => {
+    let grants = 0;
+    await page.route(`**/api/grants/${A}`, (route) => {
+      grants++;
+      return grants === 1
+        ? route.fulfill({
+            json: {
+              url: "https://s3.us-west-004.backblazeb2.com/synthetic-only/quota.mp3?versionId=synthetic",
+              expiresAt: new Date(Date.now() + 600000).toISOString(),
+            },
+          })
+        : route.continue();
+    });
+    await page.route("https://s3.us-west-004.backblazeb2.com/**", (route) =>
+      route.fulfill({ status: 403, body: "Synthetic download cap" }),
+    );
+    await page.goto(`/${locale}`);
+    await page.locator(".card-play").first().click();
+    await expect(page.locator('.player-error[role="alert"]')).toBeVisible();
+    const retry = page.getByRole("button", {
+      name: locale === "en" ? "Try again" : "Thử lại",
+      exact: true,
+    });
+    await retry.focus();
+    await retry.press("Enter");
+    await expect
+      .poll(() =>
+        page
+          .locator("audio")
+          .evaluate((audio: HTMLAudioElement) => !audio.paused && audio.currentTime > 0),
+      )
+      .toBe(true);
+    expect(grants).toBe(2);
+  });
