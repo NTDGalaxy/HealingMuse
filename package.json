@@ -54,7 +54,8 @@
     "security:repository": "node scripts/check-repository-secrets.mjs",
     "b2:account": "node scripts/b2-account-confirm.mjs",
     "release:register:b2": "node scripts/prepare-release.mjs --register --provider=b2",
-    "b2:connection": "node scripts/b2-connection.mjs"
+    "b2:connection": "node scripts/b2-connection.mjs",
+    "b2:test:preflight": "node scripts/test-b2-preflight.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",

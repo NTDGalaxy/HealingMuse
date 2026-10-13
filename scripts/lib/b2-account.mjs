@@ -20,30 +20,66 @@ export function validationOrigins(env = process.env) {
   }
   return origins;
 }
-export function validateAccountEvidence(evidence, now = Date.now()) {
+export function accountEvidenceIssues(evidence, now = Date.now()) {
+  const issues = [];
+  const at = (name) => Date.parse(evidence?.[name]);
+  if (evidence?.version !== 2 || evidence?.freeOnly !== true)
+    issues.push("account_evidence_version");
+  if (!Number.isSafeInteger(evidence?.accountStorageBytes) || evidence.accountStorageBytes < 0)
+    issues.push("storage_usage_unverified");
+  else if (evidence.accountStorageBytes >= 10_000_000_000)
+    issues.push("storage_allowance_exhausted");
   if (
-    !evidence ||
-    evidence.version !== 1 ||
-    evidence.freeOnly !== true ||
-    !Number.isSafeInteger(evidence.accountStorageBytes) ||
-    evidence.accountStorageBytes < 0 ||
-    !Number.isSafeInteger(evidence.downloadRemainingBytes) ||
-    evidence.downloadRemainingBytes < 0 ||
-    evidence.zeroSpendCaps?.storage !== true ||
-    evidence.zeroSpendCaps?.download !== true ||
-    evidence.zeroSpendCaps?.transactions !== true ||
-    evidence.noClassDFeatures !== true ||
-    !Number.isFinite(Date.parse(evidence.checkedAt)) ||
-    Date.parse(evidence.checkedAt) > now ||
-    now - Date.parse(evidence.checkedAt) > 86400000 ||
-    !Number.isFinite(Date.parse(evidence.capsEffectiveAt)) ||
-    Date.parse(evidence.capsEffectiveAt) > now ||
-    Date.parse(evidence.capsEffectiveAt) > Date.parse(evidence.checkedAt)
+    !Number.isSafeInteger(evidence?.downloadRemainingBytes) ||
+    evidence.downloadRemainingBytes < 0
   )
-    throw new Error("account_limits_unconfirmed");
+    issues.push("download_allowance_unverified");
+  else if (evidence.downloadRemainingBytes === 0) issues.push("download_allowance_exhausted");
+  if (
+    !Number.isFinite(at("checkedAt")) ||
+    at("checkedAt") > now ||
+    now - at("checkedAt") > 86400000
+  )
+    issues.push("account_evidence_stale");
+  if (
+    !Number.isFinite(at("downloadPeriodStartsAt")) ||
+    !Number.isFinite(at("downloadPeriodEndsAt")) ||
+    at("downloadPeriodStartsAt") > at("checkedAt") ||
+    at("downloadPeriodEndsAt") <= at("downloadPeriodStartsAt") ||
+    at("downloadPeriodEndsAt") <= now
+  )
+    issues.push("download_period_unverified_or_expired");
+  if (
+    ["storage", "download", "classA", "classB", "classC"].some(
+      (name) => evidence?.zeroSpendCaps?.[name] !== true,
+    )
+  )
+    issues.push("zero_spend_caps_unverified");
+  // The operator must actually recheck the settings after the propagation interval.
+  if (
+    !Number.isFinite(at("capsObservedAt")) ||
+    !Number.isFinite(at("capsEffectiveAt")) ||
+    at("capsEffectiveAt") - at("capsObservedAt") < 600000 ||
+    at("capsEffectiveAt") > at("checkedAt")
+  )
+    issues.push("caps_effectiveness_unverified");
+  if (
+    evidence?.eventNotificationsDisabled !== true ||
+    evidence?.otherClassDFeaturesDisabled !== true
+  )
+    issues.push("class_d_features_not_confirmed_disabled");
+  return issues;
+}
+export function validateAccountEvidence(evidence, now = Date.now()) {
+  const issues = accountEvidenceIssues(evidence, now);
+  if (issues.length) throw Object.assign(new Error("account_limits_unconfirmed"), { issues });
   return {
     storageRemaining: Math.max(0, 10_000_000_000 - evidence.accountStorageBytes),
     downloadRemaining: evidence.downloadRemainingBytes,
+    validUntil: Math.min(
+      Date.parse(evidence.checkedAt) + 86400000,
+      Date.parse(evidence.downloadPeriodEndsAt),
+    ),
   };
 }
 export function keyScopeChecks(config, kind, result) {
@@ -51,10 +87,10 @@ export function keyScopeChecks(config, kind, result) {
     allowed = api?.allowed;
   const buckets = allowed?.buckets,
     capabilities = allowed?.capabilities || [];
-  const needed = kind === "UPLOAD" ? ["writeFiles", "listBuckets"] : ["readFiles"];
+  const needed = kind === "UPLOAD" ? ["listBuckets", "readBuckets", "writeFiles"] : ["readFiles"];
   const permitted =
     kind === "UPLOAD"
-      ? ["writeFiles", "listFiles", "listBuckets", "readBuckets", "listAllBucketNames"]
+      ? ["listBuckets", "readBuckets", "writeFiles"]
       : [
           "readFiles",
           "listFiles",

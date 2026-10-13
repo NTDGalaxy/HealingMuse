@@ -71,6 +71,7 @@ try {
         checkpoint.budget[kind] += bytes;
         await persistCheckpoint();
       },
+      preflight.validUntil,
     );
     let cursor = 0,
       verified = 0,
@@ -157,6 +158,7 @@ try {
       event: "b2_delivery_paused",
       code: b2ErrorCode(error),
       progressRetained: true,
+      ...(error.issues ? { issues: error.issues } : {}),
     }),
   );
   process.exitCode = 1;

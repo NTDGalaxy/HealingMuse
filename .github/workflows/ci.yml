@@ -20,6 +20,7 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
+      - run: npm run b2:test:preflight
       - run: npm run db:test
       - run: npm run db:test:catalog
       - run: npm run db:test:release

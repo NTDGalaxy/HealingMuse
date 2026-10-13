@@ -5,6 +5,7 @@ import { b2Config, b2Client, b2SignedGet, type B2Receipt } from "@/lib/storage/b
 import { deliverB2Track, deliveryBudget, readRetry } from "../../scripts/lib/b2-delivery.mjs";
 import {
   validateAccountEvidence,
+  accountEvidenceIssues,
   keyScopeChecks,
   corsMatches,
 } from "../../scripts/lib/b2-account.mjs";
@@ -189,13 +190,17 @@ describe("B2 delivery recovery and private version grants", () => {
     const now = Date.now(),
       at = new Date(now - 1000).toISOString();
     const evidence = {
-      version: 1,
+      version: 2,
       freeOnly: true,
       accountStorageBytes: 100,
       downloadRemainingBytes: 200,
-      zeroSpendCaps: { storage: true, download: true, transactions: true },
-      noClassDFeatures: true,
+      downloadPeriodStartsAt: new Date(now - 3600000).toISOString(),
+      downloadPeriodEndsAt: new Date(now + 3600000).toISOString(),
+      zeroSpendCaps: { storage: true, download: true, classA: true, classB: true, classC: true },
+      eventNotificationsDisabled: true,
+      otherClassDFeaturesDisabled: true,
       checkedAt: at,
+      capsObservedAt: new Date(now - 1200000).toISOString(),
       capsEffectiveAt: at,
     };
     expect(validateAccountEvidence(evidence, now).storageRemaining).toBe(9_999_999_900);
@@ -265,4 +270,83 @@ it("uses separate read credentials for verification while the upload client only
   await deliverB2Track({ ...f.args, client: writer, reader });
   expect(writer.send).toHaveBeenCalledOnce();
   expect(f.record).toHaveBeenCalledOnce();
+});
+
+it("zero verification allowance prevents every storage request and checkpoint write", async () => {
+  const f = fixture();
+  await expect(deliverB2Track({ ...f.args, budget: deliveryBudget(1000, 0) })).rejects.toThrow(
+    "download_budget_exhausted",
+  );
+  expect(f.send).not.toHaveBeenCalled();
+  expect(f.save).not.toHaveBeenCalled();
+});
+it("two workers reserve scarce verification allowance before either upload", async () => {
+  const first = fixture(),
+    second = fixture(),
+    budget = deliveryBudget(1000, audio.length);
+  const results = await Promise.allSettled([
+    deliverB2Track({ ...first.args, budget }),
+    deliverB2Track({ ...second.args, budget }),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(
+    first.send.mock.calls.filter(([c]) => c.constructor.name === "PutObjectCommand").length +
+      second.send.mock.calls.filter(([c]) => c.constructor.name === "PutObjectCommand").length,
+  ).toBe(1);
+  expect(first.record.mock.calls.length + second.record.mock.calls.length).toBe(1);
+});
+it("expired budget evidence stops a worker before contacting storage", async () => {
+  const f = fixture();
+  await expect(
+    deliverB2Track({
+      ...f.args,
+      budget: deliveryBudget(
+        1000,
+        1000,
+        async () => {},
+        100,
+        () => 100,
+      ),
+    }),
+  ).rejects.toThrow("account_limits_unconfirmed");
+  expect(f.send).not.toHaveBeenCalled();
+});
+it("reports all missing safeguards in the supplied zero-allowance, Class-D-enabled account state", () => {
+  const at = new Date().toISOString();
+  const issues = accountEvidenceIssues({
+    version: 2,
+    freeOnly: true,
+    accountStorageBytes: 0,
+    downloadRemainingBytes: 0,
+    zeroSpendCaps: { storage: true, download: true, classA: true, classB: true, classC: true },
+    checkedAt: at,
+    eventNotificationsDisabled: false,
+    otherClassDFeaturesDisabled: false,
+  });
+  expect(issues).toEqual([
+    "download_allowance_exhausted",
+    "download_period_unverified_or_expired",
+    "caps_effectiveness_unverified",
+    "class_d_features_not_confirmed_disabled",
+  ]);
+});
+it("requires exactly the designated three upload capabilities", () => {
+  const result = (capabilities: string[]) => ({
+    apiInfo: {
+      storageApi: {
+        s3ApiUrl: config.endpoint,
+        allowed: { buckets: [{ id: "synthetic", name: config.bucket }], capabilities },
+      },
+    },
+  });
+  expect(
+    keyScopeChecks(config, "UPLOAD", result(["listBuckets", "writeFiles"])).requiredCapabilities,
+  ).toBe(false);
+  expect(
+    keyScopeChecks(
+      config,
+      "UPLOAD",
+      result(["listBuckets", "readBuckets", "writeFiles", "listFiles"]),
+    ).leastPrivilege,
+  ).toBe(false);
 });

@@ -35,6 +35,7 @@ export async function deliverB2Track({
   budget,
   read = readRetry,
 }) {
+  budget.assertValid();
   if (
     audio.length !== track.bytes ||
     createHash("sha256").update(audio).digest("hex") !== track.sha256
@@ -65,6 +66,8 @@ export async function deliverB2Track({
     await record(existing);
     return existing;
   }
+  // Reserve verification allowance before any new write, including concurrent workers.
+  await budget.reserveDownload(track.bytes);
   let receipt = existing?.version_id ? existing : null;
   if (receipt) {
     assertB2Receipt(config, receipt, track.id, track.sha256, track.bytes);
@@ -120,23 +123,35 @@ export async function deliverB2Track({
     receipt = { ...base, version_id: head.VersionId, etag: head.ETag, state: "uploaded" };
     await save(receipt);
   }
-  await budget.reserveDownload(track.bytes);
   // Never retry a full GET automatically: partial reads also spend the download allowance.
+  budget.assertValid();
   await verifyB2Bytes(reader, config, receipt);
   const verified = { ...receipt, state: "verified", verifiedAt: new Date().toISOString() };
   await save(verified);
   await record(verified);
   return verified;
 }
-/** @param {number} storage @param {number} download @param {(kind: "storage" | "download", bytes: number) => Promise<void>} [persist] */
-export function deliveryBudget(storage, download, persist = async () => {}) {
+/** @param {number} storage @param {number} download @param {(kind: "storage" | "download", bytes: number) => Promise<void>} [persist] @param {number} [validUntil] @param {() => number} [now] */
+export function deliveryBudget(
+  storage,
+  download,
+  persist = async () => {},
+  validUntil = Infinity,
+  now = Date.now,
+) {
+  const assertValid = () => {
+    if (now() >= validUntil) throw new Error("account_limits_unconfirmed");
+  };
   return {
+    assertValid,
     async reserveStorage(bytes) {
+      assertValid();
       if (bytes > storage) throw new Error("storage_budget_exhausted");
       storage -= bytes;
       await persist("storage", bytes);
     },
     async reserveDownload(bytes) {
+      assertValid();
       if (bytes > download) throw new Error("download_budget_exhausted");
       download -= bytes;
       await persist("download", bytes);
