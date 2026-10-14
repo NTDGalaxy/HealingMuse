@@ -5,8 +5,12 @@ import { releaseMetadata } from "./recording-row.mjs";
 import { b2Config, b2Client, assertB2Receipt, verifyB2Head } from "../src/lib/storage/b2.ts";
 import { readRetry } from "./lib/b2-delivery.mjs";
 import { databaseClient } from "./database.mjs";
+import { subsetTracks } from "./lib/supabase-subset.mjs";
 
-const path = "media/evidence/catalogue-release.json";
+const subset = process.argv.includes("--subset");
+const path = subset
+  ? "media/evidence/supabase-free-release.json"
+  : "media/evidence/catalogue-release.json";
 const canonical = (value) =>
   JSON.stringify(value, (_, item) =>
     item && typeof item === "object" && !Array.isArray(item)
@@ -19,10 +23,15 @@ const canonical = (value) =>
   );
 const hash = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 try {
-  const tracks = (await readJson("media/prepared/catalog.json", [])).filter(
-    (track) => track.status !== "retired",
-  );
-  if (tracks.length !== targetCount() || new Set(tracks.map((t) => t.id)).size !== tracks.length)
+  const catalogue = await readJson("media/prepared/catalog.json", []);
+  const tracks = subset
+    ? subsetTracks(catalogue, await readJson("media/evidence/supabase-free-selection.json", null))
+    : catalogue.filter((track) => track.status !== "retired");
+  if (
+    (!subset && tracks.length !== targetCount()) ||
+    !tracks.length ||
+    new Set(tracks.map((t) => t.id)).size !== tracks.length
+  )
     throw new Error("incomplete_inventory");
   const items = [];
   for (const track of tracks.sort((a, b) => a.id.localeCompare(b.id))) {
@@ -42,7 +51,9 @@ try {
   const manifest = existing ?? {
     ...payload,
     id: randomUUID(),
-    title: "HealingMuse - 1,000 human-created recordings",
+    title: subset
+      ? `HealingMuse - ${tracks.length} recordings within Supabase Free`
+      : "HealingMuse - 1,000 human-created recordings",
     manifestHash,
     preparedAt: new Date().toISOString(),
   };
@@ -58,6 +69,7 @@ try {
   const provider =
     process.argv.find((arg) => arg.startsWith("--provider="))?.split("=")[1] ?? "supabase";
   if (!["supabase", "b2"].includes(provider)) throw new Error("delivery_or_metadata_incomplete");
+  if (subset && provider !== "supabase") throw new Error("delivery_or_metadata_incomplete");
   if (process.argv.includes("--register")) {
     const db = databaseClient();
     try {

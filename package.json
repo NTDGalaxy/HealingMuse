@@ -55,7 +55,13 @@
     "b2:account": "node scripts/b2-account-confirm.mjs",
     "release:register:b2": "node scripts/prepare-release.mjs --register --provider=b2",
     "b2:connection": "node scripts/b2-connection.mjs",
-    "b2:test:preflight": "node scripts/test-b2-preflight.mjs"
+    "b2:test:preflight": "node scripts/test-b2-preflight.mjs",
+    "supabase:subset:plan": "node scripts/supabase-subset.mjs plan",
+    "supabase:subset:licenses": "node scripts/verify-subset-licenses.mjs",
+    "supabase:subset:pilot": "node scripts/supabase-subset.mjs pilot",
+    "supabase:subset:upload": "node scripts/supabase-subset.mjs upload",
+    "supabase:subset:verify": "node scripts/supabase-subset.mjs verify",
+    "release:register:subset": "node scripts/prepare-release.mjs --subset --register"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",
