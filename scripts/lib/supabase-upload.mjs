@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -27,12 +27,17 @@ export async function curlSupabaseUpload(url, key, path, audio) {
     ].join("\n");
     const configPath = join(folder, "request.conf");
     await writeFile(configPath, configuration, { mode: 0o600 });
+    const windows = process.env.SUBSET_UPLOAD_TRANSPORT === "windows";
+    const executable = windows ? "/mnt/c/Windows/System32/curl.exe" : "curl";
+    const requestConfig = windows
+      ? execFileSync("wslpath", ["-w", configPath], { encoding: "utf8" }).trim()
+      : configPath;
     const result = await new Promise((resolve, reject) => {
       const child = spawn(
-        "curl",
+        executable,
         [
           "--config",
-          configPath,
+          requestConfig,
           "--proto",
           "=https",
           "--tlsv1.2",

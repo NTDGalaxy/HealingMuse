@@ -251,10 +251,14 @@ try {
           audio: await readFile(path),
           checkpoint: state.items[track.id],
           inspect,
-          assertCapacity: capacity,
+          assertCapacity: async (bytes) => {
+            if (stop) throw new Error("storage_unavailable");
+            return capacity(bytes);
+          },
           confirmMissing: async () => {
             const information = await client.storage.from("audio").info(track.source.path);
             return (
+              !stop &&
               Number(information.error?.statusCode) === 404 &&
               information.error?.code === "NoSuchKey" &&
               !(await inspect())
