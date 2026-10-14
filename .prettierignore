@@ -1,0 +1,24 @@
+node_modules/
+.next/
+.next-preview/
+next-env.d.ts
+package-lock.json
+aas-stack.json
+content/audio-sources.json
+*.md
+public/sw.js
+public/offline/en.json
+public/offline/vi.json
+public/icons/
+media/
+.local/
+test-results/
+artifacts/
+playwright-report/
+coverage/
+.env*
+*.tsbuildinfo
+
+# Generated skill state and image provenance sidecars.
+.impeccable/questions/
+public/scenery/*.json

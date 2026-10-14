@@ -1,0 +1,8 @@
+{
+  "wikimedia": {
+    "userAgent": "HealingMuseBot/1.0 (https://github.com/NTDGalaxy/HealingMuse/issues)",
+    "contactUrl": "https://github.com/NTDGalaxy/HealingMuse/issues",
+    "metadataIntervalMs": 1500,
+    "downloadConcurrency": 1
+  }
+}

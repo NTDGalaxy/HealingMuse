@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f3eff7" />
+    <title>HealingMuse</title>
+    <link rel="stylesheet" href="/offline/style.css" />
+    <script src="/offline/app.js" defer></script>
+  </head>
+  <body>
+    <a href="#content" class="skip" id="skip">Đi đến nội dung</a>
+    <header>
+      <a href="/vi" id="brand">HealingMuse</a>
+      <nav aria-label="Language">
+        <a href="/vi/downloads" lang="vi">VI</a><a href="/en/downloads" lang="en">EN</a>
+      </nav>
+    </header>
+    <main id="content">
+      <p id="connection" class="banner" role="status"></p>
+      <h1 id="title"></h1>
+      <p id="subtitle"></p>
+      <p id="usage"></p>
+      <div id="list"></div>
+      <p id="empty"></p>
+      <p id="note"></p>
+      <button id="retry"></button>
+    </main>
+    <section class="player" aria-label="HealingMuse player">
+      <h2 id="current"></h2>
+      <audio id="audio" controls preload="metadata" aria-label="Audio"></audio
+      ><label for="timer" id="timer-label"></label
+      ><select id="timer">
+        <option value="0">0</option>
+        <option value="5">5</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="60">60</option>
+      </select>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+  </body>
+</html>
