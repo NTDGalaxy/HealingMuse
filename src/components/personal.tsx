@@ -627,6 +627,9 @@ export function SettingsView() {
           {app.user ? (
             <>
               <p>{app.user.email}</p>
+              <Link className="text-link" href={`/${locale}/reset-password`}>
+                {t("auth.managePassword")}
+              </Link>
               <button className="button secondary" onClick={() => void app.signOut()}>
                 {t("auth.signOut")}
               </button>

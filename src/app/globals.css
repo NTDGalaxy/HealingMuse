@@ -1020,6 +1020,41 @@ tbody th {
   padding: 12px 14px;
   color: var(--text);
 }
+.password-control {
+  display: grid;
+  gap: 12px;
+}
+.password-control > label {
+  font-weight: 500;
+}
+.password-field {
+  position: relative;
+}
+.form-stack .password-field input {
+  padding-inline-end: 60px;
+  min-height: 52px;
+}
+.password-field .password-visibility {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 4px;
+  width: 44px;
+  height: 44px;
+}
+.auth-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+.auth-options .text-link,
+.form-stack > .text-link {
+  min-height: 44px;
+  text-align: start;
+}
+.password-reset-panel {
+  max-width: 560px;
+}
 .form-stack textarea {
   resize: vertical;
   min-height: 90px;

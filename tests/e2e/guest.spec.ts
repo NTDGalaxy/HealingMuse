@@ -60,7 +60,14 @@ test("guest listens, navigates without losing playback, downloads, and starts of
   await page.getByRole("link", { name: "Downloads", exact: true }).first().click();
   await expect(page).toHaveURL(/\/en\/downloads$/);
   await page.reload();
-  await expect(page.getByText("Music to take with you", { exact: true })).toBeVisible();
+  // Streamed markup can retain a hidden copy before hydration completes.
+  const downloadsHeading = page.getByRole("heading", {
+    level: 1,
+    name: "Music to take with you",
+    exact: true,
+  });
+  await expect(downloadsHeading).toHaveCount(1);
+  await expect(downloadsHeading).toBeVisible();
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
