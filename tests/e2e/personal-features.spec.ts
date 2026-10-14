@@ -8,6 +8,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { paginateTracks } from "../../src/lib/catalog-query";
 let server: ViteDevServer;
 let origin: string;
+test.afterAll(async () => {
+  await server?.close();
+});
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/admin/releases", (route) => route.fulfill({ json: { items: [] } }));
 });
@@ -33,6 +36,202 @@ test.beforeAll(async () => {
   });
   await server.listen();
   origin = server.resolvedUrls!.local[0];
+});
+test("password sign-in is the default and does not send an email", async ({ page }) => {
+  await page.route("**/api/me", (route) =>
+    route.fulfill({
+      json: {
+        profile: { id: owner, locale: "en", calm_mode: false, mood_consent_at: null },
+        favorites: [],
+        playlists: [],
+        checkins: [],
+        isAdmin: true,
+      },
+    }),
+  );
+  await page.goto(`${origin}tests/browser-fixtures/index.html?guest`);
+  await page.getByRole("navigation").getByRole("button", { name: "Sign in", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
+  await dialog.getByLabel("Email address", { exact: true }).fill("synthetic@example.invalid");
+  await dialog.getByLabel("Password", { exact: true }).fill("wrong password");
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("email or password");
+  await expect(dialog.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
+  await dialog.getByLabel("Password", { exact: true }).fill("synthetic password only");
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual([
+    "signInWithPassword",
+    "signInWithPassword",
+  ]);
+});
+for (const locale of ["en", "vi"] as const) {
+  test(`password controls are accessible and clear credentials on close in ${locale}`, async ({
+    page,
+  }) => {
+    const messages = JSON.parse(await readFile(`src/messages/${locale}.json`, "utf8"));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${origin}tests/browser-fixtures/index.html?guest&locale=${locale}`);
+    const trigger = page
+      .getByRole("navigation")
+      .getByRole("button", { name: "Sign in", exact: true });
+    await trigger.click();
+    const dialog = page.getByRole("dialog");
+    const password = dialog.getByLabel(messages.auth.password, { exact: true });
+    await expect(password).toHaveAttribute("autocomplete", "current-password");
+    await expect(dialog.getByLabel(messages.auth.email, { exact: true })).toHaveAttribute(
+      "autocomplete",
+      "username",
+    );
+    await password.fill("synthetic password only");
+    const show = dialog.getByRole("button", { name: messages.auth.showPassword, exact: true });
+    const bounds = await show.boundingBox();
+    expect(bounds!.width).toBeGreaterThanOrEqual(44);
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    await show.click();
+    await expect(password).toHaveAttribute("type", "text");
+    await dialog.getByRole("button", { name: messages.auth.hidePassword, exact: true }).click();
+    await expect(password).toHaveAttribute("type", "password");
+    for (let tab = 0; tab < 14; tab++) {
+      await page.keyboard.press("Tab");
+      expect(await dialog.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+    }
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await page.screenshot({
+      path: `test-results/password-sign-in-${locale}-phone.png`,
+      fullPage: true,
+    });
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(password).toHaveValue("");
+    await expect(password).toHaveAttribute("type", "password");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+}
+test("password and email limits are announced separately without automatic retries", async ({
+  page,
+}) => {
+  await page.goto(`${origin}tests/browser-fixtures/index.html?guest&request-limit`);
+  await page.getByRole("navigation").getByRole("button", { name: "Sign in", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Email address", { exact: true }).fill("synthetic@example.invalid");
+  await dialog.getByLabel("Password", { exact: true }).fill("synthetic password only");
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Too many sign-in requests");
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual(["signInWithPassword"]);
+  await page.goto(`${origin}tests/browser-fixtures/index.html?guest&email-limit`);
+  await page.getByRole("navigation").getByRole("button", { name: "Sign in", exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "Forgot or need to set a password?", exact: true })
+    .click();
+  await expect(dialog.getByLabel("Email address", { exact: true })).toBeFocused();
+  await dialog.getByLabel("Email address", { exact: true }).fill("synthetic@example.invalid");
+  await dialog.getByRole("button", { name: "Send password recovery email", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("email sending limit");
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual(["resetPasswordForEmail"]);
+});
+test("recovery preserves the current origin and locale and gives a private confirmation", async ({
+  page,
+}) => {
+  const messages = JSON.parse(await readFile("src/messages/vi.json", "utf8"));
+  await page.goto(`${origin}tests/browser-fixtures/index.html?guest&locale=vi`);
+  await page.getByRole("navigation").getByRole("button", { name: "Sign in", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: messages.auth.forgotPassword, exact: true }).click();
+  await dialog.getByLabel(messages.auth.email, { exact: true }).fill("synthetic@example.invalid");
+  await dialog.getByRole("button", { name: messages.auth.sendRecovery, exact: true }).click();
+  await expect(dialog.getByRole("status")).toHaveText(messages.auth.recoverySent);
+  await expect(dialog.getByRole("status")).toBeFocused();
+  expect(await page.evaluate(() => window.__syntheticRecoveryPath)).toBe("/vi/reset-password");
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual(["resetPasswordForEmail"]);
+});
+test("password updates require a session, validate confirmation and clear the saved password", async ({
+  page,
+}) => {
+  await page.route("**/api/me", (route) =>
+    route.fulfill({
+      json: {
+        profile: { id: owner, locale: "en", calm_mode: false, mood_consent_at: null },
+        favorites: [],
+        playlists: [],
+        checkins: [],
+        isAdmin: false,
+      },
+    }),
+  );
+  await page.goto(`${origin}tests/browser-fixtures/index.html?guest`);
+  await page.getByRole("button", { name: "password", exact: true }).click();
+  await expect(page.getByLabel("New password", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual([]);
+  await page.goto(`${origin}tests/browser-fixtures/index.html`);
+  await page.getByRole("button", { name: "password", exact: true }).click();
+  await page.getByLabel("New password", { exact: true }).fill("synthetic password only");
+  await page.getByLabel("Confirm new password", { exact: true }).fill("another synthetic password");
+  await page.getByRole("button", { name: "Save password", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("do not match");
+  await expect(page.getByLabel("Confirm new password", { exact: true })).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual([]);
+  await page.getByLabel("Confirm new password", { exact: true }).fill("synthetic password only");
+  await page.getByRole("button", { name: "Save password", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("password has been saved");
+  await expect(page.getByRole("status")).toBeFocused();
+  await expect(page.getByLabel("New password", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual(["updateUser"]);
+});
+test("server password-policy failures are announced on the new password field", async ({
+  page,
+}) => {
+  await page.route("**/api/me", (route) =>
+    route.fulfill({
+      json: {
+        profile: { id: owner, locale: "en", calm_mode: false, mood_consent_at: null },
+        favorites: [],
+        playlists: [],
+        checkins: [],
+        isAdmin: false,
+      },
+    }),
+  );
+  await page.goto(`${origin}tests/browser-fixtures/index.html?password-update-error`);
+  await page.getByRole("button", { name: "password", exact: true }).click();
+  await page.getByLabel("New password", { exact: true }).fill("synthetic password only");
+  await page.getByLabel("Confirm new password", { exact: true }).fill("synthetic password only");
+  await page.getByRole("button", { name: "Save password", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("could not save");
+  await expect(page.getByLabel("New password", { exact: true })).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
+  await expect(page.getByLabel("New password", { exact: true })).toHaveAttribute(
+    "aria-describedby",
+    "password-help password-error",
+  );
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
+  expect(await page.evaluate(() => window.__syntheticAuthCalls)).toEqual(["updateUser"]);
 });
 test("named release review checks delivery, records confirmations and reports a changed manifest", async ({
   page,
@@ -328,6 +527,7 @@ test("synthetic authentication, consent, personal history, and administration fo
     .getByRole("textbox", { name: "Email address", exact: true })
     .fill("synthetic@example.invalid");
   await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Use an email code instead", exact: true }).click();
   await page.getByRole("button", { name: "Email me a sign-in code", exact: true }).click();
   await page.getByRole("textbox", { name: "Sign-in code", exact: true }).fill("000000");
   await page.getByRole("button", { name: "Sign in", exact: true }).last().click();

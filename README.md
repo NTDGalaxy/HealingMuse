@@ -11,7 +11,8 @@ Use Node.js 22 and npm.
 Copy `.env.example` to `.env.local` when configuring an existing Supabase project.
 Keep credentials out of Git and chat.
 Guest listening works locally with prepared recordings before cloud credentials are configured.
-Account features require a real Supabase project and passwordless email setup.
+Account features require a real Supabase project.
+Email and password are the default sign-in method, with email codes available as an optional fallback.
 Use `npm run dev` for the configured cloud app and `npm run dev:preview` for isolated local listening without changing `.env.local`.
 
 ```bash
@@ -32,12 +33,35 @@ Production uploads create drafts with the review flag off.
 
 - Guest browsing, search, listening goals, hosted playback, recording credits, and eligible downloads.
 - Persistent native audio player, seeking, queue navigation, repeat, Media Session controls, and sleep timer.
-- Optional email-code accounts, favorites, revision-protected playlists, and private synchronization.
+- Optional email-and-password accounts, email-code fallback, password recovery, favorites, revision-protected playlists, and private synchronization.
 - Separate consent for optional paired mood check-ins, immediate deletion, and 90-day retention.
 - Device-local IndexedDB recordings with attribution, download progress, removal, and offline startup.
 - Content studio for draft, preview, publication, retirement, rights review, order, and curated collections.
 - Vietnamese and English interface, keyboard controls, accessible dialogs, reduced motion, and calm mode.
 - User-initiated visible YouTube embeds and ordinary Spotify links when an administrator adds them.
+
+## Account access
+
+Existing confirmed users can sign in with their email and password without requesting an email each time.
+Passwordless users can sign in once with an email code and select Set or change password in Settings.
+Forgot or need to set a password requests a recovery email and returns to a localized password page in the same browser.
+Supabase handles password storage and authenticated updates; application database tables do not store passwords.
+Guest browsing and listening remain available without an account for published recordings.
+
+Before testing recovery, allow these exact production redirects in Supabase Authentication > URL Configuration.
+Keep the Site URL set to `https://healingmuse.vercel.app` and add exact preview equivalents only when needed.
+
+```text
+https://healingmuse.vercel.app/en/reset-password
+https://healingmuse.vercel.app/vi/reset-password
+```
+
+The optional Magic Link template uses `{{ .Token }}` for email-code entry.
+The separate Reset Password template must retain its secure `{{ .ConfirmationURL }}` recovery link.
+Normal password sign-in does not send email, but account confirmation, email codes and recovery still depend on verified delivery and existing sending limits.
+Keep email confirmation, administrator authorization, SMTP settings and rate limits unchanged under the current release policy.
+The built-in Supabase sender is restricted to authorized organization-team development recipients; public account onboarding still requires an approved production sender.
+See [Supabase password authentication](https://supabase.com/docs/guides/auth/passwords) and [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
 
 ## Validate
 
@@ -68,9 +92,9 @@ Actual NVDA, VoiceOver, TalkBack, Android, iPhone, screen-lock playback, SMTP de
 
 ## Delivery milestones
 
-| Milestone | Implementation | Remaining validation |
-| --- | --- | --- |
-| Accessible listening | Listening screens, two languages, native player, navigation, search | Representative usability review and actual screen readers |
-| Personal features | Passwordless Auth integration, library, paired check-ins, consent, recent summaries, applied owner RLS, Broadcast | SMTP, live authenticated API and channel journeys |
-| Offline and administration | IndexedDB library, shell, recovery, content studio, imports | Human audio review, external-source/device checks, live publishing |
-| Production delivery | CI, migrations, deployment configuration, load tools, recovery tools, runbook | User's GitHub/Vercel deployment, staging restoration, cloud load targets, participant rollout |
+| Milestone                  | Implementation                                                                                                                   | Remaining validation                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Accessible listening       | Listening screens, two languages, native player, navigation, search                                                              | Representative usability review and actual screen readers                                     |
+| Personal features          | Password Auth, email-code fallback, recovery, library, paired check-ins, consent, recent summaries, applied owner RLS, Broadcast | SMTP-dependent onboarding and recovery, live authenticated API and channel journeys           |
+| Offline and administration | IndexedDB library, shell, recovery, content studio, imports                                                                      | Human audio review, external-source/device checks, live publishing                            |
+| Production delivery        | CI, migrations, deployment configuration, load tools, recovery tools, runbook                                                    | User's GitHub/Vercel deployment, staging restoration, cloud load targets, participant rollout |

@@ -8,6 +8,7 @@ import { PlayerProvider } from "@/components/player";
 import { LibraryView, MoodView, SettingsView } from "@/components/personal";
 import { AdminView } from "@/components/admin";
 import { AuthDialog } from "@/components/auth-dialog";
+import { PasswordResetView } from "@/components/password-reset";
 import { TrackCard, ExploreView } from "@/components/catalog";
 import type { Track, CatalogPage, CatalogQuery } from "@/lib/types";
 import "@/app/globals.css";
@@ -94,13 +95,20 @@ function Views() {
     <>
       <header>
         <nav aria-label="Fixture screens">
-          {["library", "mood", "settings", "admin", "recording", "browse", "catalogue"].map(
-            (name) => (
-              <button className="button secondary" key={name} onClick={() => setView(name)}>
-                {name}
-              </button>
-            ),
-          )}
+          {[
+            "library",
+            "mood",
+            "settings",
+            "admin",
+            "recording",
+            "browse",
+            "catalogue",
+            "password",
+          ].map((name) => (
+            <button className="button secondary" key={name} onClick={() => setView(name)}>
+              {name}
+            </button>
+          ))}
           <button className="button" onClick={app.openAuth}>
             Sign in
           </button>
@@ -115,6 +123,8 @@ function Views() {
           <SettingsView />
         ) : view === "admin" ? (
           <AdminView />
+        ) : view === "password" ? (
+          <PasswordResetView />
         ) : view === "catalogue" ? (
           <CatalogueFixture />
         ) : view === "browse" ? (

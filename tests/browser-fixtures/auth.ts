@@ -5,6 +5,20 @@ const user = {
 } as User;
 type Listener = (event: string, session: { user: User } | null) => void;
 const listeners = new Set<Listener>();
+declare global {
+  interface Window {
+    __syntheticAuthCalls: string[];
+    __syntheticRecoveryPath?: string;
+  }
+}
+window.__syntheticAuthCalls = [];
+function record(method: string) {
+  window.__syntheticAuthCalls.push(method);
+}
+function signedIn() {
+  for (const listener of listeners) listener("SIGNED_IN", { user });
+  return { data: { session: { user } }, error: null };
+}
 const channel = {
   on() {
     return this;
@@ -28,12 +42,38 @@ const client = {
       return { error: null };
     },
     async signInWithOtp() {
+      record("signInWithOtp");
+      if (location.search.includes("email-limit"))
+        return { error: { status: 429, code: "over_email_send_rate_limit" } };
       return { error: null };
     },
-    async verifyOtp({ token }: { token: string }) {
-      if (token !== "123456") return { error: { status: 400 } };
-      for (const listener of listeners) listener("SIGNED_IN", { user });
+    async signInWithPassword({ password }: { email: string; password: string }) {
+      record("signInWithPassword");
+      if (location.search.includes("request-limit"))
+        return { data: { session: null }, error: { status: 429, code: "over_request_rate_limit" } };
+      if (password !== "synthetic password only")
+        return { data: { session: null }, error: { status: 400, code: "invalid_credentials" } };
+      return signedIn();
+    },
+    async resetPasswordForEmail(_email: string, options: { redirectTo: string }) {
+      record("resetPasswordForEmail");
+      window.__syntheticRecoveryPath = new URL(options.redirectTo).pathname;
+      if (new URL(options.redirectTo).origin !== location.origin)
+        throw new Error("Unexpected recovery origin");
+      if (location.search.includes("email-limit"))
+        return { error: { status: 429, code: "over_email_send_rate_limit" } };
       return { error: null };
+    },
+    async updateUser() {
+      record("updateUser");
+      if (location.search.includes("password-update-error"))
+        return { data: { user: null }, error: { status: 422, code: "weak_password" } };
+      return { data: { user }, error: null };
+    },
+    async verifyOtp({ token }: { token: string }) {
+      record("verifyOtp");
+      if (token !== "123456") return { data: { session: null }, error: { status: 400 } };
+      return signedIn();
     },
   },
   channel: () => channel,
