@@ -229,6 +229,8 @@ test("custom duration, favorites and opt-in settings restore without autoplay", 
     .toBe(true);
   await page.reload();
   await expect(page.locator("#binaural-custom-duration")).toHaveValue("2");
+  // Streaming can briefly retain a hidden SSR copy while saved preferences hydrate.
+  await expect(page.locator(".binaural-player")).toHaveCount(1);
   await expect(page.locator(".binaural-player")).toHaveAttribute("data-state", "idle");
   await expect(
     page.getByRole("button", { name: "Favorite this preset", exact: true }),
