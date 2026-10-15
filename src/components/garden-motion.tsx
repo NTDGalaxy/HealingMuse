@@ -21,7 +21,7 @@ export default function GardenMotion({
         (condition) => {
           if (!condition.conditions?.motion) return;
           const main = document.getElementById("main-content");
-          if (!main) return;
+          if (!main || typeof IntersectionObserver === "undefined") return;
           const context = gsap.context(() => {
             const scene = document.getElementById("sanctuary-scenery");
             if (scene) {

@@ -52,6 +52,7 @@ The Impeccable detector and archive helper could not run because engine 0.1.14 w
 
 The regression suite is [fluid-glass.spec.ts](../../e2e/fluid-glass.spec.ts).
 It covers route and reused-result arrivals, persistent playback, lower-card motion, repeated dialog focus, Calm, reduced motion, reduced transparency and phone label/control grouping.
+Held-pointer checks verify that fixed navigation stays in place and activates correctly in Calm and reduced motion.
 The full application suite also exercises catalogue, personal, binaural and offline behavior.
 The root [README](../../../README.md#validation-and-performance) documents the commands and the three-second mobile listening gate.
 Performance evidence uses 30 fresh samples per Home, Explore and Binaural theme scenario at the agreed throttle.

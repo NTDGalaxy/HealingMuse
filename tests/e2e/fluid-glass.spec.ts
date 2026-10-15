@@ -148,10 +148,22 @@ test("later phone cards rise while the first listening target stays stationary",
 
 for (const preference of ["calm", "reduced"] as const) {
   test(`${preference} stops page, dialog and selection decoration`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     if (preference === "reduced") await page.emulateMedia({ reducedMotion: "reduce" });
     else await page.addInitScript(() => localStorage.setItem("healingmuse-calm", "true"));
     await page.goto("/en/brainwave-entrainment");
     await page.locator(".binaural-mode").nth(2).click();
+    const more = page.locator(".mobile-nav button");
+    await more.hover();
+    const resting = await more.boundingBox();
+    await page.mouse.down();
+    expect(await more.boundingBox()).toEqual(resting);
+    await page.mouse.up();
+    await expect(
+      page.getByRole("dialog").getByRole("link", { name: "Settings", exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByRole("button", { name: "Your garden", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
@@ -161,7 +173,7 @@ for (const preference of ["calm", "reduced"] as const) {
     const close = dialog.getByRole("button", { name: "Close", exact: true });
     await close.hover();
     await page.mouse.down();
-    expect(await close.evaluate((element) => getComputedStyle(element).scale)).toBe("1");
+    expect(await close.evaluate((element) => getComputedStyle(element).scale)).toBe("none");
     await page.mouse.up();
     // A held-pointer probe checks :active, not click dispatch after a layout/focus update.
     await page.keyboard.press("Escape");

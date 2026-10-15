@@ -302,7 +302,7 @@ details[open] > :is(.catalog-facets, .binaural-frequencies) {
 .calm-mode :active,
 .dialog-content[data-calm="true"] :active,
 :root[data-calm="true"] :active {
-  scale: 1 !important;
+  scale: none !important;
 }
 @media (max-width: 600px) {
   .home-more-recordings .card-play {
@@ -324,7 +324,7 @@ details[open] > :is(.catalog-facets, .binaural-frequencies) {
     transition: none !important;
   }
   :active {
-    scale: 1 !important;
+    scale: none !important;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
