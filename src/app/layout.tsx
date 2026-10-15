@@ -3,6 +3,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { Application } from "@/components/application";
 import "./globals.css";
 import "./sanctuary.css";
+import "./binaural.css";
 import "@fontsource/be-vietnam-pro/vietnamese-400.css";
 import "@fontsource/be-vietnam-pro/vietnamese-500.css";
 import "@fontsource/be-vietnam-pro/vietnamese-600.css";

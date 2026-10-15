@@ -37,7 +37,12 @@ import { YouTubeEmbed } from "./youtube";
 
 const Context = createContext<{
   current: Track | null;
+  playing: boolean;
+  controlsHidden: boolean;
   play: (track: Track, queue?: Track[], continuation?: CatalogQuery) => void;
+  pauseForOtherAudio: () => void;
+  registerOtherAudio: (pause: () => void) => () => void;
+  setControlsHidden: (hidden: boolean) => void;
 } | null>(null);
 export function usePlayer() {
   const value = useContext(Context);
@@ -96,6 +101,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [current, setCurrent] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [playing, setPlaying] = useState(false);
+  const [controlsHidden, setControlsHidden] = useState(false);
+  const otherAudio = useRef<(() => void) | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [position, setPosition] = useState(0);
@@ -133,24 +140,52 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
     privacy.current = next;
   }, [app.user?.id, app.personal?.profile.mood_consent_at]);
-  const endSession = useCallback(async () => {
-    const id = session.current;
-    session.current = null;
-    if (id && navigator.onLine) {
-      const owner = privacy.current.owner;
-      try {
-        await mutation("/api/sessions", { sessionId: id }, "PATCH", owner ?? undefined);
-        if (privacy.current.owner === owner && privacy.current.consent) {
-          setAfter(id);
-          setScore(null);
+  const endSession = useCallback(
+    async (showFeedback = true) => {
+      const id = session.current;
+      session.current = null;
+      if (id && navigator.onLine) {
+        const owner = privacy.current.owner;
+        try {
+          await mutation("/api/sessions", { sessionId: id }, "PATCH", owner ?? undefined);
+          if (showFeedback && privacy.current.owner === owner && privacy.current.consent) {
+            setAfter(id);
+            setScore(null);
+          }
+        } catch {
+          if (privacy.current.owner === owner) app.announce(t("player.sessionSaveFailed"));
         }
-      } catch {
-        if (privacy.current.owner === owner) app.announce(t("player.sessionSaveFailed"));
       }
-    }
-  }, [app, t]);
+    },
+    [app, t],
+  );
+  const endSessionRef = useRef(endSession);
+  useEffect(() => {
+    endSessionRef.current = endSession;
+  }, [endSession]);
+  const pauseForOtherAudio = useCallback(() => {
+    epoch.current++;
+    browsingVersion.current++;
+    browseAbort.current?.abort();
+    advancing.current = false;
+    audio.current?.pause();
+    deadline.current = null;
+    setTimerMinutes(null);
+    setPending(null);
+    setAfter(null);
+    setExternal(null);
+    setLoading(false);
+    void endSessionRef.current(false);
+  }, []);
+  const registerOtherAudio = useCallback((pause: () => void) => {
+    otherAudio.current = pause;
+    return () => {
+      if (otherAudio.current === pause) otherAudio.current = null;
+    };
+  }, []);
   const start = useCallback(
     async (track: Track, nextQueue: Track[], beforeScore?: number) => {
+      otherAudio.current?.();
       if (track.source.kind !== "hosted") {
         audio.current?.pause();
         setExternal(track);
@@ -229,6 +264,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   );
   const play = useCallback(
     (track: Track, selection?: Track[], continuation?: CatalogQuery) => {
+      otherAudio.current?.();
       browsingVersion.current++;
       browseAbort.current?.abort();
       advancing.current = false;
@@ -246,7 +282,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     },
     [app.tracks, app.user, app.personal, online, start],
   );
-  const playerContext = useMemo(() => ({ current, play }), [current, play]);
+  const playerContext = useMemo(
+    () => ({
+      current,
+      playing,
+      controlsHidden,
+      play,
+      pauseForOtherAudio,
+      registerOtherAudio,
+      setControlsHidden,
+    }),
+    [current, playing, controlsHidden, play, pauseForOtherAudio, registerOtherAudio],
+  );
   const advance = useRef<(offset: number) => void>(() => {});
   useEffect(() => {
     advance.current = (offset) => {
@@ -299,6 +346,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   });
   const toggle = async () => {
     if (!audio.current || !current) return;
+    otherAudio.current?.();
     if (!audio.current.paused) {
       audio.current.pause();
       return;
@@ -321,7 +369,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
   useEffect(() => {
-    if (!("mediaSession" in navigator) || !current) return;
+    if (!("mediaSession" in navigator) || !current || controlsHidden) return;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: current.title[locale],
       artist: current.artist,
@@ -331,6 +379,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       [
         "play",
         () => {
+          otherAudio.current?.();
           void audio.current?.play().catch(() => setError(t("player.cannotAutoplay")));
         },
       ],
@@ -381,11 +430,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-  }, [current, locale, t]);
+  }, [current, locale, t, controlsHidden]);
   useEffect(() => {
-    if ("mediaSession" in navigator)
+    if ("mediaSession" in navigator && !controlsHidden)
       navigator.mediaSession.playbackState = playing ? "playing" : "paused";
-  }, [playing]);
+  }, [playing, controlsHidden]);
   useEffect(() => {
     const tick = () => {
       if (deadline.current === null) return;
@@ -433,6 +482,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         onError={() => setError(t("player.playbackError"))}
       />
       <section
+        style={controlsHidden ? { display: "none" } : undefined}
         className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
         aria-label={t("player.nowPlaying")}
       >

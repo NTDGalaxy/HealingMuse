@@ -12,6 +12,7 @@ import {
   Leaf,
   ArrowRight,
   ShieldCheck,
+  Headphones,
 } from "lucide-react";
 import { useApp, useOnline } from "./app-state";
 import { AuthDialog } from "./auth-dialog";
@@ -23,6 +24,7 @@ import type { Locale } from "@/lib/types";
 const links = [
   ["home", "", House],
   ["explore", "/explore", Compass],
+  ["binaural", "/brainwave-entrainment", Headphones],
   ["library", "/library", Library],
   ["downloads", "/downloads", Download],
   ["mood", "/mood", Heart],
