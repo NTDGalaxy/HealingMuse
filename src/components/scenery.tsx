@@ -4,6 +4,7 @@ import { useEffect } from "react";
 const scenes: Record<string, string> = {
   "": "lake",
   explore: "valley",
+  "brainwave-entrainment": "hills",
   library: "forest",
   downloads: "coast",
   mood: "pool",

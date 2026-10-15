@@ -6,6 +6,7 @@ import type { Locale } from "@/lib/types";
 import { AppProvider } from "./app-state";
 import { PlayerProvider } from "./player";
 import { Shell } from "./shell";
+import { BinauralProvider } from "./binaural-provider";
 export function Application({
   initialMessages,
   initialLocale,
@@ -48,7 +49,9 @@ export function Application({
     >
       <AppProvider tracks={[]} collections={[]}>
         <PlayerProvider>
-          <Shell>{children}</Shell>
+          <BinauralProvider>
+            <Shell>{children}</Shell>
+          </BinauralProvider>
         </PlayerProvider>
       </AppProvider>
     </NextIntlClientProvider>

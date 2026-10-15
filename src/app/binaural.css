@@ -1,0 +1,480 @@
+.binaural-page {
+  --binaural-accent: #277365;
+  --binaural-tint: #e1f0eb;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+.binaural-beta {
+  --binaural-accent: #365c93;
+  --binaural-tint: #e6edf8;
+}
+.binaural-theta {
+  --binaural-accent: #71539b;
+  --binaural-tint: #eee6f7;
+}
+.binaural-delta {
+  --binaural-accent: #344c78;
+  --binaural-tint: #e1e6f2;
+}
+.binaural-heading {
+  margin-bottom: 22px;
+}
+.binaural-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--binaural-accent);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.binaural-heading h1 {
+  margin-bottom: 10px;
+}
+.binaural-heading > p {
+  max-width: 65ch;
+  margin-bottom: 0;
+}
+.binaural-modes {
+  border: 0;
+  padding: 0;
+  margin: 0 0 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.binaural-mode {
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px 14px;
+  background: var(--surface);
+  min-height: 132px;
+}
+.binaural-mode input {
+  margin-top: 5px;
+  accent-color: var(--binaural-accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.binaural-mode > span {
+  display: grid;
+  gap: 4px;
+}
+.binaural-mode strong {
+  font-size: 18px;
+}
+.binaural-mode small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.binaural-mode > span > span {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.binaural-mode.selected {
+  background: var(--binaural-tint);
+  border-color: var(--binaural-accent);
+  box-shadow: inset 0 0 0 1px var(--binaural-accent);
+}
+.binaural-mode:focus-within {
+  outline: 3px solid #a76727;
+  outline-offset: 3px;
+}
+.binaural-player {
+  padding: 28px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 36px #382b440b;
+  margin-bottom: 24px;
+}
+.binaural-player-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.binaural-player-top h2 {
+  margin-bottom: 4px;
+}
+.binaural-player-top .binaural-eyebrow {
+  margin-bottom: 4px;
+}
+.binaural-state {
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.binaural-preset-row {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+.binaural-preset-row label {
+  flex: 1;
+}
+.binaural-player label:not(.check-row) {
+  font-size: 13px;
+}
+.binaural-player select,
+.binaural-player input[type="number"] {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  min-height: 48px;
+}
+.binaural-frequencies {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin: 20px 0;
+  border-radius: 14px;
+  padding: 14px 4px;
+  background: var(--binaural-tint);
+}
+.binaural-frequencies > div {
+  text-align: center;
+}
+.binaural-frequencies > div + div {
+  border-left: 1px solid #382b441a;
+}
+.binaural-frequencies dt {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.binaural-frequencies dd {
+  margin: 0;
+  font-size: 25px;
+  color: var(--binaural-accent);
+  font-variant-numeric: tabular-nums;
+}
+.binaural-frequencies dd small {
+  font-size: 11px;
+}
+.binaural-session-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.binaural-session-options small {
+  display: block;
+  margin-top: 6px;
+}
+.binaural-progress {
+  display: grid;
+  gap: 7px;
+  margin: 18px 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.binaural-progress progress {
+  width: 100%;
+  height: 7px;
+  accent-color: var(--binaural-accent);
+}
+.binaural-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.binaural-buttons .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  flex: 1;
+}
+.binaural-buttons .button:first-child {
+  flex: 1.3;
+}
+.binaural-buttons .button svg {
+  flex-shrink: 0;
+}
+.binaural-volumes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+.binaural-volume {
+  display: block;
+  padding-block: 8px;
+}
+.binaural-volume > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+.binaural-volume output {
+  font-variant-numeric: tabular-nums;
+}
+.binaural-volume input[type="range"] {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  accent-color: var(--binaural-accent);
+}
+.binaural-headphone-note {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 13px;
+  margin-top: 14px;
+}
+.binaural-headphone-note svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.binaural-advanced summary,
+.binaural-background summary {
+  min-height: 48px;
+  cursor: pointer;
+  padding-block: 12px;
+  font-weight: 500;
+}
+.binaural-advanced .binaural-volume {
+  margin-top: 12px;
+}
+.binaural-background,
+.binaural-preferences,
+.binaural-education {
+  padding: 22px 26px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  margin-bottom: 24px;
+}
+.binaural-background summary > span {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 17px;
+  margin-top: 5px;
+}
+.binaural-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 18px;
+}
+.binaural-search label {
+  flex-basis: 100%;
+  font-size: 13px;
+}
+.binaural-search input {
+  flex: 1;
+  min-width: 100px;
+}
+.binaural-tracks {
+  border: 0;
+  padding: 0;
+  margin-block: 20px;
+}
+.binaural-tracks legend {
+  margin-bottom: 10px;
+}
+.binaural-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 13px 4px;
+  min-height: 62px;
+  cursor: pointer;
+}
+.binaural-track input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+.binaural-track > span {
+  display: grid;
+  gap: 4px;
+}
+.binaural-track strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.binaural-track small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.binaural-favorites > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.binaural-favorites h2 {
+  font-size: 19px;
+}
+.binaural-references {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.binaural-education ul {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+.binaural-education li + li {
+  margin-top: 8px;
+}
+.binaural-visualizer {
+  height: 72px;
+  width: 90px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--binaural-accent);
+  flex-shrink: 0;
+}
+.binaural-visualizer i {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  opacity: 0.2;
+}
+.binaural-visualizer i:nth-child(2) {
+  width: 66px;
+  height: 66px;
+  opacity: 0.15;
+}
+.binaural-visualizer i:nth-child(3) {
+  width: 80px;
+  height: 80px;
+  opacity: 0.1;
+}
+.binaural-player[data-state="playing"] .binaural-visualizer i {
+  animation: binaural-drift 8s ease-in-out infinite alternate;
+}
+.binaural-player[data-state="playing"] .binaural-visualizer i:nth-child(2) {
+  animation-delay: -3s;
+}
+.binaural-player[data-state="playing"] .binaural-visualizer i:nth-child(3) {
+  animation-delay: -5s;
+}
+.binaural-delta .binaural-player {
+  background: #263652;
+  color: #faf7ff;
+  border-color: #465875;
+}
+.binaural-delta .binaural-player .muted,
+.binaural-delta .binaural-state {
+  color: #e0d8eb;
+}
+.binaural-delta .binaural-player-top .binaural-eyebrow,
+.binaural-delta .binaural-visualizer {
+  color: #cadbff;
+}
+.binaural-delta .binaural-player .icon-button {
+  color: #faf7ff;
+}
+.binaural-delta .binaural-player .icon-button:hover {
+  background: #425271;
+}
+.binaural-delta .binaural-frequencies {
+  color: var(--text);
+}
+.binaural-delta .binaural-volume input {
+  accent-color: #c9d9ff;
+}
+.binaural-delta .binaural-visualizer i {
+  animation: none !important;
+}
+.calm-mode .binaural-visualizer i {
+  animation: none !important;
+}
+.mobile-nav {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+@keyframes binaural-drift {
+  to {
+    transform: scale(1.08) translateY(-3px);
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .binaural-visualizer i {
+    animation: none !important;
+  }
+}
+@media (max-width: 700px) {
+  .binaural-modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-bottom: 16px;
+  }
+  .binaural-mode {
+    padding: 12px 10px;
+    min-height: 106px;
+    gap: 7px;
+    border-radius: 13px;
+  }
+  .binaural-mode strong {
+    font-size: 16px;
+  }
+  .binaural-heading {
+    margin-bottom: 16px;
+  }
+  .binaural-heading h1 {
+    font-size: 29px;
+  }
+  .binaural-player {
+    padding: 18px 16px;
+    border-radius: 18px;
+  }
+  .binaural-player-top h2 {
+    font-size: 20px;
+  }
+  .binaural-buttons .button {
+    padding-inline: 10px;
+    font-size: 14px;
+  }
+  .binaural-visualizer {
+    width: 70px;
+    height: 64px;
+    transform: scale(0.8);
+  }
+  .binaural-frequencies {
+    margin-block: 14px;
+  }
+  .binaural-volumes {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .binaural-volume {
+    padding-block: 0;
+  }
+  .binaural-background,
+  .binaural-preferences,
+  .binaural-education {
+    padding: 16px;
+  }
+  .binaural-page .page-heading > p {
+    font-size: 13px;
+  }
+  .mobile-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .mobile-nav a {
+    font-size: 10px;
+    padding-inline: 2px;
+  }
+}
+@media (max-width: 360px) {
+  .binaural-session-options {
+    grid-template-columns: 1fr;
+  }
+}

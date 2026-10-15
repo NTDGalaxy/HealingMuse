@@ -33,6 +33,7 @@ Production uploads create drafts with the review flag off.
 
 - Guest browsing, search, listening goals, hosted playback, recording credits, and eligible downloads.
 - Persistent native audio player, seeking, queue navigation, repeat, Media Session controls, and sleep timer.
+- Guest binaural listening with real stereo synthesis, twelve presets, timed sessions, optional instrumental backgrounds, independent mixing and device-local preferences.
 - Optional email-and-password accounts, email-code fallback, password recovery, favorites, revision-protected playlists, and private synchronization.
 - Separate consent for optional paired mood check-ins, immediate deletion, and 90-day retention.
 - Device-local IndexedDB recordings with attribution, download progress, removal, and offline startup.
@@ -62,6 +63,37 @@ Normal password sign-in does not send email, but account confirmation, email cod
 Keep email confirmation, administrator authorization, SMTP settings and rate limits unchanged under the current release policy.
 The built-in Supabase sender is restricted to authorized organization-team development recipients; public account onboarding still requires an approved production sender.
 See [Supabase password authentication](https://supabase.com/docs/guides/auth/passwords) and [redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+## Binaural listening
+
+Open `/en/brainwave-entrainment` or `/vi/brainwave-entrainment` without signing in.
+Choose Beta (14-30 Hz), Alpha (8-13 Hz), Theta (4-7 Hz) or Delta (0.5-3 Hz), then explicitly start a session.
+The default left carrier is 200 Hz; the right oscillator adds the chosen difference and reaches the other stereo channel through a separate merger input.
+Session lengths include 5, 10, 15, 20, 30, 45 and 60 minutes, with custom whole-minute lengths from 1 to 120.
+Leaving the page pauses the session, and returning requires Resume.
+Phone background and screen-lock playback are best effort; browser or operating-system interruptions require explicit resumption.
+
+Tones run locally through Web Audio, with no uploaded tone files, paid services, listening-history collection or database changes.
+The engine loads only when its page is visited and creates its AudioContext only on Start.
+Optional backgrounds are existing published instrumentals, loaded on request through the normal private playback-grant endpoint or a previously downloaded device-local Blob.
+Background failures leave tone-only controls available, and starting either player pauses the other.
+Browser CORS and autoplay support remain necessary for mixing streamed music; unsupported browsers can use ordinary music.
+Fresh offline navigation opens the existing downloaded-music shell; the binaural page must already be open to start tones without a connection.
+Opt-in preferences store settings, preset favorites and a recording ID locally, without private playback URLs or session history.
+
+The audio-clock deadline stops both oscillators and fades the mix even when UI timers are throttled.
+Parameter ramps avoid abrupt changes, and bounded mix gains leave digital headroom; application volume percentages cannot measure headphone sound pressure.
+Use stereo headphones at low device volume, take breaks, and stop with discomfort.
+Band names describe EEG associations, with no promise that listening produces a matching brain state or treats an illness.
+The educational wording follows the [2023 systematic review](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0286023) and [WHO safe-listening guidance](https://www.who.int/news-room/questions-and-answers/item/deafness-and-hearing-loss-safe-listening).
+
+`tests/unit/binaural.test.ts` checks configuration boundaries, audio-clock timing, interruptions, rapid actions and cleanup.
+`tests/e2e/binaural.spec.ts` renders all twelve presets and a 0.5 Hz difference through the real browser OfflineAudioContext and checks expected-channel amplitudes and cross-channel leakage.
+These signal checks do not verify brainwave synchronization or subjective effects.
+Browser tests also cover guest controls, navigation pause, settings, background playback and automated accessibility.
+Use `npm run test:performance:binaural -- --base=http://127.0.0.1:3107 --samples=30` against a production preview to measure cold readiness and click-to-rendered-signal latency at the agreed mobile throttle.
+The analyser measures generated audio frames rather than physical headphone output, and sampled interaction timing is distinct from field INP.
+Physical iPhone/Android, actual assistive technology and deployed-cloud checks remain separate release validation.
 
 ## Validate
 

@@ -47,6 +47,7 @@
     "release:verify:cloud": "node scripts/verify-release-cloud.mjs",
     "content:admin": "node scripts/content-admin.mjs",
     "test:performance": "node scripts/measure-browser.mjs",
+    "test:performance:binaural": "node scripts/measure-binaural.mjs",
     "b2:preflight": "node scripts/b2-audio.mjs preflight",
     "b2:upload": "node scripts/b2-audio.mjs upload",
     "b2:verify": "node scripts/b2-audio.mjs verify",
