@@ -93,6 +93,7 @@ export function TrackCard({
           ) : (
             <Play size={22} fill="currentColor" aria-hidden="true" />
           )}
+          {!selection && <span className="card-play-label">{t("common.play")}</span>}
         </button>
         {downloaded && (
           <span className="downloaded-badge" title={t("catalog.downloaded")}>
@@ -252,6 +253,14 @@ export function HomeIntro() {
           <ArrowUpRight size={18} aria-hidden="true" />
         </Link>
       </section>
+    </>
+  );
+}
+function HomeDiscovery() {
+  const t = useTranslations();
+  const locale = useLocale();
+  return (
+    <div className="home-discovery">
       <form className="search-box discovery-search" action={`/${locale}/explore`}>
         <Search size={22} aria-hidden="true" />
         <label className="sr-only" htmlFor="home-search">
@@ -275,13 +284,12 @@ export function HomeIntro() {
           </Link>
         ))}
         <Link href={`/${locale}/explore?genre=classical`}>{t("taxonomy.genre.classical")}</Link>
-        <Link href={`/${locale}/explore?category=nature`}>{t("catalog.nature")}</Link>
         <Link href={`/${locale}/explore`}>
           {t("common.viewAll")}
           <ArrowUpRight size={16} aria-hidden="true" />
         </Link>
       </nav>
-    </>
+    </div>
   );
 }
 export function HomeView({
@@ -300,7 +308,6 @@ export function HomeView({
   const t = useTranslations();
   const locale = useLocale() as Locale;
   const { registerTracks } = useApp();
-  const player = usePlayer();
   const tracks = initialPage.items;
   useEffect(() => {
     registerTracks([...tracks, ...collectionTracks]);
@@ -311,26 +318,15 @@ export function HomeView({
       {unavailable ? (
         <CatalogUnavailable />
       ) : (
-        <section>
+        <section className="featured-section">
           <div className="section-heading">
             <div>
-              <h2>{t("home.featured")}</h2>
+              <h2>{t("home.suggestion")}</h2>
               <p>{t("home.featuredNote")}</p>
             </div>
-            <button
-              className="button secondary home-listen"
-              disabled={!tracks.length}
-              onClick={() =>
-                tracks[0] &&
-                player.play(tracks[0], tracks, { limit: 12, cursor: initialPage.nextCursor || "" })
-              }
-            >
-              <Play size={18} aria-hidden="true" />
-              {t("home.cta")}
-            </button>
           </div>
-          <div className="track-grid">
-            {tracks.slice(0, 4).map((track) => (
+          <div className="featured-recording">
+            {tracks.slice(0, 1).map((track) => (
               <TrackCard
                 key={track.id}
                 track={track}
@@ -342,6 +338,23 @@ export function HomeView({
             ))}
           </div>
           {!tracks.length && <Empty title={t("common.emptyCatalog")} />}
+        </section>
+      )}
+      <HomeDiscovery />
+      {tracks.length > 1 && (
+        <section className="home-more-recordings">
+          <div className="track-grid">
+            {tracks.slice(1, 4).map((track) => (
+              <TrackCard
+                key={track.id}
+                track={track}
+                queue={tracks}
+                continuation={
+                  initialPage.nextCursor ? { limit: 12, cursor: initialPage.nextCursor } : undefined
+                }
+              />
+            ))}
+          </div>
         </section>
       )}
       <section className="listening-paths">
@@ -360,7 +373,7 @@ export function HomeView({
           (id) => collectionTracks.find((track) => track.id === id) || [],
         );
         return (
-          <section key={collection.id}>
+          <section className="collection-section" key={collection.id}>
             <div className="section-heading">
               <h2>{collection.title[locale]}</h2>
               <Link className="text-link" href={`/${locale}/explore?collection=${collection.id}`}>
@@ -375,17 +388,6 @@ export function HomeView({
           </section>
         );
       })}
-      <section className="nature-banner">
-        <NatureArt kind="river" />
-        <div>
-          <h2>{t("home.natureTitle")}</h2>
-          <p>{t("home.natureText")}</p>
-          <Link className="text-link" href={`/${locale}/explore?category=nature`}>
-            {t("home.natureCta")}
-            <ArrowUpRight size={18} aria-hidden="true" />
-          </Link>
-        </div>
-      </section>
       <p className="trust-note">
         {t("home.curated")} · {t("home.private")} · {t("home.atYourPace")}
       </p>

@@ -40,7 +40,7 @@
     "emptyCatalog": "Bộ sưu tập âm nhạc đang được chuẩn bị. Bạn hãy quay lại sau nhé.",
     "saved": "Đã lưu",
     "external": "Mở trong thẻ mới",
-    "more": "Tùy chọn khác",
+    "more": "Thêm",
     "viewAll": "Xem tất cả",
     "done": "Xong",
     "continue": "Tiếp tục",
@@ -80,9 +80,9 @@
   },
   "catalog": {
     "title": "Tìm âm thanh của bạn",
-    "subtitle": "Một bộ sưu tập nhỏ gồm nhạc không lời và âm thanh thiên nhiên, được chọn với sự quan tâm.",
+    "subtitle": "Những bản nhạc không lời được chọn lọc. Tìm giai điệu theo nhịp của riêng bạn.",
     "search": "Tìm bản thu",
-    "searchPlaceholder": "Một giai điệu, tiếng mưa, tiếng chim...",
+    "searchPlaceholder": "Piano, guitar, giai điệu quen...",
     "instrumental": "Nhạc không lời",
     "nature": "Âm thanh thiên nhiên",
     "results": "{count} bản thu để khám phá",
@@ -594,5 +594,18 @@
     "offlineCatalogue": "Đang hiển thị các bản thu đã tải xuống thiết bị này.",
     "pageRange": "{start}-{end} trong tổng số {total} bản thu",
     "returnToSession": "Về bộ điều khiển phiên nghe"
+  },
+  "appearance": {
+    "title": "Không gian của bạn",
+    "theme": "Giao diện",
+    "system": "Theo thiết bị",
+    "day": "Ban ngày",
+    "night": "Ban đêm",
+    "garden": "Chi tiết khu vườn",
+    "auto": "3D tự động",
+    "still": "Vườn tĩnh - tiết kiệm pin và dữ liệu",
+    "calm": "Chế độ tĩnh",
+    "calmHelp": "Dừng mọi chuyển động trang trí.",
+    "help": "Lựa chọn được lưu trên thiết bị này. Bạn vẫn nghe nhạc với mọi chế độ khu vườn."
   }
 }

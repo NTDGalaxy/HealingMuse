@@ -9,10 +9,12 @@ import { LibraryView, MoodView, SettingsView } from "@/components/personal";
 import { AdminView } from "@/components/admin";
 import { AuthDialog } from "@/components/auth-dialog";
 import { PasswordResetView } from "@/components/password-reset";
+import { AppearanceProvider } from "@/components/appearance";
 import { TrackCard, ExploreView } from "@/components/catalog";
 import type { Track, CatalogPage, CatalogQuery } from "@/lib/types";
 import "@/app/globals.css";
 import "@/app/sanctuary.css";
+import "@/app/botanical.css";
 
 const track: Track = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -153,10 +155,12 @@ createRoot(document.getElementById("root")!).render(
     messages={locale === "vi" ? vi : en}
     timeZone="Asia/Ho_Chi_Minh"
   >
-    <AppProvider tracks={tracks} collections={[]}>
-      <PlayerProvider>
-        <Views />
-      </PlayerProvider>
-    </AppProvider>
+    <AppearanceProvider>
+      <AppProvider tracks={tracks} collections={[]}>
+        <PlayerProvider>
+          <Views />
+        </PlayerProvider>
+      </AppProvider>
+    </AppearanceProvider>
   </NextIntlClientProvider>,
 );

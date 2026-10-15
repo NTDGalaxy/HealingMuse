@@ -3,6 +3,9 @@ const VERSION = "__SHELL_VERSION__";
 const SHELL = [
   "/offline/index.html",
   "/offline/app.js",
+  "/offline/appearance.js",
+  "/gardens/cloister-day-480.avif",
+  "/gardens/cloister-night-480.avif",
   "/offline/style.css",
   "/offline/vi.json",
   "/offline/en.json",

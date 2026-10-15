@@ -1,0 +1,984 @@
+/* Authored botanical world. Controls remain in semantic DOM above decorative WebGL. */
+:root {
+  --bg: #f3eff7;
+  --surface: #fffcff;
+  --text: #382b44;
+  --muted: #665571;
+  --green: #236553;
+  --line: #d9cfe2;
+  --tint: #e8e0f0;
+  --jade-tint: #e4f0ea;
+  --glass: #fffcffed;
+  --focus: #765297;
+  --on-green: #ffffff;
+  --danger: #963f34;
+  --danger-tint: #fae7e1;
+  --on-danger: #ffffff;
+  --sidebar: 216px;
+  --radius: 16px;
+  color-scheme: light;
+  font-size: 16px;
+  scrollbar-color: #ab99b8 var(--bg);
+}
+:root[data-theme="night"] {
+  --bg: #191522;
+  --surface: #282232;
+  --text: #f5eff9;
+  --muted: #c4b6d0;
+  --green: #95d7b9;
+  --line: #57485f;
+  --tint: #382e45;
+  --jade-tint: #293f39;
+  --glass: #282232f0;
+  --focus: #d8b6f5;
+  --on-green: #173b2e;
+  --danger: #ffb4a4;
+  --danger-tint: #482d31;
+  --on-danger: #482d31;
+  color-scheme: dark;
+}
+::selection {
+  background: var(--green);
+  color: var(--on-green);
+}
+:focus-visible {
+  outline-color: var(--focus);
+}
+.skip-link {
+  background: var(--surface);
+  color: var(--text);
+}
+input,
+textarea {
+  caret-color: var(--green);
+}
+html {
+  scroll-padding-block: 96px 240px;
+}
+#main-content :is(a, button, input, select, textarea, summary) {
+  scroll-margin-block: 100px 240px;
+}
+.sanctuary-scenery {
+  background: var(--bg);
+}
+.sanctuary-scenery .garden-poster,
+.garden-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+.garden-poster img {
+  object-position: center;
+}
+.garden-poster.poster-night {
+  display: none;
+}
+[data-theme="night"] .garden-poster.poster-day {
+  display: none;
+}
+[data-theme="night"] .garden-poster.poster-night {
+  display: block;
+}
+.garden-canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+.garden-canvas[data-state="ready"] canvas {
+  opacity: 1;
+}
+.sanctuary-scenery::after {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg) 96%, transparent),
+      color-mix(in srgb, var(--bg) 62%, transparent) 42%,
+      transparent 78%
+    ),
+    linear-gradient(0deg, var(--bg), transparent 65%);
+}
+.app-shell {
+  min-height: 100dvh;
+}
+.sidebar {
+  width: var(--sidebar);
+  padding: 30px 20px 20px;
+  background: var(--glass);
+  border-right: 1px solid var(--line);
+}
+.brand {
+  gap: 10px;
+  font-size: 20px;
+  min-height: 48px;
+}
+.brand-mark {
+  background: var(--jade-tint);
+  color: var(--green);
+}
+.brand small {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.side-nav {
+  margin-top: 38px;
+  gap: 5px;
+}
+.side-nav a {
+  border-radius: 12px;
+  padding: 13px 14px;
+  color: var(--muted);
+}
+.side-nav a[aria-current="page"] {
+  background: var(--jade-tint);
+  color: var(--green);
+}
+.side-nav a:hover,
+.side-nav a[aria-current="page"]:hover {
+  background: var(--jade-tint);
+  color: var(--green);
+}
+.sidebar-note {
+  background: var(--tint);
+  color: var(--muted);
+  border-radius: 16px;
+}
+.main-column {
+  margin-left: var(--sidebar);
+  padding-bottom: 52px;
+}
+.topbar {
+  min-height: 80px;
+  padding: 16px 4%;
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+}
+.topbar-welcome {
+  font-size: 13px;
+  color: var(--muted);
+}
+.topbar-actions {
+  gap: 8px;
+}
+.language-switch {
+  background: var(--glass);
+  border-color: var(--line);
+}
+.language-switch a[aria-current="true"] {
+  background: var(--tint);
+}
+.appearance-button {
+  background: var(--glass);
+  border-radius: 50%;
+}
+.account-button {
+  min-height: 44px;
+}
+#main-content {
+  max-width: 1400px;
+  padding: 36px 5% 56px;
+  margin-inline: auto;
+}
+.discovery-intro {
+  display: block;
+  max-width: 780px;
+  margin-bottom: 30px;
+}
+.discovery-intro h1 {
+  max-width: 750px;
+  font-size: clamp(32px, 4.4vw, 68px);
+  line-height: 1.16;
+  letter-spacing: -0.035em;
+  margin-bottom: 18px;
+  text-wrap: balance;
+}
+.discovery-intro p {
+  max-width: 42ch;
+  font-size: 17px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.discovery-intro > .text-link {
+  display: none;
+}
+.page-heading {
+  margin-bottom: 30px;
+  max-width: 850px;
+}
+.page-heading h1 {
+  font-size: clamp(30px, 3.6vw, 52px);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.page-heading p {
+  color: var(--muted);
+  max-width: 65ch;
+}
+.home-page,
+.home-shelves {
+  gap: 0;
+}
+.featured-section {
+  max-width: 640px;
+  margin-bottom: 30px;
+}
+.featured-section .section-heading h2 {
+  font-size: 15px;
+  letter-spacing: 0;
+}
+.featured-section .section-heading p {
+  display: none;
+}
+.featured-section .section-heading {
+  margin-bottom: 14px;
+}
+.featured-recording .track-card {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  padding: 14px;
+  gap: 20px;
+  align-items: center;
+  box-shadow: 0 12px 32px #382b4412;
+}
+.featured-recording .track-art {
+  height: 152px;
+  border-radius: 12px;
+}
+.featured-recording .track-description {
+  padding: 0;
+}
+.featured-recording .track-title {
+  font-size: 21px;
+  line-height: 1.35;
+}
+.featured-recording .track-category {
+  display: none;
+}
+.featured-recording .track-bottom {
+  margin-top: 8px;
+}
+.home-discovery {
+  max-width: 780px;
+  margin-block: 30px 44px;
+}
+.search-box {
+  background: var(--glass);
+  border-color: var(--line);
+  border-radius: 16px;
+}
+.search-box input {
+  color: var(--text);
+  min-width: 0;
+}
+.search-box input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.discovery-categories {
+  margin-bottom: 0;
+  gap: 10px;
+}
+.discovery-categories a {
+  color: var(--text);
+  background: var(--glass);
+  border-color: var(--line);
+  min-height: 44px;
+}
+.home-more-recordings {
+  margin-block: 42px 64px;
+}
+.home-more-recordings .track-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.track-card {
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 10px;
+  overflow: hidden;
+  transition: box-shadow 250ms;
+}
+.track-art {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.track-art .nature-art {
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.track-card:is(:hover, :focus-within) .track-art .nature-art {
+  transform: scale(1.035);
+}
+.track-description {
+  padding: 16px 8px 4px;
+}
+.track-description p {
+  color: var(--muted);
+}
+.track-title {
+  color: var(--text);
+  font-weight: 600;
+}
+.card-play {
+  min-width: 86px;
+  width: auto;
+  height: 44px;
+  padding: 10px 14px;
+  gap: 7px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--on-green);
+}
+.card-play-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.track-category {
+  background: var(--glass);
+  color: var(--text);
+}
+.listening-paths,
+.collection-section {
+  margin-block: 56px;
+}
+.listening-paths h2 {
+  max-width: 28ch;
+  font-size: 30px;
+}
+.collection-section .section-heading {
+  background: var(--glass);
+  padding: 12px 0;
+}
+.button {
+  background: var(--green);
+  color: var(--on-green);
+  border-color: transparent;
+  border-radius: 999px;
+}
+.button:hover:not(:disabled),
+.play-button:hover {
+  background: color-mix(in srgb, var(--green) 85%, var(--text));
+}
+.button.secondary {
+  color: var(--green);
+  background: var(--jade-tint);
+  border-color: transparent;
+}
+.button.secondary:hover:not(:disabled) {
+  color: var(--green);
+  background: color-mix(in srgb, var(--jade-tint) 85%, var(--green));
+}
+.button.danger {
+  background: var(--danger);
+  color: var(--on-danger);
+  border-color: var(--danger);
+}
+.button.danger.secondary {
+  background: var(--danger-tint);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 85%, var(--text));
+  color: var(--on-danger);
+}
+.play-button {
+  background: var(--green);
+  color: var(--on-green);
+}
+.icon-button {
+  color: var(--text);
+}
+.icon-button[aria-pressed="true"] {
+  background: var(--jade-tint);
+  color: var(--green);
+}
+.icon-button:hover,
+.icon-button:hover:not(:disabled),
+.text-button:hover {
+  background: var(--tint);
+}
+.filter-chip,
+.goal-card {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+.filter-chip[aria-pressed="true"] {
+  background: var(--jade-tint);
+  color: var(--green);
+  border-color: var(--green);
+}
+.panel,
+.empty-state,
+.admin-item,
+.reading-surface,
+.credit-list,
+.legal-page,
+.dialog-content {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 16px;
+}
+.legal-page p {
+  color: var(--muted);
+}
+.dialog-overlay {
+  background: #19152288;
+}
+.dialog-content {
+  box-shadow: 0 24px 80px #19152245;
+}
+.dialog-content :is(input:not([type="checkbox"]), select, textarea),
+.panel :is(input:not([type="checkbox"]), select, textarea),
+.binaural-page select {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+.appearance-controls {
+  display: grid;
+  gap: 22px;
+}
+.appearance-controls > label:not(.setting-row) {
+  display: grid;
+  gap: 10px;
+  font-weight: 500;
+}
+.appearance-controls select {
+  min-height: 48px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+}
+.appearance-controls .setting-row {
+  padding-block: 12px;
+}
+.appearance-controls .muted {
+  display: block;
+}
+.more-navigation {
+  display: grid;
+  gap: 8px;
+}
+.more-navigation a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px;
+  text-decoration: none;
+  border-radius: 12px;
+}
+.more-navigation a:is(:hover, [aria-current="page"]) {
+  background: var(--tint);
+}
+.player-bar {
+  background: var(--glass);
+  border-color: var(--line);
+  box-shadow: 0 -8px 30px #382b440c;
+}
+.player-track strong {
+  color: var(--text);
+}
+.page-footer {
+  color: var(--muted);
+}
+.binaural-page {
+  --binaural-accent: var(--green);
+  --binaural-tint: var(--jade-tint);
+}
+.binaural-player,
+.binaural-preferences,
+.binaural-education {
+  border-radius: 16px;
+  box-shadow: none;
+}
+.binaural-modes {
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.binaural-mode {
+  min-height: 88px;
+  padding: 12px;
+}
+.binaural-mode > span > small {
+  display: none;
+}
+.binaural-mode strong {
+  font-size: 16px;
+}
+.binaural-session-options {
+  margin-bottom: 16px;
+}
+.binaural-headphone-note {
+  margin-block: 18px 6px;
+  color: var(--muted);
+}
+.binaural-references a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+.binaural-advanced {
+  margin-top: 20px;
+}
+.binaural-advanced summary {
+  min-height: 44px;
+}
+.binaural-frequencies {
+  margin-top: 20px;
+}
+@media (min-width: 901px) {
+  .player-bar {
+    left: var(--sidebar);
+  }
+}
+@media (max-width: 1100px) and (min-width: 901px) {
+  :root {
+    --sidebar: 190px;
+  }
+  .brand {
+    font-size: 17px;
+  }
+  .sidebar {
+    padding-inline: 14px;
+  }
+}
+@media (max-width: 900px) {
+  .main-column {
+    margin-left: 0;
+    padding-bottom: calc(var(--mobile-nav) + 32px);
+  }
+  .topbar {
+    min-height: 72px;
+    padding: 12px 20px;
+    background: var(--glass);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+  }
+  .mobile-brand {
+    min-height: 44px;
+    font-size: 18px;
+  }
+  .topbar-actions {
+    gap: 4px;
+  }
+  .mobile-nav {
+    background: var(--glass);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding-inline: 6px;
+    border-color: var(--line);
+  }
+  .mobile-nav :is(a, button) {
+    min-width: 0;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 2px;
+    border: 0;
+    border-radius: 12px;
+    color: var(--muted);
+    background: transparent;
+    text-decoration: none;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .mobile-nav :is(a[aria-current="page"], button[aria-expanded="true"]) {
+    color: var(--green);
+    background: var(--jade-tint);
+  }
+  #main-content {
+    padding: 28px 24px 40px;
+  }
+  .discovery-intro {
+    margin-bottom: 24px;
+  }
+  .discovery-intro h1 {
+    max-width: 20ch;
+    font-size: clamp(30px, 6.5vw, 44px);
+    margin-bottom: 14px;
+  }
+  .discovery-intro p {
+    font-size: 15px;
+    max-width: 36ch;
+    line-height: 1.65;
+  }
+  .sanctuary-scenery::after {
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--bg) 80%, transparent),
+        color-mix(in srgb, var(--bg) 18%, transparent)
+      ),
+      linear-gradient(0deg, var(--bg), transparent 80%);
+  }
+  .featured-section {
+    margin-bottom: 24px;
+  }
+  .featured-section .section-heading {
+    align-items: center;
+    gap: 8px;
+  }
+  .featured-section .section-heading h2 {
+    font-size: 13px;
+  }
+  .featured-recording .track-card {
+    grid-template-columns: 110px minmax(0, 1fr);
+    padding: 10px;
+    gap: 14px;
+  }
+  .featured-recording .track-art {
+    height: 144px;
+  }
+  .featured-recording .track-title {
+    font-size: 17px;
+  }
+  .featured-recording .track-description p {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .featured-recording .track-bottom {
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .featured-recording .track-actions {
+    gap: 0;
+  }
+  .featured-recording .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .home-discovery {
+    margin-block: 26px 34px;
+  }
+  .home-more-recordings {
+    margin-block: 34px 44px;
+  }
+  .home-more-recordings .track-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .home-more-recordings .track-card {
+    min-width: 0;
+  }
+  .page-heading {
+    margin-bottom: 22px;
+  }
+  .page-heading h1 {
+    font-size: 30px;
+  }
+  .search-box {
+    padding: 8px;
+    gap: 7px;
+  }
+  .search-box > svg {
+    width: 18px;
+    margin-left: 4px;
+  }
+  .search-box .button {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  .search-box input {
+    font-size: 14px;
+  }
+  .track-grid {
+    gap: 16px;
+  }
+  .track-description {
+    padding: 12px 2px 2px;
+  }
+  .track-title {
+    font-size: 15px;
+  }
+  .track-category {
+    font-size: 10px;
+  }
+  .card-play {
+    min-width: 76px;
+    padding: 10px;
+  }
+  .card-play svg {
+    width: 17px;
+  }
+  .listening-paths h2 {
+    font-size: 25px;
+  }
+  .app-shell:has(.player-bar.active) .main-column {
+    padding-bottom: calc(140px + var(--mobile-nav) + 24px);
+  }
+  .app-shell:has(.player-bar.expanded) .main-column {
+    padding-bottom: calc(200px + var(--mobile-nav) + 24px);
+  }
+  .binaural-player {
+    padding: 20px;
+  }
+  .binaural-mode {
+    min-height: 76px;
+  }
+  .binaural-mode > span > span {
+    font-size: 11px;
+  }
+}
+@media (max-width: 600px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 10px 18px;
+  }
+  .topbar-actions {
+    margin-left: auto;
+  }
+  .account-button {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .account-button svg {
+    display: none;
+  }
+  .mobile-brand {
+    font-size: 16px;
+    gap: 6px;
+  }
+  .mobile-brand svg {
+    width: 20px;
+  }
+  .language-switch a {
+    min-width: 32px;
+    padding-inline: 6px;
+    font-size: 11px;
+  }
+  #main-content {
+    padding-inline: 20px;
+  }
+  .home-more-recordings .track-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-more-recordings .track-card {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 14px;
+  }
+  .home-more-recordings .track-art {
+    height: 142px;
+  }
+  .home-more-recordings .track-description {
+    padding-block: 4px;
+  }
+  .home-more-recordings .track-category {
+    display: none;
+  }
+  .home-more-recordings .track-bottom {
+    flex-wrap: wrap;
+  }
+  .binaural-heading h1 {
+    font-size: 28px;
+  }
+}
+@media (max-width: 360px) {
+  .topbar {
+    padding-inline: 12px;
+  }
+  .mobile-brand {
+    font-size: 14px;
+  }
+  .appearance-button {
+    width: 44px;
+  }
+  .topbar .language-switch {
+    display: none;
+  }
+  .featured-recording .track-card {
+    grid-template-columns: 94px minmax(0, 1fr);
+    gap: 10px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sidebar,
+  .topbar,
+  .player-bar,
+  .mobile-nav,
+  .search-box {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garden-canvas canvas,
+  .track-art .nature-art {
+    transition: none;
+  }
+}
+.calm-mode .track-art .nature-art {
+  transition: none;
+  transform: none !important;
+}
+
+/* Keep intrinsic image ratios from overruling the listening-row grid. */
+.featured-recording .track-art,
+.home-more-recordings .track-art {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: auto;
+}
+.featured-recording .track-description {
+  min-width: 0;
+}
+.featured-recording .track-description p {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.card-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.featured-section .section-heading > div {
+  min-width: 0;
+}
+.discovery-categories {
+  border-bottom: 0;
+  padding: 12px 0 0;
+  gap: 8px;
+}
+.discovery-categories a {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--jade-tint);
+  color: var(--green);
+  font-size: 13px;
+}
+.legal-page a,
+.credit-list a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.info-panel,
+.connection-banner,
+.status-pill,
+.catalog-filter-details summary {
+  background: var(--tint);
+  color: var(--text);
+}
+.storage-panel,
+.playlist-icon,
+.queue-list button[aria-current],
+.mood-scores label.selected {
+  background: var(--jade-tint);
+  color: var(--text);
+}
+.mood-scores label {
+  border-color: var(--line);
+}
+.mood-symbol {
+  color: var(--green);
+}
+.form-stack :is(input:not([type="checkbox"]), select, textarea),
+.release-review input:not([type="checkbox"]) {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+.error,
+.player-error {
+  background: #fae7e1;
+  color: #9c3326;
+}
+[data-theme="night"] .error,
+[data-theme="night"] .player-error {
+  background: #482d31;
+  color: #ffd3c7;
+}
+.binaural-page .binaural-player {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
+}
+.binaural-page .binaural-state,
+.binaural-page .binaural-player .muted {
+  color: var(--muted);
+}
+.binaural-page .binaural-player .icon-button {
+  color: var(--text);
+}
+.binaural-page .binaural-player .icon-button:hover {
+  background: var(--tint);
+}
+.binaural-page .binaural-volume input {
+  accent-color: var(--green);
+}
+.binaural-page .binaural-visualizer {
+  color: var(--green);
+}
+.binaural-page .binaural-background-choice[aria-pressed="true"] {
+  color: var(--on-green);
+}
+@media (max-width: 600px) {
+  .topbar {
+    padding-inline: 12px;
+  }
+  .mobile-brand {
+    font-size: 15px;
+  }
+  .language-switch a {
+    min-width: 44px;
+  }
+  .home-discovery {
+    margin-top: 64px;
+  }
+}
+.track-card:is(:hover, :focus-within) .track-art .nature-art {
+  scale: 1.035;
+  transform: none;
+}
+.calm-mode .track-art .nature-art {
+  scale: 1;
+}
+
+.featured-recording .card-play {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  border-radius: 0;
+  gap: 5px;
+  padding-inline: 5px;
+  white-space: nowrap;
+}
+.featured-recording .card-play-label {
+  font-size: 12px;
+}
+.track-bottom {
+  border-color: var(--line);
+}
+.mobile-nav button[data-current="true"] {
+  color: var(--green);
+  background: var(--jade-tint);
+}
+.sidebar-footer a {
+  min-width: 44px;
+  padding-inline: 4px;
+}
+.binaural-page a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  max-width: 100%;
+}
+.garden-credits {
+  padding: 24px;
+  max-width: 75ch;
+}

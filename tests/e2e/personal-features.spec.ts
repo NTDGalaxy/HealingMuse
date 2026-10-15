@@ -582,6 +582,45 @@ test("synthetic authentication, consent, personal history, and administration fo
     ).violations,
   ).toEqual([]);
 });
+test("a selected private check-in remains readable in Night appearance", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "healingmuse-appearance-v1",
+      JSON.stringify({ appearance: "night", garden: "still" }),
+    ),
+  );
+  await page.route("**/api/me", (route) =>
+    route.fulfill({
+      json: {
+        profile: {
+          id: owner,
+          locale: "en",
+          calm_mode: false,
+          mood_consent_at: new Date().toISOString(),
+        },
+        favorites: [],
+        playlists: [],
+        checkins: [],
+        isAdmin: false,
+      },
+    }),
+  );
+  await page.goto(`${origin}tests/browser-fixtures/index.html`);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
+  await expect(page.getByRole("button", { name: "Create a playlist", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "recording", exact: true }).click();
+  await page.getByRole("button", { name: "Listen to Synthetic recording", exact: true }).click();
+  await page.locator('.mood-scores input[value="3"]').check();
+  await expect(page.locator('.mood-scores label.selected input[value="3"]')).toBeChecked();
+  expect(
+    (
+      await new AxeBuilder({ page })
+        .include(".dialog-content")
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze()
+    ).violations,
+  ).toEqual([]);
+});
 test("content publication requires review and supports retirement", async ({ page }) => {
   const data: PersonalData = {
     profile: { id: owner, locale: "en", calm_mode: false, mood_consent_at: null },
@@ -648,63 +687,77 @@ test("content publication requires review and supports retirement", async ({ pag
   await expect(page.locator(".status-pill")).toHaveText("Retired");
 });
 for (const locale of ["vi", "en"] as const)
-  test(`signed-in ${locale} screens and mood choices reflow at three sizes`, async ({ page }) => {
-    const data: PersonalData = {
-      profile: { id: owner, locale, calm_mode: false, mood_consent_at: new Date().toISOString() },
-      favorites: ["00000000-0000-4000-8000-000000000001"],
-      playlists: [],
-      checkins: [],
-      isAdmin: true,
-    };
-    await page.route("**/api/me", (route) => route.fulfill({ json: data }));
-    await page.route("**/api/admin/tracks*", (route) =>
-      route.fulfill({ json: { items: [], total: 0, nextCursor: null } }),
-    );
-    await page.route("**/api/admin/collections", (route) => route.fulfill({ json: [] }));
-    await page.goto(`${origin}tests/browser-fixtures/index.html?locale=${locale}`);
-    await page.getByRole("button", { name: "mood", exact: true }).click();
-    await expect(page.locator(".mood-trends")).toBeVisible();
-    for (const width of [390, 820, 1440]) {
-      await page.setViewportSize({ width, height: 900 });
-      for (const view of ["library", "mood", "settings", "admin"]) {
-        await page.getByRole("button", { name: view, exact: true }).click();
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+  for (const theme of ["day", "night"] as const)
+    test(`signed-in ${locale} ${theme} screens and mood choices reflow at three sizes`, async ({
+      page,
+    }) => {
+      await page.addInitScript(
+        (theme) =>
+          localStorage.setItem(
+            "healingmuse-appearance-v1",
+            JSON.stringify({ appearance: theme, garden: "still" }),
+          ),
+        theme,
+      );
+      const data: PersonalData = {
+        profile: { id: owner, locale, calm_mode: false, mood_consent_at: new Date().toISOString() },
+        favorites: ["00000000-0000-4000-8000-000000000001"],
+        playlists: [],
+        checkins: [],
+        isAdmin: true,
+      };
+      await page.route("**/api/me", (route) => route.fulfill({ json: data }));
+      await page.route("**/api/admin/tracks*", (route) =>
+        route.fulfill({ json: { items: [], total: 0, nextCursor: null } }),
+      );
+      await page.route("**/api/admin/collections", (route) => route.fulfill({ json: [] }));
+      await page.goto(`${origin}tests/browser-fixtures/index.html?locale=${locale}`);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+      await page.getByRole("button", { name: "mood", exact: true }).click();
+      await expect(page.locator(".mood-trends")).toBeVisible();
+      for (const width of [390, 820, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const view of ["library", "mood", "settings", "admin"]) {
+          await page.getByRole("button", { name: view, exact: true }).click();
+          expect(
+            await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+          ).toBe(true);
+          expect(
+            (
+              await new AxeBuilder({ page })
+                .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+                .analyze()
+            ).violations,
+          ).toEqual([]);
+          await page.screenshot({
+            path: `artifacts/design/${view}-${locale}-${theme}-${width}.png`,
+            fullPage: true,
+          });
+        }
+        await page.getByRole("button", { name: "recording", exact: true }).click();
+        await page
+          .getByRole("button", {
+            name: locale === "vi" ? "Nghe Bản thu thử" : "Listen to Synthetic recording",
+            exact: true,
+          })
+          .click();
+        const dialog = page.getByRole("dialog");
+        await expect(dialog.getByRole("radio")).toHaveCount(5);
+        await page.screenshot({ path: `artifacts/design/checkin-${locale}-${theme}-${width}.png` });
+        expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
           true,
         );
-        expect(
-          (
-            await new AxeBuilder({ page })
-              .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-              .analyze()
-          ).violations,
-        ).toEqual([]);
-        await page.screenshot({
-          path: `artifacts/design/${view}-${locale}-${width}.png`,
-          fullPage: true,
-        });
+        for (const label of await dialog.locator(".mood-scores label").all()) {
+          expect(
+            await label.evaluate((element) =>
+              Number.parseFloat(getComputedStyle(element).fontSize),
+            ),
+          ).toBeGreaterThanOrEqual(16);
+          expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        }
+        await page.keyboard.press("Escape");
       }
-      await page.getByRole("button", { name: "recording", exact: true }).click();
-      await page
-        .getByRole("button", {
-          name: locale === "vi" ? "Nghe Bản thu thử" : "Listen to Synthetic recording",
-          exact: true,
-        })
-        .click();
-      const dialog = page.getByRole("dialog");
-      await expect(dialog.getByRole("radio")).toHaveCount(5);
-      await page.screenshot({ path: `artifacts/design/checkin-${locale}-${width}.png` });
-      expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
-        true,
-      );
-      for (const label of await dialog.locator(".mood-scores label").all()) {
-        expect(
-          await label.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
-        ).toBeGreaterThanOrEqual(16);
-        expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-      }
-      await page.keyboard.press("Escape");
-    }
-  });
+    });
 test("Vietnamese content forms use translated options across phone, tablet, and desktop", async ({
   page,
 }) => {

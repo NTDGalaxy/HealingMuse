@@ -1,5 +1,4 @@
 import credits from "../../../../content/artwork-credits.json";
-import scenery from "../../../../content/scenery-credits.json";
 import { getLocale } from "next-intl/server";
 export default async function Page() {
   const vi = (await getLocale()) === "vi";
@@ -23,37 +22,24 @@ export default async function Page() {
           </li>
         ))}
       </ul>
-      <h2>{vi ? "Phong cảnh trang trí" : "Decorative landscapes"}</h2>
-      <p>
-        {vi
-          ? "Sáu phong cảnh được tạo bằng công cụ tạo ảnh trong quá trình thiết kế. Đây là phong cảnh tưởng tượng, không phải ảnh tư liệu về địa điểm có thật. Âm nhạc và bản thu vẫn do con người sáng tạo."
-          : "Six landscapes were generated with an image tool during design. They depict imagined scenery rather than documented places. Music and recordings remain human-created."}
-      </p>
-      <ul className="credit-list">
-        {scenery.map((credit) => (
-          <li key={credit.id}>
-            <strong>
-              {vi
-                ? credit.title
-                : (
-                    {
-                      lake: "Dawn lake",
-                      valley: "Mountain valley",
-                      forest: "Misty forest",
-                      coast: "Quiet coast",
-                      pool: "Still pool",
-                      hills: "Clouded hills",
-                    } as Record<string, string>
-                  )[credit.id]}
-            </strong>
-            <p>
-              {vi
-                ? "Tác phẩm trang trí được tạo trong quá trình thiết kế, chuyển sang WebP và AVIF."
-                : "Decorative artwork produced during design, converted to WebP and AVIF."}
-            </p>
-          </li>
-        ))}
-      </ul>
+      <h2>{vi ? "Những khu vườn tưởng tượng" : "Imagined botanical gardens"}</h2>
+      <div className="reading-surface garden-credits">
+        <p>
+          {vi
+            ? "Mười hai khu vườn được tạo riêng cho HealingMuse bằng các mô hình thực vật và kiến trúc nguyên bản. Mỗi khu vườn có ánh sáng ban ngày, ban đêm và một hình ảnh tĩnh tương ứng."
+            : "Twelve gardens were created for HealingMuse using original botanical and architectural models. Each garden has day and night lighting and a matching still image."}
+        </p>
+        <p>
+          {vi
+            ? "Một hình ảnh ý tưởng được tạo bằng công cụ tạo ảnh trong quá trình thiết kế. Hình ảnh này chỉ dùng làm tham khảo, không được tải khi sử dụng ứng dụng. Các khu vườn không phải địa điểm có thật; âm nhạc và bản thu vẫn do con người sáng tạo."
+            : "An image tool produced a development concept used only as a design reference. The application does not load that concept image. The gardens depict imagined places; music and recordings remain human-created."}
+        </p>
+        <p>
+          {vi
+            ? "Mô hình gốc và mã nguồn được cấp phép MIT. Hình ảnh tĩnh được kết xuất từ chính các khu vườn trong ứng dụng."
+            : "Original models and source code are licensed under MIT. Still images are rendered from the application's own gardens."}
+        </p>
+      </div>
     </>
   );
 }

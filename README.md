@@ -3,7 +3,8 @@
 HealingMuse is a Vietnamese-first, English-supported music and wellbeing PWA for adult cancer patients.
 It offers recreational listening and emotional support without treatment claims.
 The application contains no AI models, generation, chatbots, transcription, or AI APIs.
-Recordings are human-created instrumentals and recorded nature sounds.
+The published production catalogue contains 348 human-created instrumental recordings.
+Decorative botanical environments are created during development and contain no runtime AI services.
 
 ## Run locally
 
@@ -40,6 +41,32 @@ Production uploads create drafts with the review flag off.
 - Content studio for draft, preview, publication, retirement, rights review, order, and curated collections.
 - Vietnamese and English interface, keyboard controls, accessible dialogs, reduced motion, and calm mode.
 - User-initiated visible YouTube embeds and ordinary Spotify links when an administrator adds them.
+
+## Botanical world
+
+Every application route has a distinct original Three.js garden with matching day and night posters.
+Appearance follows the device by default and can be changed in Your garden or Settings.
+Automatic 3D reduces resolution and detail when rendering remains slow, then uses the matching still.
+Still garden reduces graphics work and data use.
+Calm mode and reduced motion stop decorative animation without interrupting listening.
+Reduced transparency replaces frosted surfaces with opaque fills.
+
+The renderer starts independently alongside ordinary controls.
+Only one garden is active, with capability-tested worker rendering and a lightweight main-thread fallback.
+Ordinary music continues across routes; Binaural pauses when leaving its page.
+Search, filters, grants, authentication and all recording rights retain their existing contracts.
+
+`npm run garden:posters` renders responsive AVIF and WebP posters from the actual runtime scenes.
+This development command requires installed Playwright Chromium and does not access cloud audio.
+`npm run garden:budget` checks emitted graphics chunks against 220 KiB gzip and mobile posters against 80 KiB each.
+Asset provenance is recorded in `content/garden-assets.json`.
+
+Use the performance scripts against an optimized production preview with `--samples=30 --theme=day` or `--theme=night`.
+`test:performance` accepts `--routes=/vi,/vi/explore` and `--label=<name>`.
+`test:performance:binaural` measures generated signal and also accepts a theme and report label.
+Page readiness, click-to-audio, live-scene readiness, LCP, CLS and sampled interaction timing are separate measurements.
+The three-second p95 gate applies to usable listening controls and audio at 390 x 844, 150 ms latency, 1.6 Mbps download and fourfold CPU slowdown.
+Local browser evidence does not establish physical-device, actual screen-reader or deployed-cloud performance.
 
 ## Account access
 

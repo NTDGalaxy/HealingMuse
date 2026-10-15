@@ -6,7 +6,7 @@ test("guest listens, navigates without losing playback, downloads, and starts of
 }) => {
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "Find a quieter moment." })).toBeVisible();
-  await page.getByRole("button", { name: "Find something to listen to", exact: true }).click();
+  await page.locator(".featured-recording .card-play").click();
   await expect
     .poll(() =>
       page
