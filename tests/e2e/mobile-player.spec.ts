@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("the phone player exposes its complete keyboard-operable controls", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/en");
-  await page.locator(".featured-recording .card-play").click();
+  await page.locator(".featured-recording:visible .card-play").click();
   await page.getByRole("button", { name: "Controls", exact: true }).click();
   for (const name of [
     "Previous recording",

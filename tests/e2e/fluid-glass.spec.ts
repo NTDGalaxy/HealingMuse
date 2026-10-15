@@ -15,7 +15,7 @@ test("route and reused catalogue results arrive without moving listening targets
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en");
-  await page.locator(".featured-recording .card-play").click();
+  await page.locator(".featured-recording:visible .card-play").click();
   await expect
     .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
     .toBe(true);
@@ -91,7 +91,7 @@ test("route and reused catalogue results arrive without moving listening targets
 
 test("dialog entrances and exits keep repeated keyboard focus restoration", async ({ page }) => {
   await page.goto("/en");
-  const details = page.locator(".featured-recording .track-actions button").last();
+  const details = page.locator(".featured-recording:visible .track-actions button").last();
   for (const trigger of [
     details,
     page.getByRole("button", { name: "Your garden", exact: true }),

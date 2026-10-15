@@ -44,7 +44,7 @@ for (const locale of ["en", "vi"])
       await page.goto(`/${locale}`);
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       await expect(page.locator(".player-bar")).toBeHidden();
-      const first = page.locator(".featured-recording .track-card");
+      const first = page.locator(".featured-recording:visible .track-card");
       for (const selector of [".track-title", ".track-description p", ".card-play"]) {
         const bounds = (await first.locator(selector).boundingBox())!;
         expect(bounds.y).toBeGreaterThan(0);
@@ -110,7 +110,7 @@ test("renderer startup failure leaves working recording controls and a poster", 
   });
   await page.goto("/en");
   await expect(page.locator(".garden-canvas")).toHaveAttribute("data-state", "still");
-  await page.locator(".featured-recording .card-play").click();
+  await page.locator(".featured-recording:visible .card-play").click();
   await expect
     .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
     .toBe(true);
@@ -126,7 +126,7 @@ test("the active listening queue remains readable in Night appearance", async ({
   );
   await page.goto("/en");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
-  await page.locator(".featured-recording .card-play").click();
+  await page.locator(".featured-recording:visible .card-play").click();
   await page.getByRole("button", { name: "Listening queue", exact: true }).click();
   await expect(page.locator('.queue-list button[aria-current="true"]')).toHaveCount(1);
   expect(
@@ -164,7 +164,7 @@ test.describe("WebGL lifecycle", () => {
     await expect(host).toHaveAttribute("data-quality", "0");
     await expect(host.locator("canvas")).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute("data-garden", "auto");
-    await page.locator(".featured-recording .card-play").click();
+    await page.locator(".featured-recording:visible .card-play").click();
     await expect
       .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
       .toBe(true);
@@ -178,7 +178,7 @@ test.describe("WebGL lifecycle", () => {
     const host = page.locator(".garden-canvas");
     await expect(host).toHaveAttribute("data-state", "ready");
     await expect(host).toHaveAttribute("data-renderer", "main");
-    await page.locator(".featured-recording .card-play").click();
+    await page.locator(".featured-recording:visible .card-play").click();
     await expect
       .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
       .toBe(true);
