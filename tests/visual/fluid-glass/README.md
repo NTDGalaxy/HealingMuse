@@ -40,6 +40,7 @@ Controls provide short press feedback, selections acknowledge state, and dialogs
 Calm applies before hydration and to portals, while reduced motion disables decorative transitions.
 Reduced transparency supplies opaque fills and removes backdrop blur.
 The scenery host and persistent audio provider retain separate lifecycles.
+Lazy dialogs use the synchronized root Calm preference without importing global application state, preserving the smaller initial JavaScript chunk graph.
 
 ## Evidence and limits
 

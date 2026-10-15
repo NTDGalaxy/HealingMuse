@@ -290,17 +290,13 @@ details[open] > :is(.catalog-facets, .binaural-frequencies) {
   }
 }
 
-/* Dialog portals sit outside .app-shell, so they receive Calm explicitly. */
+/* The prehydration root preference also covers portals outside .app-shell. */
 .calm-mode *,
-:root[data-calm="true"] *,
-.dialog-content[data-calm="true"],
-.dialog-content[data-calm="true"] *,
-.dialog-overlay[data-calm="true"] {
+:root[data-calm="true"] * {
   animation: none !important;
   transition: none !important;
 }
 .calm-mode :active,
-.dialog-content[data-calm="true"] :active,
 :root[data-calm="true"] :active {
   scale: none !important;
 }
