@@ -1,148 +1,13 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Headphones, Heart, Pause, Play, Square, Waves } from "lucide-react";
 import { modes, frequencies, presetId, type BinauralMode } from "@/lib/binaural/config";
-import { api } from "@/lib/browser/api";
 import { clock } from "@/lib/audio";
-import type { CatalogPage, Locale } from "@/lib/types";
+import type { CatalogPage } from "@/lib/types";
 import { useBinaural } from "./binaural-provider";
-import { useApp } from "./app-state";
-
-function BackgroundPicker({ initial }: { initial: CatalogPage }) {
-  const t = useTranslations("binaural");
-  const locale = useLocale() as Locale;
-  const app = useApp();
-  const session = useBinaural();
-  const [page, setPage] = useState(initial);
-  const [query, setQuery] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  const request = useRef<AbortController | null>(null);
-  const requested = useRef(initial.total > 0);
-  useEffect(() => () => request.current?.abort(), []);
-  const { registerTracks, ensureTracks } = app;
-  useEffect(() => registerTracks(page.items), [page.items, registerTracks]);
-  useEffect(() => {
-    if (session.backgroundId) void ensureTracks([session.backgroundId]);
-  }, [session.backgroundId, ensureTracks]);
-  const load = async (cursor = "") => {
-    request.current?.abort();
-    const controller = new AbortController();
-    request.current = controller;
-    setBusy(true);
-    setError(false);
-    try {
-      const params = new URLSearchParams({ category: "instrumental", q: query, limit: "12" });
-      if (cursor) params.set("cursor", cursor);
-      const result = await api<CatalogPage>(`/api/catalog?${params}`, {
-        signal: controller.signal,
-      });
-      if (!controller.signal.aborted) setPage(result);
-    } catch {
-      if (!controller.signal.aborted) setError(true);
-    } finally {
-      if (!controller.signal.aborted) setBusy(false);
-    }
-  };
-  const selected =
-    app.tracks.find((track) => track.id === session.backgroundId) ??
-    app.downloaded.find((item) => item.id === session.backgroundId)?.track;
-  const offlineTracks = app.downloaded
-    .filter((item) => item.track.category === "instrumental")
-    .map((item) => item.track);
-  const displayed = [
-    ...offlineTracks,
-    ...page.items.filter(
-      (track) =>
-        track.category === "instrumental" && !offlineTracks.some((local) => local.id === track.id),
-    ),
-  ];
-  return (
-    <details
-      className="binaural-background reading-surface"
-      onToggle={(event) => {
-        if (event.currentTarget.open && !requested.current) {
-          requested.current = true;
-          void load();
-        }
-      }}
-    >
-      <summary>
-        {t("backgroundTitle")}{" "}
-        <span>
-          {selected?.title[locale] ??
-            (session.backgroundId ? t("backgroundUnavailable") : t("none"))}
-        </span>
-      </summary>
-      <p className="muted small">{t("backgroundHint")}</p>
-      <form
-        className="binaural-search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void load();
-        }}
-      >
-        <label htmlFor="binaural-music-search">{t("searchLabel")}</label>
-        <input
-          id="binaural-music-search"
-          type="search"
-          maxLength={120}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <button className="button secondary" disabled={busy}>
-          {t("search")}
-        </button>
-      </form>
-      <fieldset disabled={busy} aria-busy={busy} className="binaural-tracks">
-        <legend>{t("chooseMusic")}</legend>
-        <label className="check-row">
-          <input
-            type="radio"
-            name="binaural-background"
-            checked={session.backgroundId === null}
-            onChange={() => session.chooseBackground(null)}
-          />
-          {t("none")}
-        </label>
-        {displayed.map((track) => (
-          <label className="binaural-track" key={track.id}>
-            <input
-              type="radio"
-              name="binaural-background"
-              checked={session.backgroundId === track.id}
-              onChange={() => session.chooseBackground(track.id)}
-            />
-            <span>
-              <strong>{track.title[locale]}</strong>
-              <small>
-                {track.artist} · {clock(track.duration)}
-                {offlineTracks.some((item) => item.id === track.id) ? ` · ${t("downloaded")}` : ""}
-              </small>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-      {page.nextCursor && (
-        <button
-          type="button"
-          className="button secondary"
-          disabled={busy}
-          onClick={() => void load(page.nextCursor!)}
-        >
-          {t("moreMusic")}
-        </button>
-      )}
-      {busy && <p role="status">{t("loadingMusic")}</p>}
-      {error && <p role="alert">{t("musicSearchError")}</p>}
-      <p className="small muted">
-        {t("licensing")} <Link href={`/${locale}/credits`}>{t("credits")}</Link>
-      </p>
-    </details>
-  );
-}
+import { BinauralCatalogue } from "./binaural-catalogue";
 
 export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPage }) {
   const t = useTranslations("binaural");
@@ -499,7 +364,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           </div>
         </section>
       )}
-      <BackgroundPicker initial={initialCatalogue} />
+      <BinauralCatalogue initial={initialCatalogue} />
       <section
         className="binaural-preferences reading-surface"
         aria-labelledby="binaural-preferences-heading"

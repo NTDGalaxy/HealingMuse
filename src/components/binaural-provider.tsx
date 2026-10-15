@@ -59,7 +59,7 @@ function useController() {
     [backgroundId, downloaded, refresh],
   );
   const localBackground = downloaded.find(
-    (item) => item.id === backgroundId && item.track.category === "instrumental",
+    (item) => item.id === backgroundId && item.track.source.kind === "hosted",
   );
   const [delivery, setDelivery] = useState<{
     request: typeof backgroundRequest;

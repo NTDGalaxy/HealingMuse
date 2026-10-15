@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { CatalogPage, CatalogQuery, Track } from "./types";
 
 import { taxonomy } from "./catalog-taxonomy";
+import { catalogMatcher } from "./catalog-match";
+export { foldSearch } from "./catalog-match";
 export { taxonomy } from "./catalog-taxonomy";
 const optionalFilter = (values: readonly string[]) =>
   z
@@ -26,14 +28,6 @@ export const catalogQueryInput = z
     status: optionalFilter(["draft", "published", "retired"]),
   })
   .strict();
-export function foldSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .toLowerCase();
-}
 export function decodeCursor(cursor = "") {
   if (!cursor) return null;
   const decoded = atob(cursor.replace(/-/g, "+").replace(/_/g, "/"));
@@ -53,23 +47,10 @@ export function paginateTracks(
   query: CatalogQuery,
   collectionIds?: string[],
 ): CatalogPage {
-  const search = foldSearch(query.q || "");
   const selected = collectionIds ? new Set(collectionIds) : null;
+  const matches = catalogMatcher(query);
   const filtered = all
-    .filter(
-      (track) =>
-        (!query.status || track.status === query.status) &&
-        (!query.goal || track.goals.includes(query.goal as Track["goals"][number])) &&
-        (!query.category || track.category === query.category) &&
-        (!query.genre || track.genres?.includes(query.genre)) &&
-        (!query.instrument || track.instruments?.includes(query.instrument)) &&
-        (!query.tradition || track.traditions?.includes(query.tradition)) &&
-        (!selected || selected.has(track.id)) &&
-        (!search ||
-          foldSearch(
-            `${track.title.vi} ${track.title.en} ${track.description.vi} ${track.description.en} ${track.artist}`,
-          ).includes(search)),
-    )
+    .filter((track) => matches(track) && (!selected || selected.has(track.id)))
     .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
   const cursor = decodeCursor(query.cursor);
   const remaining = cursor

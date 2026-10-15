@@ -20,7 +20,7 @@ import { NatureArt } from "./art";
 import { Dialog } from "./dialog";
 import { clock } from "@/lib/audio";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Locale, Track } from "@/lib/types";
-import { taxonomy } from "@/lib/catalog-taxonomy";
+import { CatalogControls } from "./catalog-controls";
 
 export function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
@@ -53,11 +53,13 @@ export function TrackCard({
   compact = false,
   queue,
   continuation,
+  selection,
 }: {
   track: Track;
   compact?: boolean;
   queue?: Track[];
   continuation?: CatalogQuery;
+  selection?: { selected: boolean; choose: () => void; label: string; disabled?: boolean };
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -69,16 +71,28 @@ export function TrackCard({
   const downloaded = app.downloaded.some((item) => item.id === track.id);
   const title = track.title[locale];
   return (
-    <article className={`track-card ${compact ? "track-compact" : ""}`}>
+    <article
+      className={`track-card ${compact ? "track-compact" : ""} ${selection?.selected ? "track-selected" : ""}`}
+    >
       <div className="track-art">
         <NatureArt kind={track.artwork} color={track.color} />
         <span className="track-category">{t(`catalog.${track.category}`)}</span>
         <button
           className="card-play"
-          aria-label={t("catalog.playTitle", { title })}
-          onClick={() => player.play(track, queue, continuation)}
+          aria-label={selection?.label ?? t("catalog.playTitle", { title })}
+          aria-pressed={selection ? selection.selected : undefined}
+          disabled={selection?.disabled}
+          onClick={selection?.choose ?? (() => player.play(track, queue, continuation))}
         >
-          <Play size={22} fill="currentColor" aria-hidden="true" />
+          {selection ? (
+            selection.selected ? (
+              <Check size={22} aria-hidden="true" />
+            ) : (
+              <Plus size={22} aria-hidden="true" />
+            )
+          ) : (
+            <Play size={22} fill="currentColor" aria-hidden="true" />
+          )}
         </button>
         {downloaded && (
           <span className="downloaded-badge" title={t("catalog.downloaded")}>
@@ -88,7 +102,13 @@ export function TrackCard({
         )}
       </div>
       <div className="track-description">
-        <button className="track-title" onClick={() => player.play(track, queue, continuation)}>
+        <button
+          className="track-title"
+          aria-label={selection?.label}
+          aria-pressed={selection ? selection.selected : undefined}
+          disabled={selection?.disabled}
+          onClick={selection?.choose ?? (() => player.play(track, queue, continuation))}
+        >
           {title}
         </button>
         <p>{track.artist}</p>
@@ -386,9 +406,6 @@ export function ExploreView({
   const router = useRouter();
   const { registerTracks } = useApp();
   const [pending, transition] = useTransition();
-  const [filtersOpen, setFiltersOpen] = useState(
-    Boolean(query.goal || query.genre || query.instrument || query.tradition),
-  );
   const tracks = initialPage.items;
   useEffect(() => registerTracks(tracks), [tracks, registerTracks]);
   const navigate = (patch: Partial<CatalogQuery>) => {
@@ -401,66 +418,7 @@ export function ExploreView({
   return (
     <>
       <PageHeading title={t("catalog.title")} subtitle={t("catalog.subtitle")} />
-      <form
-        className="search-box"
-        onSubmit={(event) => {
-          event.preventDefault();
-          navigate({ q: String(new FormData(event.currentTarget).get("q") || "") });
-        }}
-      >
-        <Search size={21} aria-hidden="true" />
-        <label htmlFor="catalog-search" className="sr-only">
-          {t("catalog.search")}
-        </label>
-        <input
-          key={query.q}
-          id="catalog-search"
-          name="q"
-          type="search"
-          defaultValue={query.q || ""}
-          maxLength={120}
-          placeholder={t("catalog.searchPlaceholder")}
-        />
-        <button className="button">{t("catalog.search")}</button>
-      </form>
-      <div className="filter-row" aria-label={t("catalog.title")}>
-        {["", "instrumental", "nature"].map((value) => (
-          <button
-            className="filter-chip"
-            key={value}
-            aria-pressed={(query.category || "") === value}
-            onClick={() => navigate({ category: value })}
-          >
-            {t(value ? `catalog.${value}` : "common.all")}
-          </button>
-        ))}
-      </div>
-      <details
-        className="catalog-filter-details"
-        open={filtersOpen}
-        onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
-      >
-        <summary>{t("catalog.filters")}</summary>
-        <div className="catalog-facets">
-          {(["goal", "genre", "instrument", "tradition"] as const).map((field) => (
-            <label key={field} htmlFor={`filter-${field}`}>
-              {t(field === "goal" ? "home.today" : `catalog.${field}`)}
-              <select
-                id={`filter-${field}`}
-                value={query[field] || ""}
-                onChange={(event) => navigate({ [field]: event.target.value })}
-              >
-                <option value="">{t("common.all")}</option>
-                {(field === "goal" ? ["relax", "rest", "focus"] : taxonomy[field]).map((value) => (
-                  <option key={value} value={value}>
-                    {t(field === "goal" ? `goals.${value}` : `taxonomy.${field}.${value}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-        </div>
-      </details>
+      <CatalogControls query={query} navigate={navigate} />
       {unavailable ? (
         <CatalogUnavailable />
       ) : (

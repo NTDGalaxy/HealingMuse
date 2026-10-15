@@ -75,7 +75,13 @@ Phone background and screen-lock playback are best effort; browser or operating-
 
 Tones run locally through Web Audio, with no uploaded tone files, paid services, listening-history collection or database changes.
 The engine loads only when its page is visited and creates its AudioContext only on Start.
-Optional backgrounds are existing published instrumentals, loaded on request through the normal private playback-grant endpoint or a previously downloaded device-local Blob.
+The visible background catalogue includes every published recording, with the same search, category, listening-goal, musical-style, instrument and tradition controls as Explore.
+Both pages share the search/filter component, and online results use the same catalogue API.
+Catalogue results load as the listener scrolls toward them, with 24 recordings per page, a total count, previous/next navigation and clear filters.
+The existing 348-recording catalogue spans 15 pages, with 12 recordings on the final page.
+Recording cards retain favorites, eligible downloads and recording credits; choosing a hosted recording selects it for the mixer and exposes a link back to session controls.
+Background audio loads through the normal private playback-grant endpoint or a previously downloaded device-local Blob.
+Offline search and filters reuse the local catalogue matcher and show only explicit device downloads.
 Background failures leave tone-only controls available, and starting either player pauses the other.
 Browser CORS and autoplay support remain necessary for mixing streamed music; unsupported browsers can use ordinary music.
 Fresh offline navigation opens the existing downloaded-music shell; the binaural page must already be open to start tones without a connection.
@@ -91,6 +97,7 @@ The educational wording follows the [2023 systematic review](https://journals.pl
 `tests/e2e/binaural.spec.ts` renders all twelve presets and a 0.5 Hz difference through the real browser OfflineAudioContext and checks expected-channel amplitudes and cross-channel leakage.
 These signal checks do not verify brainwave synchronization or subjective effects.
 Browser tests also cover guest controls, navigation pause, settings, background playback and automated accessibility.
+The catalogue browser suite walks all 348 isolated fixture recordings, verifies final-page selection and backward navigation, and exercises combined filters, Vietnamese search, rapid changes and bilingual layouts.
 Use `npm run test:performance:binaural -- --base=http://127.0.0.1:3107 --samples=30` against a production preview to measure cold readiness and click-to-rendered-signal latency at the agreed mobile throttle.
 The analyser measures generated audio frames rather than physical headphone output, and sampled interaction timing is distinct from field INP.
 Physical iPhone/Android, actual assistive technology and deployed-cloud checks remain separate release validation.

@@ -232,8 +232,7 @@
   flex-shrink: 0;
   margin-top: 3px;
 }
-.binaural-advanced summary,
-.binaural-background summary {
+.binaural-advanced summary {
   min-height: 48px;
   cursor: pointer;
   padding-block: 12px;
@@ -250,62 +249,44 @@
   border-radius: 20px;
   margin-bottom: 24px;
 }
-.binaural-background summary > span {
-  display: block;
-  font-weight: 400;
+.binaural-catalogue-selection {
   color: var(--muted);
-  font-size: 12px;
-  margin-left: 17px;
-  margin-top: 5px;
-}
-.binaural-search {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-block: 18px;
-}
-.binaural-search label {
-  flex-basis: 100%;
-  font-size: 13px;
-}
-.binaural-search input {
-  flex: 1;
-  min-width: 100px;
+  font-size: 14px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
 }
 .binaural-tracks {
   border: 0;
   padding: 0;
   margin-block: 20px;
+  min-width: 0;
 }
-.binaural-tracks legend {
-  margin-bottom: 10px;
+.binaural-tracks[disabled] {
+  opacity: 0.55;
 }
-.binaural-track {
+.binaural-recording {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  border-top: 1px solid var(--line);
-  padding: 13px 4px;
-  min-height: 62px;
-  cursor: pointer;
+  flex-direction: column;
 }
-.binaural-track input {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--green);
+.binaural-recording .track-card {
+  flex: 1;
 }
-.binaural-track > span {
-  display: grid;
-  gap: 4px;
+.binaural-background .track-selected {
+  border-color: var(--green);
+  box-shadow: inset 0 0 0 1px var(--green);
 }
-.binaural-track strong {
-  font-size: 13px;
-  font-weight: 500;
+.binaural-background .track-selected .card-play {
+  color: white;
+  background: var(--green);
 }
-.binaural-track small {
-  color: var(--muted);
-  font-size: 11px;
+.binaural-tones-only {
+  min-height: 44px;
+  margin-block: 12px 20px;
+}
+.binaural-return {
+  margin-top: 8px;
+  text-align: center;
 }
 .binaural-favorites > div {
   display: flex;
@@ -411,6 +392,19 @@
   }
 }
 @media (max-width: 700px) {
+  .binaural-background .search-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 12px;
+  }
+  .binaural-background .search-box .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+  .binaural-background .filter-row {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
   .binaural-modes {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
@@ -474,6 +468,9 @@
   }
 }
 @media (max-width: 360px) {
+  .binaural-background .track-grid {
+    grid-template-columns: 1fr;
+  }
   .binaural-session-options {
     grid-template-columns: 1fr;
   }

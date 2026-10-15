@@ -21,8 +21,9 @@ test.afterAll(async () => {
 test("real OfflineAudioContext renders all presets into separate ears", async ({ page }) => {
   fixtureServer = await createServer({
     configFile: false,
+    cacheDir: "node_modules/.vite/binaural-audio",
     optimizeDeps: { entries: ["tests/browser-fixtures/binaural-audio.html"] },
-    server: { host: "127.0.0.1", port: 0 },
+    server: { host: "127.0.0.1", port: 0, watch: null },
   });
   await fixtureServer.listen();
   await page.goto(
@@ -228,6 +229,8 @@ test("custom duration, favorites and opt-in settings restore without autoplay", 
     .toBe(true);
   await page.reload();
   await expect(page.locator("#binaural-custom-duration")).toHaveValue("2");
+  // Streaming can briefly retain a hidden SSR copy while saved preferences hydrate.
+  await expect(page.locator(".binaural-player")).toHaveCount(1);
   await expect(page.locator(".binaural-player")).toHaveAttribute("data-state", "idle");
   await expect(
     page.getByRole("button", { name: "Favorite this preset", exact: true }),
@@ -285,10 +288,8 @@ test("licensed background uses one fresh grant, mixes independently and yields t
     );
   await openBinaural(page);
   expect(grants).toBe(0);
-  await page.locator(".binaural-background summary").click();
-  await page
-    .getByRole("radio", { name: new RegExp(track.title.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })
-    .check();
+  await page.locator(".binaural-background").scrollIntoViewIfNeeded();
+  await page.locator(".binaural-background .card-play").first().click();
   await expect(page.getByRole("button", { name: "Start session", exact: true })).toBeEnabled();
   expect(grants).toBe(1);
   await page.getByRole("button", { name: "Start session", exact: true }).click();
@@ -301,10 +302,8 @@ test("licensed background uses one fresh grant, mixes independently and yields t
   fail = true;
   // A retry requires a new grant and leaves controls available after a quota-like failure.
   await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
-  await page.getByRole("radio", { name: "Tones only", exact: true }).check();
-  await page
-    .getByRole("radio", { name: new RegExp(track.title.en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })
-    .check();
+  await page.getByRole("button", { name: "Tones only", exact: true }).click();
+  await page.locator(".binaural-background .card-play").first().click();
   await expect(
     page.getByRole("button", { name: "Prepare music again", exact: true }),
   ).toBeVisible();
@@ -410,8 +409,8 @@ test("a CORS-blocked private background leaves tones and retry controls availabl
     }),
   );
   await openBinaural(page);
-  await page.locator(".binaural-background summary").click();
-  await page.locator(".binaural-track input").first().check();
+  await page.locator(".binaural-background").scrollIntoViewIfNeeded();
+  await page.locator(".binaural-background .card-play").first().click();
   await page.getByRole("button", { name: "Start session", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Prepare music again", exact: true }),
@@ -468,8 +467,22 @@ test("previously downloaded instrumental mixes offline without requesting a gran
   await expect(page.getByRole("button", { name: "Start session", exact: true })).toBeEnabled();
   await expect(page.locator(".binaural-player")).toHaveCount(1);
   await context.setOffline(true);
-  await page.locator(".binaural-background summary").click();
-  await page.locator(".binaural-track input").first().check();
+  await page.locator(".binaural-background").scrollIntoViewIfNeeded();
+  const catalogue = page.locator(".binaural-background");
+  await expect(catalogue.locator(".track-card")).toHaveCount(1);
+  await catalogue
+    .getByRole("searchbox", { name: "Search recordings", exact: true })
+    .fill("no matching local recording");
+  await catalogue.getByRole("searchbox", { name: "Search recordings", exact: true }).press("Enter");
+  await expect(
+    catalogue.getByRole("heading", { name: "No recordings found", exact: true }),
+  ).toBeVisible();
+  await catalogue
+    .locator(".filter-row")
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await expect(catalogue.locator(".track-card")).toHaveCount(1);
+  await page.locator(".binaural-background .card-play").first().click();
   await page.getByRole("button", { name: "Start session", exact: true }).click();
   await expect(page.locator(".binaural-player")).toHaveAttribute("data-state", "playing");
   await expect(page.getByRole("button", { name: "Prepare music again", exact: true })).toHaveCount(
