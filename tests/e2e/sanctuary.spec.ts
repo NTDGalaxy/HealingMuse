@@ -8,7 +8,8 @@ test("phone discovery shows playable choices and expands native listening filter
   const firstPlay = page.locator("#main-content .card-play").first();
   await expect(firstPlay).toBeVisible();
   const bounds = (await firstPlay.boundingBox())!;
-  const playerTop = (await page.locator(".player-bar").boundingBox())!.y;
+  await expect(page.locator(".player-bar")).toBeHidden();
+  const playerTop = (await page.locator(".mobile-nav").boundingBox())!.y;
   expect(bounds.y + bounds.height).toBeLessThan(playerTop);
   const summary = page.locator("#main-content .catalog-filter-details summary");
   await summary.focus();

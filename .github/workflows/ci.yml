@@ -27,6 +27,7 @@ jobs:
       - run: npm run db:test:b2
       - run: npm run security:repository
       - run: npm run build
+      - run: node scripts/check-garden-budget.mjs
       - run: npm run security:client
       - run: node scripts/test-fixtures.mjs
       - run: npx playwright install --with-deps chromium

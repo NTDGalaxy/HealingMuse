@@ -13,12 +13,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Headphones,
+  MoreHorizontal,
 } from "lucide-react";
 import { useApp, useOnline } from "./app-state";
 import { AuthDialog } from "./auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { AppearanceButton } from "./appearance";
+import { Dialog } from "./dialog";
 import type { Locale } from "@/lib/types";
 
 const links = [
@@ -36,6 +39,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const app = useApp();
   const online = useOnline();
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const revealFocus = (event: FocusEvent) => {
+      const element = event.target;
+      if (!(element instanceof HTMLElement) || !element.closest("#main-content")) return;
+      const overlays = [...document.querySelectorAll(".mobile-nav, .player-bar")]
+        .map((overlay) => overlay.getBoundingClientRect())
+        .filter((box) => box.height > 0);
+      const bottom = Math.min(innerHeight, ...overlays.map((box) => box.top));
+      const box = element.getBoundingClientRect();
+      if (box.bottom > bottom - 16)
+        window.scrollBy({ top: box.bottom - bottom + 24, behavior: "instant" });
+    };
+    document.addEventListener("focusin", revealFocus);
+    return () => document.removeEventListener("focusin", revealFocus);
+  }, []);
   useEffect(() => {
     if ("serviceWorker" in navigator)
       void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
@@ -96,6 +115,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
           <span className="topbar-welcome">{t(isConfigured ? "home.welcome" : "nav.preview")}</span>
           <div className="topbar-actions">
+            <AppearanceButton />
             <nav className="language-switch" aria-label={t("nav.language")}>
               {["vi", "en"].map((language) => (
                 <Link
@@ -132,19 +152,59 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <footer className="page-footer">{t("nav.footer")}</footer>
       </div>
       <nav className="mobile-nav" aria-label={t("nav.label")}>
-        {links
-          .filter(([key]) => key !== "mood")
-          .map(([key, suffix, Icon]) => (
+        {links.slice(0, 4).map(([key, suffix, Icon]) => (
+          <Link
+            key={key}
+            href={`/${locale}${suffix}`}
+            aria-current={active(suffix) ? "page" : undefined}
+          >
+            <Icon size={21} aria-hidden="true" />
+            <span>{t(`nav.${key}`)}</span>
+          </Link>
+        ))}
+        <button
+          aria-haspopup="dialog"
+          data-current={[
+            "/downloads",
+            "/mood",
+            "/settings",
+            "/admin",
+            "/privacy",
+            "/terms",
+            "/credits",
+          ].some(active)}
+          aria-expanded={more}
+          onClick={() => setMore(true)}
+        >
+          <MoreHorizontal size={21} aria-hidden="true" />
+          <span>{t("common.more")}</span>
+        </button>
+      </nav>
+      <Dialog open={more} onOpenChange={setMore} title={t("common.more")}>
+        <nav className="more-navigation" aria-label={t("nav.label")}>
+          {links.slice(4).map(([key, suffix, Icon]) => (
             <Link
               key={key}
               href={`/${locale}${suffix}`}
               aria-current={active(suffix) ? "page" : undefined}
+              onClick={() => setMore(false)}
             >
               <Icon size={21} aria-hidden="true" />
-              <span>{t(`nav.${key}`)}</span>
+              {t(`nav.${key}`)}
             </Link>
           ))}
-      </nav>
+          {app.personal?.isAdmin && (
+            <Link href={`/${locale}/admin`} onClick={() => setMore(false)}>
+              {t("nav.admin")}
+            </Link>
+          )}
+          {(["privacy", "terms", "credits"] as const).map((key) => (
+            <Link key={key} href={`/${locale}/${key}`} onClick={() => setMore(false)}>
+              {t(`nav.${key}`)}
+            </Link>
+          ))}
+        </nav>
+      </Dialog>
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {app.notice}
       </div>

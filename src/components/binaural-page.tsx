@@ -55,10 +55,6 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
   return (
     <div className={`binaural-page binaural-${config.mode}`}>
       <header className="page-heading binaural-heading">
-        <span className="binaural-eyebrow">
-          <Headphones size={18} aria-hidden="true" />
-          {t("eyebrow")}
-        </span>
         <h1>{t("title")}</h1>
         <p>{t("intro")}</p>
       </header>
@@ -98,7 +94,6 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
       >
         <div className="binaural-player-top">
           <div>
-            <p className="binaural-eyebrow">{t("yourSession")}</p>
             <h2 id="binaural-player-heading">{t(`modes.${config.mode}.purpose`)}</h2>
           </div>
           <div className="binaural-visualizer" aria-hidden="true">
@@ -111,88 +106,6 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
         <p className="binaural-state" role="status">
           {t(`states.${state.status}`)}
         </p>
-        <div className="binaural-buttons">
-          <button
-            type="button"
-            className="button"
-            disabled={
-              !session.ready || busy || (!playing && (session.backgroundLoading || durationError))
-            }
-            onClick={playing ? session.pause : session.start}
-          >
-            {playing ? (
-              <Pause size={20} aria-hidden="true" />
-            ) : (
-              <Play size={20} aria-hidden="true" />
-            )}
-            {playing ? t("pause") : paused ? t("resume") : t("start")}
-          </button>
-          <button
-            type="button"
-            className="button secondary"
-            disabled={
-              !["playing", "paused", "interrupted", "starting", "pausing"].includes(state.status)
-            }
-            onClick={session.stop}
-          >
-            <Square size={18} aria-hidden="true" />
-            {t("stop")}
-          </button>
-        </div>
-        <div className="binaural-preset-row">
-          <label htmlFor="binaural-preset">
-            {t("preset")}
-            <select
-              id="binaural-preset"
-              value={isPreset ? config.beatHz : "custom"}
-              onChange={(event) => {
-                if (event.target.value !== "custom")
-                  session.update({ beatHz: Number(event.target.value) });
-              }}
-            >
-              {mode.presets.map((frequency, index) => (
-                <option key={frequency} value={frequency}>
-                  {t(`modes.${config.mode}.preset${index}`)} · {frequency} Hz
-                </option>
-              ))}
-              {!isPreset && <option value="custom">{t("customFrequency")}</option>}
-            </select>
-          </label>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t("favoritePreset")}
-            aria-pressed={session.favorites.includes(selectedPreset)}
-            disabled={!isPreset}
-            onClick={() => session.toggleFavorite(selectedPreset)}
-          >
-            <Heart
-              size={22}
-              fill={session.favorites.includes(selectedPreset) ? "currentColor" : "none"}
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-        <dl className="binaural-frequencies">
-          <div>
-            <dt>{t("leftEar")}</dt>
-            <dd>
-              {hz.left} <small>Hz</small>
-            </dd>
-          </div>
-          <div>
-            <dt>{t("difference")}</dt>
-            <dd>
-              {hz.difference} <small>Hz</small>
-            </dd>
-          </div>
-          <div>
-            <dt>{t("rightEar")}</dt>
-            <dd>
-              {Number(hz.right.toFixed(1))} <small>Hz</small>
-            </dd>
-          </div>
-        </dl>
         <div className="binaural-session-options">
           <label htmlFor="binaural-duration">
             {t("duration")}
@@ -245,6 +158,73 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
               <small id="binaural-duration-hint">{t("durationHint")}</small>
             </label>
           )}
+        </div>
+        <div className="binaural-buttons">
+          <button
+            type="button"
+            className="button"
+            disabled={
+              !session.ready || busy || (!playing && (session.backgroundLoading || durationError))
+            }
+            onClick={playing ? session.pause : session.start}
+          >
+            {playing ? (
+              <Pause size={20} aria-hidden="true" />
+            ) : (
+              <Play size={20} aria-hidden="true" />
+            )}
+            {playing ? t("pause") : paused ? t("resume") : t("start")}
+          </button>
+          <button
+            type="button"
+            className="button secondary"
+            disabled={
+              !["playing", "paused", "interrupted", "starting", "pausing"].includes(state.status)
+            }
+            onClick={session.stop}
+          >
+            <Square size={18} aria-hidden="true" />
+            {t("stop")}
+          </button>
+        </div>
+        <p className="binaural-headphone-note">
+          <Headphones size={19} aria-hidden="true" />
+          {t("headphones")}
+        </p>
+        <p className="small muted">{t("pausePolicy")}</p>
+        <div className="binaural-preset-row">
+          <label htmlFor="binaural-preset">
+            {t("preset")}
+            <select
+              id="binaural-preset"
+              value={isPreset ? config.beatHz : "custom"}
+              onChange={(event) => {
+                if (event.target.value !== "custom")
+                  session.update({ beatHz: Number(event.target.value) });
+              }}
+            >
+              {mode.presets.map((frequency, index) => (
+                <option key={frequency} value={frequency}>
+                  {t(`modes.${config.mode}.preset${index}`)} · {frequency} Hz
+                </option>
+              ))}
+              {!isPreset && <option value="custom">{t("customFrequency")}</option>}
+            </select>
+          </label>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={t("favoritePreset")}
+            aria-pressed={session.favorites.includes(selectedPreset)}
+            disabled={!isPreset}
+            onClick={() => session.toggleFavorite(selectedPreset)}
+          >
+            <Heart
+              size={22}
+              fill={session.favorites.includes(selectedPreset) ? "currentColor" : "none"}
+              aria-hidden="true"
+            />
+          </button>
         </div>
         <div className="binaural-progress">
           <progress
@@ -302,13 +282,29 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           {volume("toneVolume", t("toneVolume"))}
           {volume("backgroundVolume", t("backgroundVolume"))}
         </div>
-        <p className="binaural-headphone-note">
-          <Headphones size={19} aria-hidden="true" />
-          {t("headphones")}
-        </p>
-        <p className="small muted">{t("pausePolicy")}</p>
         <details className="binaural-advanced">
           <summary>{t("advanced")}</summary>
+          <dl className="binaural-frequencies">
+            <div>
+              <dt>{t("leftEar")}</dt>
+              <dd>
+                {hz.left} <small>Hz</small>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("difference")}</dt>
+              <dd>
+                {hz.difference} <small>Hz</small>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("rightEar")}</dt>
+              <dd>
+                {Number(hz.right.toFixed(1))} <small>Hz</small>
+              </dd>
+            </div>
+          </dl>
+
           <label className="binaural-volume" htmlFor="binaural-carrier">
             <span>
               {t("carrier")}

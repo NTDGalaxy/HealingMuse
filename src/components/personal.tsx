@@ -10,6 +10,7 @@ import { usePlayer } from "./player";
 import type { Locale, Playlist } from "@/lib/types";
 import { formatBytes } from "@/lib/audio";
 import { api, mutation } from "@/lib/browser/api";
+import { AppearanceControls } from "./appearance";
 import { recentMoodDays } from "@/lib/wellbeing";
 
 export function AccountGate({
@@ -593,19 +594,7 @@ export function SettingsView() {
       <div className="settings-stack">
         <section className="panel">
           <h2>{t("settings.appearance")}</h2>
-          <label className="setting-row" htmlFor="calm-mode">
-            <span>
-              <strong>{t("settings.calm")}</strong>
-              <span className="muted">{t("settings.calmText")}</span>
-            </span>
-            <input
-              id="calm-mode"
-              className="switch"
-              type="checkbox"
-              checked={app.calm}
-              onChange={(e) => void app.setCalm(e.target.checked)}
-            />
-          </label>
+          <AppearanceControls />
           <div className="setting-row">
             <strong>{t("settings.language")}</strong>
             <div className="language-switch">

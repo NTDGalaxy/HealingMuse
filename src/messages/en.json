@@ -40,7 +40,7 @@
     "emptyCatalog": "The music collection is being prepared. Please come back soon.",
     "saved": "Saved",
     "external": "Opens in a new tab",
-    "more": "More options",
+    "more": "More",
     "viewAll": "See all",
     "done": "Done",
     "continue": "Continue",
@@ -80,9 +80,9 @@
   },
   "catalog": {
     "title": "Find your sound",
-    "subtitle": "A small collection of instrumentals and nature recordings, chosen with care.",
+    "subtitle": "Instrumental recordings, chosen with care. Find a melody at your own pace.",
     "search": "Search recordings",
-    "searchPlaceholder": "A melody, rain, birdsong...",
+    "searchPlaceholder": "Piano, guitar, a familiar melody...",
     "instrumental": "Instrumentals",
     "nature": "Nature sounds",
     "results": "{count} recordings to explore",
@@ -594,5 +594,18 @@
     "offlineCatalogue": "Showing recordings already downloaded on this device.",
     "pageRange": "{start}-{end} of {total} recordings",
     "returnToSession": "Back to session controls"
+  },
+  "appearance": {
+    "title": "Your garden",
+    "theme": "Appearance",
+    "system": "Follow device",
+    "day": "Day",
+    "night": "Night",
+    "garden": "Garden detail",
+    "auto": "Automatic 3D",
+    "still": "Still garden - less power and data",
+    "calm": "Calm mode",
+    "calmHelp": "Pause all decorative movement.",
+    "help": "Your choice stays on this device. Music works with every garden setting."
   }
 }

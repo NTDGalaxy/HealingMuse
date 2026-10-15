@@ -214,3 +214,69 @@ details,
   background: #dcd0e9;
   color: #382b44;
 }
+
+/* The offline room uses the same route-derived still and appearance preference. */
+:root {
+  --bg: #f3eff7;
+  --surface: #fffcff;
+  --text: #382b44;
+  --muted: #665571;
+  --green: #236553;
+  color-scheme: light;
+}
+:root[data-theme="night"] {
+  --bg: #191522;
+  --surface: #282232;
+  --text: #f5eff9;
+  --muted: #c4b6d0;
+  --green: #95d7b9;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--bg), transparent),
+    url("/gardens/cloister-day-480.avif") center/cover;
+  z-index: -1;
+  opacity: 0.45;
+}
+[data-theme="night"] body::before {
+  background-image:
+    linear-gradient(90deg, var(--bg), transparent), url("/gardens/cloister-night-480.avif");
+}
+p {
+  color: var(--muted);
+}
+a {
+  color: var(--green);
+}
+.recording,
+.player {
+  background: var(--surface);
+  color: var(--text);
+}
+.banner {
+  background: var(--surface);
+}
+button {
+  background: var(--green);
+  color: #173b2e;
+}
+:root:not([data-theme="night"]) button {
+  color: #fff;
+}
+.recording button.remove {
+  color: var(--green);
+  background: transparent;
+  border-color: var(--green);
+}
+select {
+  background: var(--surface);
+  color: var(--text);
+}

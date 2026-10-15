@@ -5,6 +5,9 @@ const option = (key, fallback) =>
   process.argv.find((value) => value.startsWith(`--${key}=`))?.slice(key.length + 3) ?? fallback;
 const base = option("base", "http://127.0.0.1:3107");
 const samples = Number(option("samples", "30"));
+const theme = option("theme", "day");
+const label = option("label", "binaural").replace(/[^a-zA-Z0-9_-]/g, "");
+if (!["day", "night"].includes(theme)) throw new Error("invalid_theme");
 if (!Number.isInteger(samples) || samples < 1 || samples > 100) throw new Error("invalid_samples");
 const observations = [];
 const browser = await chromium.launch({ headless: true });
@@ -14,9 +17,26 @@ try {
       viewport: { width: 390, height: 844 },
       serviceWorkers: "block",
     });
+    await context.addInitScript(
+      (theme) =>
+        localStorage.setItem(
+          "healingmuse-appearance-v1",
+          JSON.stringify({ appearance: theme, garden: "auto" }),
+        ),
+      theme,
+    );
     const page = await context.newPage();
     const cdp = await context.newCDPSession(page);
     await cdp.send("Network.enable");
+    const transfers = [];
+    const requests = new Map();
+    cdp.on("Network.responseReceived", ({ requestId, response }) =>
+      requests.set(requestId, { path: new URL(response.url).pathname, mime: response.mimeType }),
+    );
+    cdp.on("Network.loadingFinished", ({ requestId, encodedDataLength }) => {
+      const request = requests.get(requestId);
+      if (request) transfers.push({ ...request, bytes: encodedDataLength });
+    });
     await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
     await cdp.send("Network.emulateNetworkConditions", {
       offline: false,
@@ -104,9 +124,20 @@ try {
     await page.waitForFunction(() => window.__binauralMeasurement.ready > 0);
     await page.locator(".binaural-buttons button").first().click();
     await page.waitForFunction(() => window.__binauralMeasurement.signal > 0);
-    await page.waitForTimeout(300);
+    await page.waitForFunction(
+      () =>
+        ["ready", "still"].includes(
+          document.querySelector(".garden-canvas")?.getAttribute("data-state"),
+        ),
+      null,
+      { timeout: 12000 },
+    );
     const measurement = await page.evaluate(() => ({
       ...window.__binauralMeasurement,
+      sceneState: document.querySelector(".garden-canvas")?.getAttribute("data-state"),
+      sceneReadyMs: Number(
+        document.querySelector(".garden-canvas")?.getAttribute("data-ready-ms") || 0,
+      ),
       resources: performance.getEntriesByType("resource").map((entry) => ({
         path: new URL(entry.name).pathname,
         bytes: entry.transferSize,
@@ -121,7 +152,10 @@ try {
       cls: measurement.cls,
       interactionMs: measurement.interaction,
       errors,
-      ...(sample === 0 ? { waterfall: measurement.resources } : {}),
+      sceneState: measurement.sceneState,
+      sceneReadyMs: measurement.sceneReadyMs || null,
+      transferredBytes: transfers.reduce((sum, resource) => sum + resource.bytes, 0),
+      ...(sample === 0 ? { waterfall: measurement.resources, networkTransfers: transfers } : {}),
     });
     await context.close();
     if ((sample + 1) % 5 === 0)
@@ -136,6 +170,7 @@ const p95 = (key) =>
   [...observations.map((item) => item[key])].sort((a, b) => a - b)[Math.ceil(samples * 0.95) - 1];
 const summary = {
   samples,
+  theme,
   viewport: "390x844",
   latencyMs: 150,
   downloadMbps: 1.6,
@@ -150,7 +185,7 @@ const summary = {
 };
 await mkdir("artifacts", { recursive: true });
 await writeFile(
-  "artifacts/performance-binaural.json",
+  `artifacts/performance-${label}.json`,
   JSON.stringify({ summary, observations }, null, 2),
 );
 console.log(JSON.stringify(summary));

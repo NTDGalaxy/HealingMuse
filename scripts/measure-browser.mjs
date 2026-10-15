@@ -1,7 +1,5 @@
 import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
-import { gzipSync } from "node:zlib";
-import { readFile } from "node:fs/promises";
 const argument = (name, fallback) =>
   process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
 const base = argument("base", "http://localhost:3011");
@@ -12,7 +10,13 @@ if (!Number.isInteger(samples) || samples < 1 || samples > 100)
 const percentile = (values, p) =>
   [...values].sort((a, b) => a - b)[Math.ceil(values.length * p) - 1];
 const browser = await chromium.launch({ headless: true });
-const scenarios = ["/vi", "/vi/explore"];
+const scenarios = argument("routes", "/vi,/vi/explore").split(",");
+const theme = argument("theme", "day");
+if (
+  !["day", "night"].includes(theme) ||
+  scenarios.some((route) => !/^\/(vi|en)(\/(explore|brainwave-entrainment))?$/.test(route))
+)
+  throw new Error("Invalid measurement scenario");
 const results = [];
 try {
   for (const route of scenarios) {
@@ -22,6 +26,14 @@ try {
         viewport: { width: 390, height: 844 },
         serviceWorkers: "block",
       });
+      await context.addInitScript(
+        (theme) =>
+          localStorage.setItem(
+            "healingmuse-appearance-v1",
+            JSON.stringify({ appearance: theme, garden: "auto" }),
+          ),
+        theme,
+      );
       const page = await context.newPage();
       const cdp = await context.newCDPSession(page);
       await cdp.send("Network.enable");
@@ -62,6 +74,15 @@ try {
           true,
         );
       });
+      const transfers = [];
+      const requests = new Map();
+      cdp.on("Network.responseReceived", ({ requestId, response }) =>
+        requests.set(requestId, { path: new URL(response.url).pathname, mime: response.mimeType }),
+      );
+      cdp.on("Network.loadingFinished", ({ requestId, encodedDataLength }) => {
+        const request = requests.get(requestId);
+        if (request) transfers.push({ ...request, bytes: encodedDataLength });
+      });
       const errors = [];
       page.on("pageerror", () => errors.push("page_error"));
       await page.goto(new URL(route, base).href, { waitUntil: "domcontentloaded" });
@@ -80,8 +101,20 @@ try {
       const readiness = await page.evaluate(() => performance.now());
       await page.locator(".card-play").first().click();
       await page.waitForFunction(() => window.__metrics.playing > 0, null, { timeout: 15000 });
+      await page.waitForFunction(
+        () =>
+          ["ready", "still"].includes(
+            document.querySelector(".garden-canvas")?.getAttribute("data-state"),
+          ),
+        null,
+        { timeout: 12000 },
+      );
       const observation = await page.evaluate(() => ({
         ...window.__metrics,
+        sceneState: document.querySelector(".garden-canvas")?.getAttribute("data-state"),
+        sceneReadyMs: Number(
+          document.querySelector(".garden-canvas")?.getAttribute("data-ready-ms") || 0,
+        ),
         resources: performance.getEntriesByType("resource").map((r) => ({
           path: new URL(r.name).pathname,
           start: r.startTime,
@@ -97,7 +130,10 @@ try {
         cls: observation.cls,
         interactionMs: observation.interaction,
         errors,
-        ...(sample === 0 ? { waterfall: observation.resources } : {}),
+        sceneState: observation.sceneState,
+        sceneReadyMs: observation.sceneReadyMs || null,
+        transferredBytes: transfers.reduce((sum, resource) => sum + resource.bytes, 0),
+        ...(sample === 0 ? { waterfall: observation.resources, networkTransfers: transfers } : {}),
       });
       await context.close();
       if ((sample + 1) % 5 === 0)
@@ -141,6 +177,7 @@ await mkdir("artifacts", { recursive: true });
 const report = {
   measuredAt: new Date().toISOString(),
   label,
+  theme,
   environment: new URL(base).hostname,
   throttle: {
     width: 390,
@@ -159,14 +196,4 @@ const report = {
   results,
 };
 await writeFile(`artifacts/performance-${label}.json`, JSON.stringify(report, null, 2) + "\n");
-// Report source compression as a conservative motion-specific ceiling, separate from Next's shared runtime.
-const motionBytes = gzipSync(await readFile("src/components/scenery.tsx")).length;
-console.log(
-  JSON.stringify({
-    event: "motion_budget",
-    sourceGzipBytes: motionBytes,
-    budgetBytes: 10240,
-    withinBudget: motionBytes <= 10240,
-  }),
-);
 if (samples >= 30 && !report.performanceGate) process.exitCode = 1;

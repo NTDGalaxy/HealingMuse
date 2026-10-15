@@ -7,6 +7,7 @@ import { AppProvider } from "./app-state";
 import { PlayerProvider } from "./player";
 import { Shell } from "./shell";
 import { BinauralProvider } from "./binaural-provider";
+import { AppearanceProvider } from "./appearance";
 export function Application({
   initialMessages,
   initialLocale,
@@ -47,13 +48,15 @@ export function Application({
       messages={translation.messages}
       timeZone="Asia/Ho_Chi_Minh"
     >
-      <AppProvider tracks={[]} collections={[]}>
-        <PlayerProvider>
-          <BinauralProvider>
-            <Shell>{children}</Shell>
-          </BinauralProvider>
-        </PlayerProvider>
-      </AppProvider>
+      <AppearanceProvider>
+        <AppProvider tracks={[]} collections={[]}>
+          <PlayerProvider>
+            <BinauralProvider>
+              <Shell>{children}</Shell>
+            </BinauralProvider>
+          </PlayerProvider>
+        </AppProvider>
+      </AppearanceProvider>
     </NextIntlClientProvider>
   );
 }

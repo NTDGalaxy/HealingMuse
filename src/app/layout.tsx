@@ -4,6 +4,8 @@ import { Application } from "@/components/application";
 import "./globals.css";
 import "./sanctuary.css";
 import "./binaural.css";
+import "./botanical.css";
+import { appearanceBootstrap } from "@/components/appearance";
 import "@fontsource/be-vietnam-pro/vietnamese-400.css";
 import "@fontsource/be-vietnam-pro/vietnamese-500.css";
 import "@fontsource/be-vietnam-pro/vietnamese-600.css";
@@ -12,7 +14,7 @@ import "@fontsource/be-vietnam-pro/latin-500.css";
 import "@fontsource/be-vietnam-pro/latin-600.css";
 export const metadata: Metadata = {
   title: { default: "HealingMuse - A little room to breathe", template: "%s | HealingMuse" },
-  description: "Human-curated music and nature sounds for recreation and emotional support.",
+  description: "Human-curated instrumental music for recreation and emotional support.",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "HealingMuse" },
   manifest: "/manifest.webmanifest",
 };
@@ -21,7 +23,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: appearanceBootstrap }} />
+      </head>
       <body>
         <Application initialLocale={locale} initialMessages={messages}>
           {children}

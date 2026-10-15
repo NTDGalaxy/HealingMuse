@@ -18,6 +18,9 @@ const hash = createHash("sha256");
 for (const path of [
   "public/offline/index.html",
   "public/offline/app.js",
+  "public/offline/appearance.js",
+  "public/gardens/cloister-day-480.avif",
+  "public/gardens/cloister-night-480.avif",
   "public/offline/style.css",
   "public/offline/vi.json",
   "public/offline/en.json",

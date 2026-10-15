@@ -16,6 +16,9 @@ test("a waiting shell update preserves downloaded playback and offline startup",
   for (const path of [
     "/offline/index.html",
     "/offline/app.js",
+    "/offline/appearance.js",
+    "/gardens/cloister-day-480.avif",
+    "/gardens/cloister-night-480.avif",
     "/offline/style.css",
     "/offline/en.json",
     "/offline/vi.json",
@@ -47,11 +50,13 @@ test("a waiting shell update preserves downloaded playback and offline startup",
                 ? "application/json"
                 : path.endsWith(".mp3")
                   ? "audio/mpeg"
-                  : path.endsWith(".png")
-                    ? "image/png"
-                    : path.endsWith(".woff2")
-                      ? "font/woff2"
-                      : "text/html",
+                  : path.endsWith(".avif")
+                    ? "image/avif"
+                    : path.endsWith(".png")
+                      ? "image/png"
+                      : path.endsWith(".woff2")
+                        ? "font/woff2"
+                        : "text/html",
         );
         response.end(file);
       }

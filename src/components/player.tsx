@@ -482,7 +482,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         onError={() => setError(t("player.playbackError"))}
       />
       <section
-        style={controlsHidden ? { display: "none" } : undefined}
+        style={controlsHidden || !current ? { display: "none" } : undefined}
         className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
         aria-label={t("player.nowPlaying")}
       >
