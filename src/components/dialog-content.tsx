@@ -20,17 +20,17 @@ export default function DialogContent({
   wide?: boolean;
 }) {
   const t = useTranslations("common");
-  const returnFocus = useRef<HTMLElement | null>(
-    typeof document !== "undefined" && document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null,
-  );
+  const returnFocus = useRef<HTMLElement | null>(null);
   return (
     <Primitive.Root open={open} onOpenChange={onOpenChange}>
       <Primitive.Portal>
         <Primitive.Overlay className="dialog-overlay" />
         <Primitive.Content
           className={`dialog-content ${wide ? "dialog-wide" : ""}`}
+          onOpenAutoFocus={() => {
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             if (returnFocus.current?.isConnected) returnFocus.current.focus();

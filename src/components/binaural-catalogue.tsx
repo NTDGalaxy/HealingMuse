@@ -164,7 +164,10 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
       </p>
       <fieldset disabled={busy} aria-busy={busy} className="binaural-tracks">
         <legend className="sr-only">{t("binaural.chooseMusic")}</legend>
-        <div className="track-grid">
+        <div
+          className="track-grid"
+          data-result-key={JSON.stringify([query, offset, busy, localMode])}
+        >
           {visible.items.map((track) => (
             <div key={track.id} className="binaural-recording">
               <TrackCard

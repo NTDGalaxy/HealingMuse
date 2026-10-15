@@ -1,0 +1,350 @@
+/* Botanical glass: translucent material, reflective edges and stable listening targets. */
+:root {
+  --glass: #fffcffc7;
+  --panel-glass: #fffcffb8;
+  --reading-glass: #fffcffe6;
+  --glass-highlight: #ffffffb8;
+  --glass-shadow: #382b4414;
+  --glass-reflection: #ffffff54;
+  --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-theme="night"] {
+  --glass: #282232c7;
+  --panel-glass: #282232b8;
+  --reading-glass: #282232e8;
+  --glass-highlight: #e8d9f52e;
+  --glass-shadow: #100c1a33;
+  --glass-reflection: #c1a6dd12;
+}
+
+/* Moving scenery remains visible through scrolling surfaces without a blur pass per card. */
+.track-card,
+.panel,
+.empty-state,
+.storage-panel,
+.admin-item,
+.release-review,
+.binaural-page :is(.binaural-player, .binaural-background, .binaural-preferences),
+.binaural-mode {
+  background-color: var(--panel-glass);
+  background-image: linear-gradient(145deg, var(--glass-reflection), transparent 65%);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-highlight),
+    0 12px 32px var(--glass-shadow);
+}
+.featured-recording .track-card {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-highlight),
+    0 16px 40px var(--glass-shadow);
+}
+.legal-page,
+.credit-list,
+.garden-credits,
+.binaural-education {
+  background: var(--reading-glass);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+.track-card:hover {
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-highlight),
+    0 16px 36px var(--glass-shadow);
+}
+.binaural-page .track-selected,
+.binaural-mode.selected {
+  background-color: color-mix(in srgb, var(--jade-tint) 88%, transparent);
+  box-shadow: inset 0 0 0 2px var(--green);
+}
+.search-box,
+.discovery-categories a,
+.filter-chip,
+.goal-card {
+  background: var(--glass);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+.filter-chip[aria-pressed="true"] {
+  background: var(--jade-tint);
+}
+.sidebar,
+.mobile-nav,
+.player-bar {
+  backdrop-filter: blur(16px) saturate(1.15);
+}
+.sidebar-note {
+  background: color-mix(in srgb, var(--tint) 68%, transparent);
+}
+.dialog-content {
+  background: var(--reading-glass);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-highlight),
+    0 24px 64px #1915223d;
+}
+.dialog-overlay {
+  background: #19152270;
+}
+
+/* Comfortable task groups, with no empty grid cells or fixed card heights. */
+.settings-stack {
+  max-width: 1040px;
+  gap: 24px;
+}
+.settings-stack .panel {
+  min-width: 0;
+  margin: 0;
+}
+.appearance-controls .setting-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+}
+.appearance-controls .setting-row .switch {
+  margin: 0;
+}
+.track-grid {
+  align-items: stretch;
+}
+.track-card {
+  display: flex;
+  flex-direction: column;
+}
+.track-description {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.track-bottom {
+  margin-top: auto;
+  padding-top: 10px;
+}
+.featured-recording .track-description {
+  display: block;
+}
+.featured-recording .track-bottom {
+  margin-top: 8px;
+  padding-top: 0;
+}
+.home-more-recordings .track-description {
+  min-width: 0;
+}
+@media (min-width: 1100px) {
+  .settings-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .settings-stack > .panel:first-child {
+    grid-column: 1 / -1;
+  }
+  .settings-stack .appearance-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-stack .appearance-controls > .setting-row {
+    grid-column: 1 / -1;
+  }
+}
+
+/* CSS starts headings on insertion, before delayed decorative JavaScript can reposition them. */
+.page-heading,
+.discovery-intro {
+  animation: heading-arrive 550ms var(--motion-arrive);
+}
+/* Motion has one owner per target: CSS headings/controls/dialogs, GSAP surfaces and artwork. */
+:is(
+  .button,
+  .icon-button,
+  .card-play,
+  .play-button,
+  .main-play,
+  .filter-chip,
+  .goal-card,
+  .binaural-mode,
+  .account-button,
+  .more-navigation a,
+  .side-nav a,
+  .mobile-nav a,
+  .mobile-nav button,
+  .language-switch a
+) {
+  transition:
+    scale 140ms var(--motion-arrive),
+    background-color 180ms var(--motion-arrive),
+    color 180ms var(--motion-arrive),
+    border-color 180ms var(--motion-arrive);
+}
+:is(
+    .button,
+    .icon-button,
+    .card-play,
+    .play-button,
+    .main-play,
+    .filter-chip,
+    .goal-card,
+    .binaural-mode,
+    .account-button,
+    .more-navigation a,
+    .side-nav a,
+    .mobile-nav a,
+    .mobile-nav button,
+    .language-switch a
+  ):active:not(:disabled) {
+  scale: 0.97;
+}
+.icon-button[aria-pressed="true"] svg,
+.track-selected .card-play svg,
+.binaural-mode.selected input {
+  animation: choice-confirm 260ms var(--motion-arrive);
+}
+details[open] > :is(.catalog-facets, .binaural-frequencies) {
+  animation: disclosure-arrive 260ms var(--motion-arrive);
+}
+.dialog-overlay[data-state="open"] {
+  animation: veil-arrive 200ms var(--motion-arrive);
+}
+.dialog-overlay[data-state="closed"] {
+  animation: veil-leave 150ms var(--motion-arrive);
+}
+.dialog-content[data-state="open"] {
+  animation: dialog-arrive 360ms var(--motion-arrive);
+}
+.dialog-content[data-state="closed"] {
+  animation: dialog-leave 150ms var(--motion-arrive);
+}
+.dialog-content[data-state="open"] .more-navigation a {
+  animation: disclosure-arrive 320ms var(--motion-arrive) both;
+}
+.dialog-content[data-state="open"] .form-stack {
+  animation: disclosure-arrive 260ms var(--motion-arrive);
+}
+.more-navigation a:nth-child(2) {
+  animation-delay: 35ms;
+}
+.more-navigation a:nth-child(3) {
+  animation-delay: 70ms;
+}
+.more-navigation a:nth-child(n + 4) {
+  animation-delay: 105ms;
+}
+
+@keyframes choice-confirm {
+  from {
+    scale: 0.78;
+  }
+  60% {
+    scale: 1.12;
+  }
+  to {
+    scale: 1;
+  }
+}
+@keyframes heading-arrive {
+  from {
+    translate: 0 14px;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+@keyframes disclosure-arrive {
+  from {
+    opacity: 0.94;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes veil-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes veil-leave {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dialog-arrive {
+  from {
+    translate: 0 14px;
+    scale: 0.985;
+  }
+  to {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes dialog-leave {
+  to {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.99;
+  }
+}
+
+/* The prehydration root preference also covers portals outside .app-shell. */
+.calm-mode *,
+:root[data-calm="true"] * {
+  animation: none !important;
+  transition: none !important;
+}
+.calm-mode :active,
+:root[data-calm="true"] :active {
+  scale: none !important;
+}
+@media (max-width: 600px) {
+  .home-more-recordings .card-play {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    border-radius: 0;
+    padding-inline: 5px;
+    gap: 5px;
+    white-space: nowrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  :active {
+    scale: none !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme="night"] {
+    --glass: var(--surface);
+    --panel-glass: var(--surface);
+    --reading-glass: var(--surface);
+    --glass-reflection: transparent;
+  }
+  .sidebar,
+  .topbar,
+  .mobile-nav,
+  .player-bar,
+  .search-box,
+  .dialog-content {
+    background: var(--surface);
+    backdrop-filter: none;
+  }
+  .sidebar-note {
+    background: var(--tint);
+  }
+  .binaural-page .track-selected,
+  .binaural-mode.selected {
+    background: var(--jade-tint);
+  }
+}
