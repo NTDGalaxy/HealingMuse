@@ -163,7 +163,7 @@ export function AuthDialog() {
           </button>
         </div>
       ) : (
-        <form onSubmit={submit} className="form-stack" aria-busy={busy}>
+        <form key={`${method}-${sent}`} onSubmit={submit} className="form-stack" aria-busy={busy}>
           <label htmlFor="auth-email">{t("auth.email")}</label>
           <input
             id="auth-email"

@@ -15,7 +15,7 @@ const Context = createContext<
   | null
 >(null);
 const key = "healingmuse-appearance-v1";
-export const appearanceBootstrap = `(function(){try{var p=JSON.parse(localStorage.getItem('${key}')||'{}');var a=['day','night'].includes(p.appearance)?p.appearance:'system';document.documentElement.dataset.theme=a==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'night':'day'):a;document.documentElement.dataset.garden=p.garden==='still'?'still':'auto';}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'night':'day';}})();`;
+export const appearanceBootstrap = `(function(){try{document.documentElement.dataset.calm=String(localStorage.getItem('healingmuse-calm')==='true');var p=JSON.parse(localStorage.getItem('${key}')||'{}');var a=['day','night'].includes(p.appearance)?p.appearance:'system';document.documentElement.dataset.theme=a==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'night':'day'):a;document.documentElement.dataset.garden=p.garden==='still'?'still':'auto';}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'night':'day';}})();`;
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);

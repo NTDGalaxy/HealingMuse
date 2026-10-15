@@ -5,6 +5,7 @@ import "./globals.css";
 import "./sanctuary.css";
 import "./binaural.css";
 import "./botanical.css";
+import "./interaction.css";
 import { appearanceBootstrap } from "@/components/appearance";
 import "@fontsource/be-vietnam-pro/vietnamese-400.css";
 import "@fontsource/be-vietnam-pro/vietnamese-500.css";

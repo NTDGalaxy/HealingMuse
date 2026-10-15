@@ -428,7 +428,7 @@ export function ExploreView({
           <p className="results-note" role="status">
             {pending ? t("common.loading") : t("catalog.results", { count: initialPage.total })}
           </p>
-          <div className="track-grid">
+          <div className="track-grid" data-result-key={JSON.stringify(query)}>
             {tracks.map((track) => (
               <TrackCard
                 key={track.id}

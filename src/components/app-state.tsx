@@ -121,6 +121,7 @@ export function AppProvider({
       if (version === requestVersion.current && data.profile.id === userId.current) {
         setPersonal(data);
         setCalmState(data.profile.calm_mode);
+        document.documentElement.dataset.calm = String(data.profile.calm_mode);
         return data;
       }
     } catch (e) {
@@ -182,7 +183,9 @@ export function AppProvider({
       .catch(() => setDownloadError(t("downloads.unsupported")));
     void Promise.resolve().then(() => {
       try {
-        setCalmState(localStorage.getItem("healingmuse-calm") === "true");
+        const storedCalm = localStorage.getItem("healingmuse-calm") === "true";
+        setCalmState(storedCalm);
+        document.documentElement.dataset.calm = String(storedCalm);
       } catch {
         /* The setting remains available for this visit. */
       }
@@ -260,6 +263,7 @@ export function AppProvider({
   };
   const setCalm = async (value: boolean) => {
     setCalmState(value);
+    document.documentElement.dataset.calm = String(value);
     try {
       localStorage.setItem("healingmuse-calm", String(value));
     } catch {

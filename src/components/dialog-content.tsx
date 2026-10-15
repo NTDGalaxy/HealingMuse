@@ -3,6 +3,7 @@ import * as Primitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRef } from "react";
+import { useApp } from "./app-state";
 
 export default function DialogContent({
   open,
@@ -20,17 +21,19 @@ export default function DialogContent({
   wide?: boolean;
 }) {
   const t = useTranslations("common");
-  const returnFocus = useRef<HTMLElement | null>(
-    typeof document !== "undefined" && document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null,
-  );
+  const { calm } = useApp();
+  const returnFocus = useRef<HTMLElement | null>(null);
   return (
     <Primitive.Root open={open} onOpenChange={onOpenChange}>
       <Primitive.Portal>
-        <Primitive.Overlay className="dialog-overlay" />
+        <Primitive.Overlay className="dialog-overlay" data-calm={calm || undefined} />
         <Primitive.Content
           className={`dialog-content ${wide ? "dialog-wide" : ""}`}
+          data-calm={calm || undefined}
+          onOpenAutoFocus={() => {
+            returnFocus.current =
+              document.activeElement instanceof HTMLElement ? document.activeElement : null;
+          }}
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             if (returnFocus.current?.isConnected) returnFocus.current.focus();
