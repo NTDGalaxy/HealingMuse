@@ -19,8 +19,16 @@ const owner = "10000000-0000-4000-8000-000000000001",
 test.beforeAll(async () => {
   server = await createServer({
     configFile: false,
+    cacheDir: "node_modules/.vite/personal-features",
+    optimizeDeps: { entries: ["tests/browser-fixtures/index.html"] },
     plugins: [react()],
-    server: { host: "127.0.0.1", port: 0 },
+    server: {
+      host: "127.0.0.1",
+      port: 0,
+      // These fixtures are immutable during a run; avoid scanning local media and build output.
+      watch: null,
+      warmup: { clientFiles: ["tests/browser-fixtures/main.tsx"] },
+    },
     resolve: {
       alias: [
         { find: "@/lib/supabase/client", replacement: resolve("tests/browser-fixtures/auth.ts") },

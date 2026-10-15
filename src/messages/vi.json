@@ -515,14 +515,10 @@
     "carrier": "Tần số âm bên trái",
     "frequencyExplanation": "Tần số bên phải bằng tần số bên trái cộng độ chênh đã chọn. Các con số điều chỉnh âm thanh, không đo trạng thái não.",
     "backgroundTitle": "Nhạc nền tùy chọn",
-    "backgroundHint": "Chọn một bản nhạc không lời có sẵn hoặc bản đã tải xuống. Thay nhạc sẽ tạm dừng phiên nghe; chọn Tiếp tục nghe khi sẵn sàng.",
+    "backgroundHint": "Duyệt toàn bộ kho nhạc, tìm kiếm và lọc như trang Khám phá. Chọn nhạc nền sẽ tạm dừng phiên; nhấn Tiếp tục khi sẵn sàng.",
     "none": "Chỉ âm binaural",
-    "searchLabel": "Tìm nhạc không lời làm nền",
-    "search": "Tìm nhạc",
     "chooseMusic": "Bản thu làm nền",
     "downloaded": "Nghe được ngoại tuyến",
-    "moreMusic": "Thêm nhạc không lời",
-    "musicSearchError": "Chưa tải được nhạc. Hãy tìm lại hoặc chỉ nghe âm binaural.",
     "backgroundUnavailable": "Bản thu đã chọn hiện không khả dụng",
     "backgroundError": "Chưa phát được nhạc nền. Hãy thử lại, chọn bản đã tải xuống hoặc chỉ nghe âm binaural. Các điều khiển âm binaural vẫn hoạt động.",
     "retryMusic": "Chuẩn bị lại nhạc nền",
@@ -592,6 +588,11 @@
       }
     },
     "engineError": "Không tải được bộ điều khiển nghe. Hãy kết nối lại và thử lần nữa, hoặc nghe nhạc thông thường.",
-    "retryEngine": "Tải lại bộ điều khiển nghe"
+    "retryEngine": "Tải lại bộ điều khiển nghe",
+    "useBackground": "Chọn {title} làm nhạc nền",
+    "mixUnsupported": "Bản thu này sử dụng trình phát bên ngoài nên không thể phối cùng âm binaural.",
+    "offlineCatalogue": "Đang hiển thị các bản thu đã tải xuống thiết bị này.",
+    "pageRange": "{start}-{end} trong tổng số {total} bản thu",
+    "returnToSession": "Về bộ điều khiển phiên nghe"
   }
 }
