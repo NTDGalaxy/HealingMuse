@@ -592,7 +592,7 @@ export function SettingsView() {
     <>
       <PageHeading title={t("settings.title")} subtitle={t("settings.subtitle")} />
       <div className="settings-stack">
-        <section className="panel">
+        <section className="panel settings-appearance">
           <h2>{t("settings.appearance")}</h2>
           <AppearanceControls />
           <div className="setting-row">
@@ -611,51 +611,62 @@ export function SettingsView() {
             </div>
           </div>
         </section>
-        <section className="panel">
+        <section className={`panel settings-account${app.user ? "" : " settings-account-guest"}`}>
           <h2>{t("settings.account")}</h2>
           {app.user ? (
             <>
-              <p>{app.user.email}</p>
-              <Link className="text-link" href={`/${locale}/reset-password`}>
-                {t("auth.managePassword")}
-              </Link>
-              <button className="button secondary" onClick={() => void app.signOut()}>
-                {t("auth.signOut")}
-              </button>
+              <p className="settings-identity">{app.user.email}</p>
+              <div className="settings-actions">
+                <Link className="text-link" href={`/${locale}/reset-password`}>
+                  {t("auth.managePassword")}
+                </Link>
+                <button className="button secondary" onClick={() => void app.signOut()}>
+                  {t("auth.signOut")}
+                </button>
+              </div>
+              <div className="settings-account-footer">
+                <button className="button secondary danger" onClick={() => setDeleting(true)}>
+                  {t("settings.deleteAccount")}
+                </button>
+              </div>
             </>
           ) : (
             <>
               <p>{t("settings.guestText")}</p>
-              <button className="button" onClick={app.openAuth}>
-                {t("nav.signIn")}
-              </button>
+              <div className="settings-actions">
+                <button className="button" onClick={app.openAuth}>
+                  {t("nav.signIn")}
+                </button>
+              </div>
             </>
           )}
         </section>
         {app.user && (
-          <section className="panel">
+          <section className="panel settings-privacy">
             <h2>{t("settings.privacy")}</h2>
             <p>{t("mood.consentText")}</p>
             <p className="muted">
               {t(app.personal?.profile.mood_consent_at ? "settings.enabled" : "settings.disabled")}
             </p>
-            <button
-              className="button secondary"
-              disabled={!online}
-              onClick={() =>
-                app.personal?.profile.mood_consent_at
-                  ? setRevoke(true)
-                  : void app.perform("/api/me", { moodConsent: true }, "PATCH")
-              }
-            >
-              {t(app.personal?.profile.mood_consent_at ? "mood.revoke" : "mood.enable")}
-            </button>
-            <Link className="text-link" href={`/${locale}/mood`}>
-              {t("nav.mood")}
-            </Link>
+            <div className="settings-actions">
+              <button
+                className="button secondary"
+                disabled={!online}
+                onClick={() =>
+                  app.personal?.profile.mood_consent_at
+                    ? setRevoke(true)
+                    : void app.perform("/api/me", { moodConsent: true }, "PATCH")
+                }
+              >
+                {t(app.personal?.profile.mood_consent_at ? "mood.revoke" : "mood.enable")}
+              </button>
+              <Link className="text-link" href={`/${locale}/mood`}>
+                {t("nav.mood")}
+              </Link>
+            </div>
           </section>
         )}
-        <section className="panel">
+        <section className="panel settings-install">
           <h2>{t("settings.install")}</h2>
           <p>{t("settings.installText")}</p>
           {install ? (
@@ -673,13 +684,6 @@ export function SettingsView() {
             <p className="muted small">{t("settings.installManual")}</p>
           )}
         </section>
-        {app.user && (
-          <section className="panel">
-            <button className="button secondary danger" onClick={() => setDeleting(true)}>
-              {t("settings.deleteAccount")}
-            </button>
-          </section>
-        )}
       </div>
       {app.error && (
         <p className="error" role="alert">

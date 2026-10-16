@@ -98,9 +98,13 @@ for (const locale of ["en", "vi"] as const) {
     );
     await password.fill("synthetic password only");
     const show = dialog.getByRole("button", { name: messages.auth.showPassword, exact: true });
-    const bounds = await show.boundingBox();
-    expect(bounds!.width).toBeGreaterThanOrEqual(44);
-    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    // Measure the usable target after the dialog's scale entrance has settled.
+    await expect
+      .poll(async () => {
+        const bounds = await show.boundingBox();
+        return bounds !== null && bounds.width >= 44 && bounds.height >= 44;
+      })
+      .toBe(true);
     await show.click();
     await expect(password).toHaveAttribute("type", "text");
     await dialog.getByRole("button", { name: messages.auth.hidePassword, exact: true }).click();
@@ -719,6 +723,33 @@ for (const locale of ["vi", "en"] as const)
         await page.setViewportSize({ width, height: 900 });
         for (const view of ["library", "mood", "settings", "admin"]) {
           await page.getByRole("button", { name: view, exact: true }).click();
+          if (view === "settings") {
+            const account = await page.locator(".settings-account").boundingBox();
+            const privacy = await page.locator(".settings-privacy").boundingBox();
+            const install = await page.locator(".settings-install").boundingBox();
+            if (width >= 1100) {
+              expect(account!.y).toBeCloseTo(privacy!.y, 0);
+              expect(account!.height).toBeCloseTo(privacy!.height, 0);
+              expect(install!.width).toBeCloseTo(account!.width + privacy!.width + 24, 0);
+            } else {
+              expect(privacy!.y).toBeGreaterThanOrEqual(account!.y + account!.height + 23);
+              expect(install!.width).toBeCloseTo(account!.width, 0);
+            }
+            await expect(page.locator(".settings-account .danger")).toHaveCount(1);
+            for (const actions of await page.locator(".settings-actions").all()) {
+              const bounds = await actions.locator(":scope > *").evaluateAll((elements) =>
+                elements.map((element) => {
+                  const { x, y, width, height } = element.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+              );
+              expect(bounds.every((box) => box.height >= 44)).toBe(true);
+              expect(
+                bounds[1].x >= bounds[0].x + bounds[0].width + 12 ||
+                  bounds[1].y >= bounds[0].y + bounds[0].height + 12,
+              ).toBe(true);
+            }
+          }
           expect(
             await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
           ).toBe(true);
