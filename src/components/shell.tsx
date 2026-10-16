@@ -43,7 +43,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const revealFocus = (event: FocusEvent) => {
       const element = event.target;
-      if (!(element instanceof HTMLElement) || !element.closest("#main-content")) return;
+      // Text clicks focus the tabindex=-1 main container. Its bottom is the whole page,
+      // not a covered control. Leave pointer focus and skip-link targets to the browser.
+      if (
+        !(element instanceof HTMLElement) ||
+        element.id === "main-content" ||
+        !element.closest("#main-content") ||
+        !element.matches(":focus-visible")
+      )
+        return;
       const overlays = [...document.querySelectorAll(".mobile-nav, .player-bar")]
         .map((overlay) => overlay.getBoundingClientRect())
         .filter((box) => box.height > 0);

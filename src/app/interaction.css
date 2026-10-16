@@ -88,7 +88,7 @@
   background: #19152270;
 }
 
-/* Comfortable task groups, with no empty grid cells or fixed card heights. */
+/* Settings follow the task order: appearance, account/privacy, installation. */
 .settings-stack {
   max-width: 1040px;
   gap: 24px;
@@ -96,6 +96,46 @@
 .settings-stack .panel {
   min-width: 0;
   margin: 0;
+}
+.settings-account,
+.settings-privacy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.settings-identity {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 16px;
+  max-width: 100%;
+}
+.settings-actions > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.settings-account-footer {
+  align-self: stretch;
+  margin-top: auto;
+  padding-top: 24px;
+}
+.settings-account-footer::before {
+  content: "";
+  display: block;
+  border-top: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+.settings-install p {
+  max-width: 70ch;
+}
+.settings-install p + p,
+.settings-install p + .button {
+  margin-top: 12px;
 }
 .appearance-controls .setting-row {
   display: grid;
@@ -135,15 +175,18 @@
   .settings-stack {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    align-items: stretch;
   }
-  .settings-stack > .panel:first-child {
+  .settings-appearance,
+  .settings-account-guest,
+  .settings-install {
     grid-column: 1 / -1;
   }
   .settings-stack .appearance-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .settings-stack .appearance-controls > .setting-row {
+  .settings-stack .appearance-controls > .setting-row,
+  .settings-stack .appearance-controls > p {
     grid-column: 1 / -1;
   }
 }
