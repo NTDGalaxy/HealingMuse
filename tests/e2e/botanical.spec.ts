@@ -95,6 +95,23 @@ for (const locale of ["en", "vi"] as const)
     });
   }
 
+test("stored Still, Calm and reduced motion hydrate the server markup without a mismatch", async ({
+  page,
+  appearance,
+}) => {
+  // The motion policy reads the live preferences during hydration; markup must never follow it.
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await appearance({ theme: "night", garden: "still", calm: true });
+  await page.goto("/en");
+  const shell = new Shell(page);
+  await shell.expectGardenState("still");
+  await new Recordings(page).featuredPlay.click();
+  await expectPlaying(page);
+  expect(errors).toEqual([]);
+});
+
 test("global appearance persists and More restores keyboard focus", async ({ page }) => {
   const shell = new Shell(page);
   await page.setViewportSize({ width: 390, height: 844 });

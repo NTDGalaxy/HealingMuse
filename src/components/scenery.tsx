@@ -9,15 +9,12 @@ import {
   type RendererEvent,
 } from "@/lib/garden/protocol";
 import type { Garden } from "@/lib/garden/scene";
-import { usePreference, usePreferencesStore } from "./appearance";
+import { usePreference } from "./appearance";
+import { useMotionPolicy } from "./motion-policy";
 const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
 export function Scenery({ pathname }: { pathname: string }) {
-  const preferences = usePreferencesStore();
+  const policy = useMotionPolicy();
   const theme = usePreference((value) => value.theme);
-  const calm = usePreference((value) => value.calm);
-  const still = usePreference((value) => value.garden === "still");
-  const reducedMotion = usePreference((value) => value.reducedMotion);
-  const saveData = usePreference((value) => value.saveData);
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null),
     worker = useRef<Worker | null>(null);
@@ -98,10 +95,7 @@ export function Scenery({ pathname }: { pathname: string }) {
       clear();
       delete element.dataset.readyMs;
       delete element.dataset.quality;
-      // Read the live snapshot: right after hydration the rendered values are still the
-      // server defaults, and a stored Calm or Still must never start the 3D scene.
-      const current = preferences.getSnapshot();
-      if (current.calm || current.reducedMotion || current.garden === "still" || current.saveData) {
+      if (!policy.scene) {
         poster();
         return;
       }
@@ -162,8 +156,8 @@ export function Scenery({ pathname }: { pathname: string }) {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", visibility);
     };
-    // Each preference is a dependency so a change restarts or stills the scene.
-  }, [preferences, calm, still, reducedMotion, saveData]);
+    // A policy change restarts or stills the scene.
+  }, [policy.scene]);
   return (
     <>
       <div
@@ -194,7 +188,7 @@ export function Scenery({ pathname }: { pathname: string }) {
         ))}
         <div className="garden-canvas" ref={host} data-state="starting" />
       </div>
-      <GardenMotion pathname={pathname} calm={calm} still={still} />
+      <GardenMotion pathname={pathname} />
     </>
   );
 }
