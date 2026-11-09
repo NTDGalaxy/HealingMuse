@@ -3,161 +3,82 @@ import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { gardenForPath } from "@/lib/garden/config";
 import {
-  gardenProtocol,
-  readWorkerMessage,
-  type HostCommand,
-  type RendererEvent,
-} from "@/lib/garden/protocol";
-import type { Garden } from "@/lib/garden/scene";
+  createGardenController,
+  type GardenController,
+  type GardenState,
+} from "@/lib/garden/controller";
+import type { SceneSpec } from "@/lib/garden/protocol";
+import { mainThreadRenderer, workerRenderer } from "@/lib/garden/renderers";
 import { usePreference } from "./appearance";
 import { useMotionPolicy } from "./motion-policy";
 const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
+
+const hostStates: Record<GardenState["phase"], string> = {
+  idle: "starting",
+  waiting: "starting",
+  starting: "starting",
+  ready: "ready",
+  degraded: "ready",
+  poster: "still",
+};
+const running = (state: GardenState) => state.phase === "ready" || state.phase === "degraded";
+
+/** Mirrors the controller state onto the host for its styles, the tests and the perf harness. */
+function reflect(element: HTMLElement, state: GardenState, previous: GardenState) {
+  const data = element.dataset;
+  data.state = hostStates[state.phase];
+  if ("renderer" in state) data.renderer = state.renderer;
+  else delete data.renderer;
+  if (!running(state)) delete data.readyMs;
+  else if (!running(previous)) data.readyMs = String(Math.round(performance.now()));
+  const tier = "tier" in state ? state.tier : null;
+  if (tier === null) delete data.quality;
+  else data.quality = String(tier);
+}
+
 export function Scenery({ pathname }: { pathname: string }) {
   const policy = useMotionPolicy();
   const theme = usePreference((value) => value.theme);
   const garden = gardenForPath(pathname);
-  const host = useRef<HTMLDivElement>(null),
-    worker = useRef<Worker | null>(null);
-  const renderer = useRef<Garden | null>(null);
-  const latest = useRef({ garden, theme });
+  const host = useRef<HTMLDivElement>(null);
+  const controller = useRef<GardenController | null>(null);
+  const scene = useRef<SceneSpec>({ garden, theme });
   useEffect(() => {
-    latest.current = { garden, theme };
-    worker.current?.postMessage({ type: "scene", scene: latest.current } satisfies HostCommand);
-    renderer.current?.change(latest.current);
+    scene.current = { garden, theme };
+    controller.current?.setScene(scene.current);
   }, [garden, theme]);
   useEffect(() => {
     const element = host.current;
     if (!element) return;
-    let stopped = false,
-      activeCanvas: HTMLCanvasElement | null = null,
-      timeout: ReturnType<typeof setTimeout> | undefined;
-    const clear = () => {
-      clearTimeout(timeout);
-      worker.current?.terminate();
-      worker.current = null;
-      renderer.current?.dispose();
-      renderer.current = null;
-      activeCanvas?.remove();
-      activeCanvas = null;
-    };
-    const poster = () => {
-      if (stopped) return;
-      clear();
-      element.dataset.state = "still";
-      delete element.dataset.readyMs;
-      delete element.dataset.renderer;
-    };
-    const canvas = () => {
-      activeCanvas = document.createElement("canvas");
-      activeCanvas.setAttribute("aria-hidden", "true");
-      element.append(activeCanvas);
-      return activeCanvas;
-    };
-    const event = (message: RendererEvent) => {
-      if (stopped) return;
-      if (message.type === "ready") {
-        clearTimeout(timeout);
-        element.dataset.state = "ready";
-        element.dataset.readyMs = String(Math.round(performance.now()));
-        worker.current?.postMessage({
-          type: "visible",
-          value: document.visibilityState === "visible",
-        } satisfies HostCommand);
-      } else if (message.type === "quality") element.dataset.quality = String(message.tier);
-      else poster();
-    };
-    const startMain = () => {
-      if (stopped) return;
-      clear();
-      element.dataset.renderer = "main";
-      const target = canvas();
-      void import("@/lib/garden/scene")
-        .then(({ createGarden }) => {
-          if (stopped || target !== activeCanvas) return;
-          try {
-            renderer.current = createGarden(target, {
-              viewport: { width: innerWidth, height: innerHeight },
-              scene: latest.current,
-              onEvent: event,
-              lowPower: true,
-            });
-            event({ type: "ready" });
-            renderer.current.visible(document.visibilityState === "visible");
-          } catch {
-            poster();
-          }
-        })
-        .catch(poster);
-      timeout = setTimeout(poster, 8000);
-    };
-    const configure = () => {
-      if (stopped) return;
-      clear();
-      delete element.dataset.readyMs;
-      delete element.dataset.quality;
-      if (!policy.scene) {
-        poster();
-        return;
-      }
-      element.dataset.state = "starting";
-      const target = canvas();
-      if (typeof Worker !== "undefined" && "transferControlToOffscreen" in target) {
-        try {
-          const offscreen = target.transferControlToOffscreen();
-          const instance = new Worker(new URL("../lib/garden/worker.ts", import.meta.url), {
-            type: "module",
-          });
-          worker.current = instance;
-          element.dataset.renderer = "worker";
-          instance.onmessage = (message: MessageEvent<unknown>) => {
-            if (stopped || worker.current !== instance) return;
-            const data = readWorkerMessage(message.data);
-            const failure = data.type === "failed" || data.type === "lost";
-            if (failure && element.dataset.state === "starting") startMain();
-            else event(data);
-          };
-          instance.onerror = () => {
-            if (stopped || worker.current !== instance) return;
-            if (element.dataset.state === "starting") startMain();
-            else poster();
-          };
-          instance.postMessage(
-            {
-              type: "init",
-              protocol: gardenProtocol,
-              canvas: offscreen,
-              viewport: { width: innerWidth, height: innerHeight },
-              scene: latest.current,
-            } satisfies HostCommand,
-            [offscreen],
-          );
-          timeout = setTimeout(poster, 8000);
-        } catch {
-          startMain();
-        }
-      } else startMain();
-    };
-    const resize = () => {
-      const viewport = { width: innerWidth, height: innerHeight };
-      worker.current?.postMessage({ type: "resize", viewport } satisfies HostCommand);
-      renderer.current?.resize(viewport);
-    };
-    const visibility = () => {
-      const value = document.visibilityState === "visible";
-      worker.current?.postMessage({ type: "visible", value } satisfies HostCommand);
-      renderer.current?.visible(value);
-    };
-    configure();
+    const instance = createGardenController({
+      renderers: { worker: workerRenderer(element), main: mainThreadRenderer(element) },
+      decoration: async () => true,
+      mark: () => {},
+      scene: scene.current,
+      viewport: { width: innerWidth, height: innerHeight },
+      visible: document.visibilityState === "visible",
+    });
+    controller.current = instance;
+    let previous = instance.getSnapshot();
+    const unsubscribe = instance.subscribe(() => {
+      const next = instance.getSnapshot();
+      reflect(element, next, previous);
+      previous = next;
+    });
+    const resize = () => instance.resize({ width: innerWidth, height: innerHeight });
+    const visibility = () => instance.setVisible(document.visibilityState === "visible");
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", visibility);
     return () => {
-      stopped = true;
-      clear();
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", visibility);
+      unsubscribe();
+      instance.stop();
+      controller.current = null;
     };
-    // A policy change restarts or stills the scene.
-  }, [policy.scene]);
+  }, []);
+  // After the controller exists: the policy starts it, stills it or restarts it.
+  useEffect(() => controller.current?.setPolicy(policy.scene), [policy.scene]);
   return (
     <>
       <div

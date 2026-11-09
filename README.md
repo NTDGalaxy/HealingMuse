@@ -149,6 +149,7 @@ A lightweight main-thread renderer and matching responsive posters provide fallb
 Mobile rendering starts at 30 fps with capped resolution.
 Sustained slow rendering reduces quality, then switches to a still without repeatedly oscillating between tiers.
 Hidden tabs suspend rendering, and renderer failures do not block the audio player.
+A pure state machine in [src/lib/garden/controller.ts](src/lib/garden/controller.ts) owns that lifecycle, and both renderers sit behind one port interface.
 
 Short page entrances introduce the heading and listening surfaces.
 New catalogue results use a capped stagger, including results that reuse existing recording cards.
@@ -298,7 +299,7 @@ Appearance and graphics preferences require no database migration.
 src/app/                 Localized routes, API handlers and interface styles
 src/components/          Shell, players, discovery, forms and personal features
 src/lib/binaural/        Validated session configuration and stereo audio engine
-src/lib/garden/          Procedural scenes, route configuration and worker protocol
+src/lib/garden/          Procedural scenes, lifecycle controller, renderers and worker protocol
 src/lib/browser/         Downloads, API client and client-side utilities
 src/lib/server/          Catalogue, storage resolver and API boundaries
 src/lib/storage/         Optional B2 signing and integrity checks
