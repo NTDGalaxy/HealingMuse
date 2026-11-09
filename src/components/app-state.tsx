@@ -66,6 +66,8 @@ function createActions(stores: AppStores, preferences: PreferencesStore, i18n: S
       (await personal.perform(url, data, method)).ok,
     openAuth: session.openAuth,
     closeAuth: session.closeAuth,
+    /** The Supabase browser client, loaded on first use; null in the local preview. */
+    loadAuthClient: session.load,
     async signOut() {
       if (!(await session.signOut())) {
         personal.setError("unavailable");

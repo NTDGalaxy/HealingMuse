@@ -2,9 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { browserClient } from "@/lib/supabase/client";
 import { monitor } from "@/lib/browser/monitor";
-import { useApp, useOnline } from "@/components/app-state";
+import { useApp, useAppActions, useOnline } from "@/components/app-state";
 import { Button, buttonClass } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { PageHeader } from "@/components/ui/page-header";
@@ -20,6 +19,7 @@ function PasswordResetContent() {
   const t = useTranslations();
   const locale = useLocale();
   const app = useApp();
+  const { loadAuthClient } = useAppActions();
   const online = useOnline();
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -69,13 +69,17 @@ function PasswordResetContent() {
                 document.getElementById("confirm-password")?.focus();
                 return;
               }
-              const client = browserClient();
-              if (!client || !online) {
+              if (!online) {
                 setError(t("errors.offline"));
                 return;
               }
               setBusy(true);
               try {
+                const client = await loadAuthClient();
+                if (!client) {
+                  setError(t("errors.offline"));
+                  return;
+                }
                 const { data, error: problem } = await client.auth.updateUser({ password });
                 if (problem || !data.user) {
                   setPasswordInvalid(

@@ -1,3 +1,5 @@
+// First, so the session cookie is in place before the app decides whether to load the client.
+import "./synthetic-session";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";

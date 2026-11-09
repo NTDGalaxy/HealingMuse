@@ -1,29 +1,40 @@
+// Synthetic Supabase browser client, substituted for @/lib/supabase/client by the fixture server.
+// Like the real client it keeps the session in a cookie, finishes an auth redirect (?code=) when
+// it is created and tells other tabs about sign-in and sign-out on the storage-key channel.
 import type { User } from "@supabase/supabase-js";
-const user = {
-  id: "10000000-0000-4000-8000-000000000001",
-  email: "synthetic@example.invalid",
-} as User;
+import { hasSessionCookie, setSessionCookie, storageKey, user } from "./synthetic-session";
+
 type Listener = (event: string, session: { user: User } | null) => void;
 const listeners = new Set<Listener>();
-declare global {
-  interface Window {
-    __syntheticAuthCalls: string[];
-    __syntheticRecoveryPath?: string;
-    /** Totals of auth listeners and Realtime channels the app has ever opened. */
-    __syntheticSubscriptions: { auth: number; channels: number };
-    /** Delivers a Realtime broadcast to every open channel, like the database trigger does. */
-    __syntheticBroadcast: (event: string) => void;
-  }
-}
-window.__syntheticAuthCalls = [];
-window.__syntheticSubscriptions = { auth: 0, channels: 0 };
 function record(method: string) {
   window.__syntheticAuthCalls.push(method);
 }
+const session = () => (hasSessionCookie() ? { user } : null);
+function notify(event: string) {
+  for (const listener of listeners) listener(event, session());
+}
+const tabs = new BroadcastChannel(storageKey);
+tabs.onmessage = (message: MessageEvent<{ event: string }>) => notify(message.data.event);
+function change(event: "SIGNED_IN" | "SIGNED_OUT") {
+  setSessionCookie(event === "SIGNED_IN");
+  notify(event);
+  tabs.postMessage({ event });
+}
 function signedIn() {
-  for (const listener of listeners) listener("SIGNED_IN", { user });
+  change("SIGNED_IN");
   return { data: { session: { user } }, error: null };
 }
+
+// A recovery or sign-in link lands with a one-time code, which the client exchanges for a
+// session and removes from the address, as detectSessionInUrl does.
+const landing = new URL(location.href);
+if (landing.searchParams.has("code")) {
+  record("exchangeCodeForSession");
+  setSessionCookie(true);
+  landing.searchParams.delete("code");
+  history.replaceState(history.state, "", landing);
+}
+
 type Channel = {
   handlers: { event: string; handler: () => void }[];
   on(type: string, filter: { event: string }, handler: () => void): Channel;
@@ -56,13 +67,12 @@ const client = {
       window.__syntheticSubscriptions.auth++;
       listeners.add(listener);
       queueMicrotask(() => {
-        if (listeners.has(listener))
-          listener("INITIAL_SESSION", location.search.includes("guest") ? null : { user });
+        if (listeners.has(listener)) listener("INITIAL_SESSION", session());
       });
       return { data: { subscription: { unsubscribe: () => listeners.delete(listener) } } };
     },
     async signOut() {
-      for (const listener of listeners) listener("SIGNED_OUT", null);
+      change("SIGNED_OUT");
       return { error: null };
     },
     async signInWithOtp() {

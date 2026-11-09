@@ -177,6 +177,8 @@ A passwordless user can authenticate by code, then choose Set or change password
 Forgot or need to set a password requests a recovery email and opens a localized password page.
 Supabase Auth handles password storage and authenticated password changes.
 Application tables do not store passwords.
+The Supabase browser client downloads only when it is needed: at page start when a session cookie, an auth redirect or the password page is present, and otherwise when sign-in opens.
+Guests browsing and listening never download it, and another tab's sign-in or sign-out still reaches every open tab.
 
 Production email onboarding and recovery depend on an approved sender.
 Supabase's built-in sender is intended for development and restricts delivery to authorized organization-team addresses.
@@ -300,7 +302,9 @@ Appearance and graphics preferences require no database migration.
 
 ```text
 src/app/                 Localized routes, API handlers and interface styles
-src/components/          Shell, players, discovery, forms and personal features
+src/components/          Shell, players, discovery and shared components
+src/components/ui/       Interface primitives: buttons, fields, states, pagers, lists, confirmations
+src/features/            Account, library, downloads, mood, settings, legal and admin screens
 src/lib/binaural/        Validated session configuration and stereo audio engine
 src/lib/garden/          Procedural scenes, lifecycle controller, renderers and worker protocol
 src/lib/browser/         Downloads, API client and client-side utilities

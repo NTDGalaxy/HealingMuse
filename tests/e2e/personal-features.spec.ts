@@ -1214,3 +1214,73 @@ test("content studio Back returns to the previous page of recordings", async ({ 
   await expect(row(1)).toBeVisible();
   await expect(ui.button("common.back")).toHaveCount(0);
 });
+test("a guest visit never downloads the sign-in client until sign-in opens", async ({ page }) => {
+  const ui = screens(page);
+  await ui.open({ guest: true });
+  for (const view of ["library", "mood", "admin", "settings", "password", "recording"] as const)
+    await ui.show(view);
+  await ui.recordings.details(harness.recording.title.en).click();
+  await expect(ui.dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(ui.dialog).toHaveCount(0);
+  expect(ui.moduleRequests(harness.modules.authClient)).toBe(0);
+  await ui.signIn.click();
+  await expect(ui.dialog.getByLabel(ui.t("auth.email"), { exact: true })).toBeVisible();
+  await expect.poll(() => ui.moduleRequests(harness.modules.authClient)).toBe(1);
+});
+test("email-code sign-in loads the client on demand and restores the account", async ({ page }) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  await ui.open({ guest: true });
+  await ui.signIn.click();
+  const dialog = ui.dialog;
+  await dialog.getByRole("textbox", { name: ui.t("auth.email"), exact: true }).fill(email);
+  await dialog.getByRole("checkbox").check();
+  await ui.button("auth.useEmailCode").click();
+  await ui.button("auth.sendCode").click();
+  await dialog.getByRole("textbox", { name: ui.t("auth.code"), exact: true }).fill("123456");
+  await dialog.getByRole("button", { name: ui.t("auth.verify"), exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(ui.button("library.newPlaylist")).toBeVisible();
+  expect(await ui.authCalls()).toEqual(["signInWithOtp", "verifyOtp"]);
+  expect(ui.moduleRequests(harness.modules.authClient)).toBe(1);
+});
+test("a password-recovery link restores its session before the new-password form", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  // The recovery email's link lands without a session cookie, carrying a one-time code.
+  await ui.open({ guest: true, flags: ["code=synthetic-recovery"] });
+  await ui.show("password");
+  const newPassword = page.getByLabel(ui.t("auth.newPassword"), { exact: true });
+  await newPassword.fill(syntheticPassword);
+  await page.getByLabel(ui.t("auth.confirmPassword"), { exact: true }).fill(syntheticPassword);
+  await ui.button("auth.savePassword").click();
+  await expect(page.getByRole("status")).toContainText(ui.t("auth.passwordSaved"));
+  expect(await ui.authCalls()).toEqual(["exchangeCodeForSession", "updateUser"]);
+});
+test("signing in or out in one tab updates another open tab", async ({ page, context }) => {
+  await context.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  const first = screens(page);
+  const second = screens(await context.newPage());
+  const firstSettings = new Settings(first.page);
+  const secondSettings = new Settings(second.page);
+  await first.open({ guest: true });
+  await second.open({ guest: true });
+  await first.show("settings");
+  await second.show("settings");
+  await expect(secondSettings.guestNote).toBeVisible();
+  expect(second.moduleRequests(harness.modules.authClient)).toBe(0);
+  await first.signIn.click();
+  const dialog = first.dialog;
+  await dialog.getByLabel(first.t("auth.email"), { exact: true }).fill(email);
+  await dialog.getByLabel(first.t("auth.password"), { exact: true }).fill(syntheticPassword);
+  await dialog.getByRole("checkbox").check();
+  await dialog.getByRole("button", { name: first.t("auth.verify"), exact: true }).click();
+  await expect(firstSettings.signOut).toBeVisible();
+  await expect(secondSettings.signOut).toBeVisible();
+  await secondSettings.signOut.click();
+  await expect(secondSettings.guestNote).toBeVisible();
+  await expect(firstSettings.guestNote).toBeVisible();
+});

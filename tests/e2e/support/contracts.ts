@@ -273,6 +273,8 @@ export const harness = {
   /** Source modules the fixture's Vite server serves on demand, by request path. */
   modules: {
     adminConsole: "src/features/admin/admin-console.tsx",
+    /** The synthetic stand-in for @/lib/supabase/client, the app's sign-in chunk. */
+    authClient: "tests/browser-fixtures/auth.ts",
   },
   recording: {
     id: "00000000-0000-4000-8000-000000000001",

@@ -15,6 +15,8 @@ const fake = vi.hoisted(() => {
     channels: [] as Channel[],
     removed: [] as Channel[],
     signOutError: null as null | { message: string },
+    /** Browser clients handed out, that is, how often the client module was loaded and used. */
+    loads: 0,
   };
   const client = {
     auth: {
@@ -50,8 +52,16 @@ const fake = vi.hoisted(() => {
   };
   return { state, client, emit };
 });
-vi.mock("@/lib/supabase/client", () => ({ browserClient: () => fake.client }));
-vi.mock("@/lib/supabase/config", () => ({ isConfigured: true }));
+vi.mock("@/lib/supabase/client", () => ({
+  browserClient: () => {
+    fake.state.loads++;
+    return fake.client;
+  },
+}));
+vi.mock("@/lib/supabase/config", () => ({
+  isConfigured: true,
+  authStorageKey: () => "sb-synthetic-auth-token",
+}));
 vi.mock("@/lib/browser/monitor", () => ({ monitor: vi.fn() }));
 vi.mock("@/lib/browser/api", async (original) => ({
   ...(await original<typeof import("@/lib/browser/api")>()),
@@ -76,7 +86,7 @@ import {
 import { createStore } from "@/lib/state/create-store";
 import { createAnnouncer } from "@/lib/state/announcer";
 import { createTrackCache, trackCacheLimit } from "@/lib/state/track-cache";
-import { createSession } from "@/lib/state/session";
+import { createSession, needsClientAtStart, type PageSignals } from "@/lib/state/session";
 import { createPersonal, echoWindow } from "@/lib/state/personal";
 import { createDownloads } from "@/lib/state/downloads";
 
@@ -104,6 +114,17 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+const storageKey = "sb-synthetic-auth-token";
+const page = (overrides: Partial<PageSignals> = {}): PageSignals => ({
+  pathname: "/vi/library",
+  search: "",
+  hash: "",
+  cookie: "",
+  ...overrides,
+});
+/** A page load carrying a session cookie, so the client loads as the session starts. */
+const returning = () => page({ cookie: `${storageKey}=base64-session` });
+const guest = () => page();
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -111,6 +132,7 @@ beforeEach(() => {
   fake.state.channels.length = 0;
   fake.state.removed.length = 0;
   fake.state.signOutError = null;
+  fake.state.loads = 0;
 });
 
 describe("createStore", () => {
@@ -195,11 +217,42 @@ describe("track cache", () => {
   });
 });
 
+describe("session start signals", () => {
+  it("loads at start for a session cookie, an auth redirect or the password page", () => {
+    for (const signals of [
+      page({ cookie: `theme=night; ${storageKey}=base64-session` }),
+      page({ cookie: `${storageKey}.0=chunk; ${storageKey}.1=chunk` }),
+      page({ search: "?code=one-time" }),
+      page({ search: "?token_hash=abc&type=recovery" }),
+      page({ hash: "#access_token=a&refresh_token=b&type=recovery" }),
+      page({ hash: "#error=access_denied&error_code=otp_expired&error_description=Expired" }),
+      page({ pathname: "/en/reset-password" }),
+      page({ pathname: "/vi/reset-password" }),
+    ])
+      expect(needsClientAtStart(signals, storageKey), JSON.stringify(signals)).toBe(true);
+  });
+  it("treats every other page as a guest's", () => {
+    for (const signals of [
+      page(),
+      page({ pathname: "/vi/explore", search: "?q=piano&category=instrumental&cursor=abc" }),
+      page({ cookie: `${storageKey}-code-verifier=pending; ${storageKey}.x=other` }),
+      page({ cookie: "sb-another-project-auth-token=session" }),
+    ])
+      expect(needsClientAtStart(signals, storageKey), JSON.stringify(signals)).toBe(false);
+    expect(needsClientAtStart(page({ search: "?code=x" }), null)).toBe(false);
+  });
+});
+
 describe("session", () => {
-  it("follows auth events and only settles loading once", () => {
-    const session = createSession();
+  // Node has BroadcastChannel; only the cross-tab test opens one, and it closes it again.
+  beforeEach(() => vi.stubGlobal("BroadcastChannel", undefined));
+  afterEach(() => vi.unstubAllGlobals());
+  it("restores a returning account and only settles loading once", async () => {
+    const session = createSession({ page: returning });
     expect(session.getSnapshot()).toMatchObject({ user: null, authLoading: true });
     const stop = session.start();
+    await settle();
+    expect(session.getSnapshot().authLoading).toBe(true);
     fake.emit(null);
     expect(session.getSnapshot()).toMatchObject({ userId: null, authLoading: false });
     fake.emit({ id: "a" });
@@ -207,9 +260,26 @@ describe("session", () => {
     stop();
     expect(fake.state.auth.size).toBe(0);
   });
-  it("opens the sign-in dialog and signs out only when Supabase confirms", async () => {
-    const session = createSession();
+  it("settles a guest at once and loads the client only when sign-in opens", async () => {
+    const session = createSession({ page: guest });
     session.start();
+    expect(session.getSnapshot()).toMatchObject({ user: null, authLoading: false });
+    await settle();
+    expect(fake.state.loads).toBe(0);
+    expect(session.client()).toBeNull();
+    session.openAuth();
+    expect(session.getSnapshot().authOpen).toBe(true);
+    await settle();
+    expect(fake.state.loads).toBe(1);
+    fake.emit({ id: "a" });
+    expect(session.getSnapshot().userId).toBe("a");
+    expect(await session.load()).toBe(fake.client);
+    expect(fake.state.loads).toBe(1);
+  });
+  it("opens the sign-in dialog and signs out only when Supabase confirms", async () => {
+    const session = createSession({ page: returning });
+    session.start();
+    await settle();
     fake.emit({ id: "a" });
     session.openAuth();
     expect(session.getSnapshot().authOpen).toBe(true);
@@ -222,6 +292,34 @@ describe("session", () => {
     expect(await session.signOut()).toBe(true);
     expect(session.getSnapshot().user).toBeNull();
   });
+  it("follows another tab's sign-in before its own client has loaded", async () => {
+    vi.unstubAllGlobals();
+    const session = createSession({ page: guest });
+    const stop = session.start();
+    const otherTab = new BroadcastChannel(storageKey);
+    otherTab.postMessage({ event: "SIGNED_IN" });
+    await vi.waitFor(() => expect(fake.state.loads).toBe(1));
+    fake.emit({ id: "b" });
+    expect(session.getSnapshot().userId).toBe("b");
+    otherTab.close();
+    stop();
+  });
+  it("stays a guest when the client cannot be downloaded, and can retry", async () => {
+    let attempts = 0;
+    const session = createSession({
+      page: returning,
+      loadClient: async () => {
+        if (++attempts === 1) throw new Error("chunk failed");
+        return fake.client as never;
+      },
+    });
+    session.start();
+    await settle();
+    expect(session.getSnapshot()).toMatchObject({ user: null, authLoading: false });
+    expect(monitor).toHaveBeenCalledWith("authentication_failed");
+    expect(await session.load()).toBe(fake.client);
+    expect(attempts).toBe(2);
+  });
 });
 
 describe("personal data", () => {
@@ -232,13 +330,16 @@ describe("personal data", () => {
     page = Object.assign(new EventTarget(), { visibilityState: "visible" });
     vi.stubGlobal("window", new EventTarget());
     vi.stubGlobal("document", page);
+    vi.stubGlobal("BroadcastChannel", undefined);
   });
   afterEach(() => vi.unstubAllGlobals());
-  const setup = () => {
-    const session = createSession();
+  const setup = async () => {
+    const session = createSession({ page: returning });
     const onData = vi.fn();
     const store = createPersonal({ session, onData, now: () => clock, online: () => true });
     session.start();
+    // The returning account's client loads before its auth events can arrive.
+    await settle();
     const stop = store.start();
     return { session, store, onData, stop };
   };
@@ -248,7 +349,7 @@ describe("personal data", () => {
   };
 
   it("coalesces overlapping refreshes into one trailing request", async () => {
-    const { store } = setup();
+    const { store } = await setup();
     const requests: ReturnType<typeof deferred<PersonalData>>[] = [];
     apiMock.mockImplementation(() => {
       const request = deferred<PersonalData>();
@@ -268,7 +369,7 @@ describe("personal data", () => {
     expect(store.getSnapshot().data?.favorites).toEqual(["x"]);
   });
   it("drops a response that belongs to the previous account", async () => {
-    const { store, onData } = setup();
+    const { store, onData } = await setup();
     const first = deferred<PersonalData>();
     apiMock.mockReturnValueOnce(first.promise as Promise<never>);
     await signIn("a");
@@ -283,7 +384,7 @@ describe("personal data", () => {
     expect(store.getSnapshot().data).toBeNull();
   });
   it("re-subscribes Realtime only when the account changes", async () => {
-    const { session } = setup();
+    const { session } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);
     await signIn("a");
     fake.emit({ id: "a" });
@@ -294,7 +395,7 @@ describe("personal data", () => {
     expect(monitor).toHaveBeenCalledWith("synchronization_failed");
   });
   it("asks a guest to sign in instead of sending a change", async () => {
-    const { session, store } = setup();
+    const { session, store } = await setup();
     fake.emit(null);
     expect(await store.perform("/api/favorites", { trackId: "x", saved: true })).toEqual({
       ok: false,
@@ -304,7 +405,7 @@ describe("personal data", () => {
     expect(mutationMock).not.toHaveBeenCalled();
   });
   it("sends a change for the signed-in owner and reports failures by code", async () => {
-    const { store } = setup();
+    const { store } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);
     await signIn("a");
     apiMock.mockClear();
@@ -324,7 +425,7 @@ describe("personal data", () => {
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
   it("ignores the Realtime echo of its own change but not other devices' changes", async () => {
-    const { store } = setup();
+    const { store } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);
     await signIn("a");
     await settle();
@@ -347,7 +448,7 @@ describe("personal data", () => {
     expect(apiMock).toHaveBeenCalledTimes(3);
   });
   it("refreshes after a failed change when another device changed data meanwhile", async () => {
-    const { store } = setup();
+    const { store } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);
     await signIn("a");
     await settle();
@@ -365,7 +466,7 @@ describe("personal data", () => {
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
   it("refreshes when the tab becomes visible or the device comes back online", async () => {
-    const { store, stop } = setup();
+    const { store, stop } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);
     await signIn("a");
     await settle();

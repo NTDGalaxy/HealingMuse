@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { browserClient } from "@/lib/supabase/client";
+import { isConfigured } from "@/lib/supabase/config";
 import { Dialog } from "@/components/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, TextField } from "@/components/ui/field";
@@ -16,7 +16,7 @@ type Method = "password" | "code" | "recovery";
 export function AuthDialog() {
   const t = useTranslations();
   const locale = useLocale();
-  const { closeAuth, announce } = useAppActions();
+  const { closeAuth, announce, loadAuthClient } = useAppActions();
   const authOpen = useAuthOpen();
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
@@ -28,7 +28,6 @@ export function AuthDialog() {
   const [error, setError] = useState("");
   const [invalid, setInvalid] = useState(false);
   const attempt = useRef(0);
-  const client = browserClient();
 
   function focusInput(id: string) {
     requestAnimationFrame(() => document.getElementById(id)?.focus());
@@ -67,7 +66,7 @@ export function AuthDialog() {
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!client || busy) return;
+    if (busy) return;
     if (method !== "recovery" && !agreed) {
       setError(t("auth.consentRequired"));
       return;
@@ -77,6 +76,10 @@ export function AuthDialog() {
     setError("");
     setInvalid(false);
     try {
+      // Opening the dialog started the download, so this rarely waits.
+      const client = await loadAuthClient();
+      if (current !== attempt.current) return;
+      if (!client) throw new Error("unavailable");
       if (method === "password") {
         const { data, error: problem } = await client.auth.signInWithPassword({
           email: email.trim(),
@@ -156,7 +159,7 @@ export function AuthDialog() {
       title={t(method === "recovery" ? "auth.recoveryTitle" : "auth.title")}
       description={t(method === "recovery" ? "auth.recoveryDescription" : "auth.subtitle")}
     >
-      {!client ? (
+      {!isConfigured ? (
         <p className="info-panel">{t("auth.unavailable")}</p>
       ) : method === "recovery" && sent ? (
         <div className="form-stack">

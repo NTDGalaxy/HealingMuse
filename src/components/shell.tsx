@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useAppActions, useCalm, useIsAdmin, useOnline, useUserId } from "./app-state";
-import { AuthDialog } from "@/features/account/auth-dialog";
+import dynamic from "next/dynamic";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
 import { Fragment, useLayoutEffect, useState } from "react";
@@ -38,6 +38,12 @@ import {
   routesIn,
   type RouteKey,
 } from "@/lib/routes";
+
+// The sign-in dialog, and the Supabase client it uses, load on demand.
+const AuthDialog = dynamic(
+  () => import("@/features/account/auth-dialog").then((module) => module.AuthDialog),
+  { ssr: false },
+);
 
 const icons: Partial<Record<RouteKey, typeof House>> = {
   home: House,
