@@ -430,6 +430,7 @@ Prompts, provenance and licenses are recorded in [content/garden-assets.json](co
 For every route in `src/lib/routes.ts` it gates startup JS and CSS (re-gzipped at level 9), the fonts resolved from the startup `@font-face` rules, and the mobile poster against the ceilings in [budgets.json](budgets.json).
 It fails when a forbidden module (Radix dialog, three.js, GSAP, the binaural engine, Zod, supabase-js or the YouTube embed) ships in a route's startup JS without a `ratchetModules` allowance, and when a detector marker no longer matches any emitted chunk.
 The emitted graphics chunks, including dependencies and workers, must stay within **220 KiB gzip**, and each mobile poster must remain **80 KiB or less**.
+Graphics chunks are found by marker strings: three.js and GSAP by text their builds contain, and the garden scenes, worker and GSAP layer by the literals listed in [src/lib/garden/budget-markers.ts](src/lib/garden/budget-markers.ts).
 A ceiling may only rise in a commit that states the metric, its old and new value and timed-gate evidence, approved in the pull request.
 Catalogue-dependent bytes (artwork images and, with `--base=<url>`, HTML) are reported in `artifacts/budget-report.json` and never gated.
 Generated shell assets are rebuilt through `scripts/build-shell.mjs`, which also runs before normal builds.

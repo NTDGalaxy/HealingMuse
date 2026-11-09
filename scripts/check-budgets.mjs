@@ -13,6 +13,7 @@ import { join, posix, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { runInNewContext } from "node:vm";
 import { gzipSync } from "node:zlib";
+import { graphicsMarkers } from "../src/lib/garden/budget-markers.ts";
 import { fallbackScene, locales, routeHref, routes } from "../src/lib/routes.ts";
 
 export const KIB = 1024;
@@ -43,15 +44,20 @@ export const MODULES = [
 ];
 
 /**
- * Every emitted chunk that contains one of these counts toward the graphics total: three.js,
- * GSAP, the garden worker and host, and the scene code (including whatever shares their chunks).
+ * Every emitted chunk that contains one of these counts toward the graphics total: three.js and
+ * GSAP by strings their builds contain, and the garden scenes, worker and GSAP layer by the
+ * explicit markers of src/lib/garden/budget-markers.ts (including whatever shares their chunks).
+ * The startup chunk that hosts the scene is gated with the route's startup JS instead.
  * @type {readonly Detector[]}
  */
 export const GRAPHICS = [
   { id: "three", label: "three.js", marker: "THREE." },
   { id: "gsap", label: "GSAP", marker: "ScrollTrigger" },
-  { id: "garden-host", label: "garden worker and host", marker: "healingmuse-garden-" },
-  { id: "garden-scenes", label: "garden scenes", marker: "HealingMuse botanical world" },
+  ...Object.entries(graphicsMarkers).map(([id, { label, marker }]) => ({
+    id: `garden-${id}`,
+    label,
+    marker,
+  })),
 ];
 
 /**

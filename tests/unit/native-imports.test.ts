@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 // bundler. They must stay erasable syntax with relative imports only (no "@/" aliases).
 const modules = [
   "src/lib/routes.ts",
+  "src/lib/garden/budget-markers.ts",
   "src/lib/preferences.ts",
   "src/lib/validation.ts",
   "src/lib/storage/b2.ts",

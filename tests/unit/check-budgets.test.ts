@@ -1,7 +1,9 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import {
+  GRAPHICS,
   KIB,
   METRICS,
   MODULES,
@@ -18,6 +20,7 @@ import {
   staleDetectors,
 } from "../../scripts/check-budgets.mjs";
 import { routes } from "@/lib/routes";
+import { graphicsMarkers } from "@/lib/garden/budget-markers";
 
 const chunk = (path: string, text: string) => ({ path, bytes: Buffer.from(text) });
 const measurement = (startupJsGzip: number) => ({
@@ -177,5 +180,29 @@ describe("ceiling comparison", () => {
     for (const budget of Object.values<Record<string, unknown>>(budgets.routes))
       for (const metric of Object.keys(METRICS)) expect(budget[metric]).toBeTypeOf("number");
     expect(budgets.limits).toEqual({ graphicsJsGzip: 220 * KIB, mobilePosterBytes: 80 * KIB });
+  });
+});
+
+describe("graphics chunk markers", () => {
+  const sources = (directory: string): string[] =>
+    readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? sources(join(directory, entry.name))
+        : /\.tsx?$/.test(entry.name)
+          ? [join(directory, entry.name).split("\\").join("/")]
+          : [],
+    );
+  const files = sources("src").filter((file) => file !== "src/lib/garden/budget-markers.ts");
+
+  it("counts every explicit garden marker toward the graphics total", () => {
+    for (const { marker } of Object.values(graphicsMarkers))
+      expect(GRAPHICS.map((detector) => detector.marker)).toContain(marker);
+  });
+
+  it("embeds each marker in its graphics module and nowhere else", () => {
+    for (const { marker, module } of Object.values(graphicsMarkers)) {
+      const holders = files.filter((file) => readFileSync(file, "utf8").includes(marker));
+      expect(holders).toEqual([module]);
+    }
   });
 });

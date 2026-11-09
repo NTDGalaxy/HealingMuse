@@ -1,5 +1,6 @@
 // OffscreenCanvas renderer. Speaks src/lib/garden/protocol.ts: the init command is the handshake,
 // and every reply is an enveloped RendererEvent.
+import type { GraphicsMarker } from "./budget-markers";
 import { createGarden, type Garden } from "./scene";
 import {
   compatible,
@@ -12,7 +13,7 @@ import {
 let garden: Garden | undefined;
 const post = (event: RendererEvent) =>
   self.postMessage({
-    source: "healingmuse-garden-worker",
+    source: "healingmuse-graphics:worker" satisfies GraphicsMarker<"worker">,
     protocol: gardenProtocol,
     event,
   } satisfies WorkerMessage);

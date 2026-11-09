@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { gardens, initialQuality, lowerQuality, type GardenId, type GardenTheme } from "./config";
+import type { GraphicsMarker } from "./budget-markers";
 import type { SceneEvent, SceneSpec, Viewport } from "./protocol";
 
 // Original parametric botanical geometry. No remote models, textures or requests.
@@ -271,7 +272,7 @@ export function createGarden(
   renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene(),
     camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
-  scene.name = "HealingMuse botanical world";
+  scene.name = "healingmuse-graphics:scene" satisfies GraphicsMarker<"scene">;
   const hemisphere = new THREE.HemisphereLight("#fff1fb", "#466c62", 2.5);
   const sun = new THREE.DirectionalLight("#fff2dd", 3.5);
   sun.position.set(-3, 8, 5);
