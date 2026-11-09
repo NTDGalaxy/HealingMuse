@@ -342,7 +342,8 @@ Never delete cloud objects or change storage providers as a side effect of a des
 Migrations are applied through the trusted `db:migrate` tool after a separate schema and backup review.
 It verifies connection identity and TLS certificates, tracks migration hashes and refuses edits to already-applied migrations.
 Add a new migration for schema changes instead of rewriting migration history.
-This interface refinement needs no migration, audio upload or publication action.
+Migrations `202611090001` to `202611090004` are additive and work with the previous application version; apply them through that reviewed `db:migrate` step.
+Once they are applied, API roles can no longer publish a recording directly; only the reviewed release workflow can.
 
 ## Validation and performance
 
@@ -358,6 +359,7 @@ npm run db:test
 npm run db:test:catalog
 npm run db:test:release
 npm run db:test:b2
+npm run db:lint
 npm run security:repository
 npm run build
 npm run garden:budget
@@ -367,6 +369,9 @@ npm run security:client
 Database suites use isolated portable PostgreSQL fixtures and exercise the real migration SQL.
 They cover ownership, administrator boundaries, consent, playlist revisions, discovery, publication and delivery requirements.
 They do not establish that a live Supabase project has applied the same schema.
+The catalog suite also runs a matrix of `catalog_page` queries against the previous definition of the function and requires identical results.
+`db:lint` checks migration names, `begin;`/`commit;` framing, `search_path` on security definer functions, a revoke after every created function and the extension allowlist.
+It also compares the migrated RLS flags and table, column and function privileges with [scripts/fixtures/db-privileges.json](scripts/fixtures/db-privileges.json); after an intended change, run `node scripts/lint-migrations.mjs --update-snapshot` and review the diff.
 Cloud database, recovery, load and delivery commands are separate operator checks and can access or mutate cloud state.
 
 For browser checks against an optimized preview running on port 3127:

@@ -53,6 +53,7 @@
     "b2:upload": "node scripts/b2-audio.mjs upload",
     "b2:verify": "node scripts/b2-audio.mjs verify",
     "db:test:b2": "node scripts/test-b2-database.mjs",
+    "db:lint": "node scripts/lint-migrations.mjs",
     "security:repository": "node scripts/check-repository-secrets.mjs",
     "b2:account": "node scripts/b2-account-confirm.mjs",
     "release:register:b2": "node scripts/prepare-release.mjs --register --provider=b2",
