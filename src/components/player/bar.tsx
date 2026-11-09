@@ -40,13 +40,14 @@ export function PlayerBar({
     <section
       style={controlsHidden || !current ? { display: "none" } : undefined}
       className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
+      data-part="player-bar"
       data-bottom-overlay=""
       aria-label={t("player.nowPlaying")}
     >
       <div className="player-track">
         {current && <NatureArt kind={current.artwork} color={current.color} />}
         <div>
-          <strong>{current?.title[locale] ?? t("player.idle")}</strong>
+          <strong data-part="player-title">{current?.title[locale] ?? t("player.idle")}</strong>
           <span className="muted small">{current?.artist ?? t("player.idleNote")}</span>
         </div>
       </div>

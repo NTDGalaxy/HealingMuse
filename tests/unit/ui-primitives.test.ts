@@ -48,10 +48,12 @@ describe("Button", () => {
 describe("content states", () => {
   it("renders the page header, empty state, error state and inline alert", () => {
     expect(html(h(PageHeader, { title: "Library", subtitle: "Kept close" }))).toBe(
-      '<div class="page-heading"><h1>Library</h1><p>Kept close</p></div>',
+      '<div class="page-heading" data-part="page-heading"><h1>Library</h1><p>Kept close</p></div>',
     );
     const empty = html(h(EmptyState, { title: "Nothing yet" }, h("button", null, "Go")));
-    expect(empty).toMatch(/^<div class="empty-state"><svg [^>]*aria-hidden="true"/);
+    expect(empty).toMatch(
+      /^<div class="empty-state" data-part="empty-state"><svg [^>]*aria-hidden="true"/,
+    );
     expect(empty).toMatch(/<\/svg><h2>Nothing yet<\/h2><button>Go<\/button><\/div>$/);
     expect(html(h(EmptyState, { title: "None", text: "Later" }))).toMatch(
       /<h2>None<\/h2><p>Later<\/p><\/div>$/,
@@ -100,7 +102,9 @@ describe("field family", () => {
         action: "/en/explore",
       }),
     );
-    expect(form).toMatch(/^<form class="search-box discovery-search" action="\/en\/explore"><svg /);
+    expect(form).toMatch(
+      /^<form class="search-box discovery-search" data-part="search-field" action="\/en\/explore"><svg /,
+    );
     expect(form).toMatch(/<\/svg><label class="sr-only" for="home-search">Search<\/label><input /);
     expect(attributes(form, "input")).toEqual([
       'id="home-search"',
@@ -114,7 +118,7 @@ describe("field family", () => {
       h(SearchField, { id: "review-search", label: "Search", placeholder: "Find" }),
     );
     expect(plain).toMatch(
-      /^<form class="search-box"><label class="sr-only" for="review-search">Search<\/label><input /,
+      /^<form class="search-box" data-part="search-field"><label class="sr-only" for="review-search">Search<\/label><input /,
     );
     expect(plain).toMatch(/\/><button class="button">Search<\/button><\/form>$/);
   });

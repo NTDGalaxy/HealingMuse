@@ -195,9 +195,9 @@ test("the active listening queue remains readable in Night appearance", async ({
   await new Recordings(page).featuredPlay.click();
   await player.button("queue").click();
   await expect(player.currentQueueItem).toHaveCount(1);
-  await expectAccessible(page, dialogs.content);
+  await expectAccessible(page, dialogs.role);
   await page.keyboard.press("Escape");
-  await shell.sideNavLink("/en/explore").hover();
+  await shell.sideNavLink("explore").hover();
   await expectAccessible(page, chrome.sidebar);
 });
 
@@ -214,7 +214,7 @@ test.describe("WebGL lifecycle", () => {
     await page.goto("/en");
     await shell.expectGardenState("still");
     await shell.expectGardenQuality("0");
-    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await expect(shell.gardenCanvas).toHaveCount(0);
     await shell.expectGardenDetail("auto");
     await new Recordings(page).featuredPlay.click();
     await expectPlaying(page);
@@ -230,7 +230,7 @@ test.describe("WebGL lifecycle", () => {
     await page.goto("/en");
     await shell.expectGardenState("ready");
     const buffer = () =>
-      shell.gardenHostCanvas.evaluate((canvas) => {
+      shell.gardenCanvas.evaluate((canvas) => {
         const { width, height } = canvas as HTMLCanvasElement;
         return { width, height, scale: width / innerWidth };
       });
@@ -259,7 +259,7 @@ test.describe("WebGL lifecycle", () => {
     await page.goto("/en");
     await expect.poll(() => refused).toBe(lazy.length);
     await shell.expectGardenState("still");
-    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await expect(shell.gardenCanvas).toHaveCount(0);
     await new Recordings(page).featuredPlay.click();
     await expectPlaying(page);
     expect(errors).toEqual([]);
@@ -275,14 +275,14 @@ test.describe("WebGL lifecycle", () => {
     await shell.expectGardenRenderer("main");
     await new Recordings(page).featuredPlay.click();
     await expectPlaying(page);
-    await shell.gardenHostCanvas.evaluate((canvas) =>
+    await shell.gardenCanvas.evaluate((canvas) =>
       (canvas as HTMLCanvasElement)
         .getContext("webgl2")!
         .getExtension("WEBGL_lose_context")!
         .loseContext(),
     );
     await shell.expectGardenState("still");
-    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await expect(shell.gardenCanvas).toHaveCount(0);
     await expectPlaying(page);
   });
 });

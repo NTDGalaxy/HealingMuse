@@ -139,7 +139,7 @@ for (const locale of ["en", "vi"] as const)
     );
     await page.goto(`/${locale}`);
     await new Recordings(page, locale).plays.first().click();
-    await expect(player.errorAlert).toBeVisible();
+    await expect(player.error).toBeVisible();
     const retry = player.retry;
     await retry.focus();
     await retry.press("Enter");

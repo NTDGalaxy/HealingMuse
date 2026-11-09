@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
-import { player, status } from "../contracts";
-import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
+import { player } from "../contracts";
+import { escapeRegExp, t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 
 type PlayerButton = "timer" | "expand" | "previous" | "next" | "repeat" | "queue" | "finish";
 
@@ -15,27 +15,28 @@ export class Player {
     return t(this.locale, key, values);
   }
 
+  /** The player bar, also while it is hidden because nothing plays. */
   get bar() {
     return this.page.locator(player.bar);
   }
+  /** The playback error the bar shows, with its retry control. */
   get error() {
-    return this.page.locator(player.error);
-  }
-  get errorAlert() {
-    return this.page.locator(player.errorAlert);
+    return this.bar.getByRole("alert");
   }
   get currentTitle() {
     return this.page.locator(player.currentTitle);
   }
+  /** The play or pause control in the bar, whichever it currently offers. */
   get playButton() {
-    return this.page.locator(player.playButton);
+    const names = [this.t("player.play"), this.t("player.pause")].map(escapeRegExp);
+    return this.bar.getByRole("button", { name: new RegExp(`^(${names.join("|")})$`) });
   }
   /** The entries of the open queue dialog, in queue order. */
   get queueItems() {
-    return this.page.locator(player.queueItem);
+    return this.page.getByRole("dialog").getByRole("list").getByRole("button");
   }
   get currentQueueItem() {
-    return this.page.locator(player.currentQueueItem);
+    return this.queueItems.and(this.page.locator(player.current));
   }
   get seek() {
     return this.page.getByRole("slider", { name: this.t("player.seek") });
@@ -57,6 +58,10 @@ export class Player {
     return this.page.getByRole("button", { name: this.t("player.timerActive", { minutes }) });
   }
   get timerEnded() {
-    return this.page.locator(status).filter({ hasText: this.t("player.timerEnded") });
+    return this.page.getByRole("status").filter({ hasText: this.t("player.timerEnded") });
+  }
+  /** The embedded video frame of an external recording, named after the recording. */
+  video(title: string) {
+    return this.page.getByTitle(title, { exact: true });
   }
 }

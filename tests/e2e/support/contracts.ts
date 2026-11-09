@@ -1,11 +1,18 @@
 import { readinessMarks } from "../../../src/lib/perf/readiness";
 import type { Locale } from "./i18n";
 
-// Every class name, id, data attribute, storage key and computed-style expectation the
-// end-to-end suite depends on lives here. A redesign that renames markup edits this file,
-// not the specs. Composite selectors are built from the tokens below so each name appears once.
+// Every markup hook, data attribute, storage key and computed-style expectation the end-to-end
+// suite depends on lives here, so a redesign edits this file and the page objects, never the specs.
+// Page objects prefer roles, labels and landmarks resolved through i18n.ts. Where no unique one
+// exists, components carry a stable data-part attribute named for what the part is, and the
+// selectors below name those parts. They never name a class or an id; tests/unit/
+// e2e-conventions.test.ts enforces that.
 
-const main = "#main-content";
+/** The selector of an element carrying `data-part="<name>"`. */
+const part = (name: string) => `[data-part="${name}"]`;
+
+/** The main landmark, for CSS contexts (axe scopes, in-page probes) that cannot take a role. */
+const main = "main";
 const trackCard = ".track-card";
 const cardPlay = ".card-play";
 const featured = ".featured-recording";
@@ -16,33 +23,30 @@ const binauralBackground = ".binaural-background";
 
 /** The document element and the preferences it reflects before and after hydration. */
 export const documentRoot = {
-  selector: "html",
+  selector: ":root",
   lang: "lang",
   theme: "data-theme",
   garden: "data-garden",
 } as const;
 
 export const shell = {
-  app: ".app-shell",
+  app: part("app-shell"),
+  /** The state class the Shell applies while Calm is on (no other markup reflects it). */
   calmClass: "calm-mode",
   main,
-  mainHeading: `${main} h1`,
-  mainCopy: `${main} p:visible`,
-  skipLink: ".skip-link",
-  topbar: ".topbar",
-  sidebar: ".sidebar",
-  sideNavLink: (href: string) => `.side-nav a[href="${href}"]`,
-  mobileNav: ".mobile-nav",
-  mobileNavButton: ".mobile-nav button",
+  sidebar: part("sidebar"),
+  mobileNav: part("mobile-nav"),
   current: "data-current",
-  languageLink: (locale: Locale) => `.language-switch a[lang="${locale}"]`,
-  searchBox: ".search-box",
-  downloadStatus: ".download-status",
-  toast: ".toast",
-  scenery: "#sanctuary-scenery",
+  /** A link whose text is in `locale`, as every language switch marks it. */
+  languageLink: (locale: Locale) => `[lang="${locale}"]`,
+  searchField: part("search-field"),
+  downloadStatus: part("download-status"),
+  /** The visual notice; aria-hidden, because the live region announces the same text. */
+  toast: part("toast"),
+  scenery: part("scenery"),
   sceneryShift: "--scenic-shift",
-  pageHeading: ".page-heading",
-  emptyState: ".empty-state",
+  pageHeading: part("page-heading"),
+  emptyState: part("empty-state"),
   panel: ".panel",
   /** Body copy and setting labels that must stay at a readable size. */
   readableText: "main p, .setting-row > span > span",
@@ -51,11 +55,9 @@ export const shell = {
 } as const;
 
 export const dialog = {
+  /** Every open dialog surface (Radix renders its content with this role). */
   role: '[role="dialog"]',
-  content: ".dialog-content",
 } as const;
-
-export const status = '[role="status"]';
 
 /** Performance marks the application records (src/lib/perf/readiness.ts). */
 export const marks = {
@@ -69,9 +71,9 @@ export const marks = {
 export const personalDataPath = "/api/me";
 
 export const garden = {
-  host: ".garden-canvas",
+  host: part("garden-host"),
+  /** The WebGL canvas the garden renderer creates inside the host at runtime. */
   canvas: "canvas",
-  hostCanvas: ".garden-canvas canvas",
   state: "data-state",
   quality: "data-quality",
   renderer: "data-renderer",
@@ -122,16 +124,15 @@ export const card = {
 } as const;
 
 export const player = {
+  /** The persistent player's media element, the only one in the document. */
   audio: "audio",
   /** The player's media element carrying a session mark set by `markListeningSession`. */
-  markedAudio: (mark: string) => `audio[data-session="${mark}"]`,
-  bar: ".player-bar",
-  error: ".player-error",
-  errorAlert: '.player-error[role="alert"]',
-  currentTitle: ".player-bar .player-track strong",
-  playButton: ".player-buttons .play-button",
-  queueItem: ".queue-list button",
-  currentQueueItem: '.queue-list button[aria-current="true"]',
+  markedAudio: (mark: string) => `[data-session="${mark}"]`,
+  /** The persistent player bar, rendered (with display: none) even while nothing plays. */
+  bar: part("player-bar"),
+  currentTitle: part("player-title"),
+  /** The queue entry of the recording that is playing. */
+  current: '[aria-current="true"]',
 } as const;
 
 /** Streamed playback asks this endpoint for a short-lived URL; downloaded playback never does. */
@@ -209,10 +210,6 @@ export const button = {
 export const describedBy = {
   newPassword: "password-help password-error",
   signInCode: "code-help auth-error",
-} as const;
-
-export const youtube = {
-  frame: "iframe",
 } as const;
 
 /** The literal account deletion requires, compared by the server and the form. */

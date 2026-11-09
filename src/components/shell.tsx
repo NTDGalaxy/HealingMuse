@@ -69,12 +69,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const active = (key: RouteKey) => isRouteActive(pathname, locale as Locale, key);
   const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
-    <div className={`app-shell ${calm ? "calm-mode" : ""}`}>
+    <div className={`app-shell ${calm ? "calm-mode" : ""}`} data-part="app-shell">
       <Scenery pathname={pathname} />
       <a className="skip-link" href="#main-content">
         {t("nav.skip")}
       </a>
-      <aside className="sidebar">
+      <aside className="sidebar" data-part="sidebar">
         <Link className="brand" href={`/${locale}`} aria-label="HealingMuse">
           <span className="brand-mark">
             <Leaf size={25} aria-hidden="true" />
@@ -148,7 +148,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </main>
         <footer className="page-footer">{t("nav.footer")}</footer>
       </div>
-      <nav className="mobile-nav" data-bottom-overlay="" aria-label={t("nav.label")}>
+      <nav
+        className="mobile-nav"
+        data-part="mobile-nav"
+        data-bottom-overlay=""
+        aria-label={t("nav.label")}
+      >
         {primaryRoutes.map(({ key }) => {
           const Icon = icons[key]!;
           return (

@@ -78,6 +78,7 @@ export function Scenery({ pathname }: { pathname: string }) {
       <div
         id="sanctuary-scenery"
         className={`sanctuary-scenery garden-${garden}`}
+        data-part="scenery"
         aria-hidden="true"
         data-garden={garden}
         data-engine="healingmuse-garden-host"
@@ -101,7 +102,7 @@ export function Scenery({ pathname }: { pathname: string }) {
             />
           </picture>
         ))}
-        <div className="garden-canvas" ref={host} data-state="waiting" />
+        <div className="garden-canvas" data-part="garden-host" ref={host} data-state="waiting" />
       </div>
       {/* A new wait for every policy that allows the layer; nothing renders through hydration. */}
       {policy.reveals && (

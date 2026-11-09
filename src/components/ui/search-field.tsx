@@ -30,7 +30,11 @@ export function SearchField({
   submitType?: "submit";
 }) {
   return (
-    <form className={className ? `search-box ${className}` : "search-box"} {...form}>
+    <form
+      className={className ? `search-box ${className}` : "search-box"}
+      data-part="search-field"
+      {...form}
+    >
       {iconSize !== undefined && <Search size={iconSize} aria-hidden="true" />}
       <label className="sr-only" htmlFor={id}>
         {label}

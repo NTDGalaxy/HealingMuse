@@ -57,7 +57,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
   );
   return (
     <div className={`binaural-page binaural-${config.mode}`}>
-      <header className="page-heading binaural-heading">
+      <header className="page-heading binaural-heading" data-part="page-heading">
         <h1>{t("title")}</h1>
         <p>{t("intro")}</p>
       </header>

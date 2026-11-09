@@ -72,7 +72,7 @@ export function LiveAnnouncer() {
         {notice}
       </div>
       {notice && (
-        <div className="toast" aria-hidden="true">
+        <div className="toast" data-part="toast" aria-hidden="true">
           {notice}
         </div>
       )}
@@ -90,7 +90,7 @@ export function DownloadStatus() {
   const track = useTrack(progress?.id);
   if (!progress && !error) return null;
   return (
-    <div className="download-status">
+    <div className="download-status" data-part="download-status">
       {progress ? (
         <>
           <p role="status">

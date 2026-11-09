@@ -22,7 +22,6 @@ import {
   mood,
   shell as chrome,
   size,
-  youtube,
 } from "./support/contracts";
 import { composed, t, type Locale } from "./support/i18n";
 import { preparedAudio, preparedCatalogue } from "./support/catalogue";
@@ -516,7 +515,7 @@ test("a selected private check-in remains readable in Night appearance", async (
   await ui.recordings.listen(harness.recording.title.en).click();
   await page.locator(mood.scoreInput(3)).check();
   await expect(page.locator(mood.selectedScoreInput(3))).toBeChecked();
-  await expectAccessible(page, dialogs.content);
+  await expectAccessible(page, dialogs.role);
 });
 test("recording saves cannot publish outside release review and support retirement", async ({
   page,
@@ -700,7 +699,7 @@ test("YouTube loads only after consent and unavailable videos offer another reco
       body: "window.YT={Player:class{constructor(frame,options){setTimeout(()=>options.events.onError({data:100}),20)}destroy(){}}};window.onYouTubeIframeAPIReady();",
     }),
   );
-  const frame = page.locator(youtube.frame);
+  const frame = new Player(page).video(harness.video.title.en);
   await ui.open();
   await ui.show("recording");
   await ui.recordings.listen(harness.video.title.en).click();
@@ -1449,7 +1448,7 @@ test("a recovery link completes its sign-in even after navigating before the sig
   await ui.open({ guest: true, flags: ["code=synthetic-recovery"] });
   await ui.show("settings");
   // The listener moves on within the app before the sign-in code has downloaded.
-  await page.locator(chrome.languageLink("vi")).click();
+  await new Shell(page).languageLink("vi").click();
   await expect(page).not.toHaveURL(/code=/);
   release();
   await expect(settings.account.getByText(email, { exact: true })).toBeVisible();

@@ -51,7 +51,7 @@ test("offline Downloads queues only the recordings it shows and never streams", 
   await player.button("next").click();
   await expectPaused(page);
   await expect(player.currentTitle).toHaveText(later);
-  await expect(player.errorAlert).toHaveCount(0);
+  await expect(player.error).toHaveCount(0);
   expect(grants).toEqual([]);
   await context.setOffline(false);
 });
@@ -86,7 +86,7 @@ test("a late source from an earlier Retry never replaces the recording chosen si
   // The first recording fails to load, so the player offers Retry.
   await page.route(`**/api/local-audio/${A}`, (route) => route.abort("failed"));
   await recordings.listen(first).click();
-  await expect(player.errorAlert).toBeVisible();
+  await expect(player.error).toBeVisible();
   await page.unroute(`**/api/local-audio/${A}`);
   // Retry asks for a fresh source; the listener picks another recording before it arrives.
   const retry = await holdRequests(page, `**${playbackGrantPath}${A}`, { pass: 0 });
@@ -144,6 +144,6 @@ test("choosing another recording while one loads shows no autoplay error", async
   await recordings.listen(second).click();
   await expectPlaying(page);
   await expect(player.currentTitle).toHaveText(second);
-  await expect(player.errorAlert).toHaveCount(0);
+  await expect(player.error).toHaveCount(0);
   audio.release();
 });

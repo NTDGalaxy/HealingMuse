@@ -92,7 +92,7 @@ for (const preference of ["calm", "reduced"] as const) {
     else await appearance({ calm: true });
     await page.goto(binaural.path);
     await binaural.modeChoices.nth(2).click();
-    const more = shell.mobileNavButton;
+    const more = shell.moreButton;
     await more.hover();
     const resting = await more.boundingBox();
     await page.mouse.down();

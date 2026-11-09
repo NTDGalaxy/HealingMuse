@@ -11,7 +11,7 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="empty-state">
+    <div className="empty-state" data-part="empty-state">
       <Leaf size={36} aria-hidden="true" />
       <h2>{title}</h2>
       {text && <p>{text}</p>}

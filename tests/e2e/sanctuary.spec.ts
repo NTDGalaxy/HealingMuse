@@ -50,7 +50,7 @@ test("reduced motion, stored Calm mode and reduced transparency remove decorativ
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ ...style.reducedTransparency }],
   });
-  for (const surface of [shell.topbar, shell.searchBox, new Player(page).bar]) {
+  for (const surface of [shell.topbar, shell.searchField, new Player(page).bar]) {
     expect(
       await surface.first().evaluate((element) => getComputedStyle(element).backdropFilter),
     ).toBe(style.none);

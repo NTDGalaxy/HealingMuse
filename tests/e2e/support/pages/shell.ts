@@ -1,7 +1,9 @@
 import { expect, type Page } from "@playwright/test";
-import { documentRoot, garden, shell, status } from "../contracts";
+import { documentRoot, garden, shell } from "../contracts";
 import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 import type { GardenDetail, Theme } from "../test";
+
+type SideNavRoute = "explore" | "binaural" | "downloads" | "settings";
 
 /** The persistent application chrome: navigation, appearance, dialogs and the garden. */
 export class Shell {
@@ -21,38 +23,37 @@ export class Shell {
     return this.page.locator(shell.app);
   }
   get main() {
-    return this.page.locator(shell.main);
+    return this.page.getByRole("main");
   }
   /** The route heading inside the reading region, never Next's hidden streamed copy. */
   get mainHeading() {
-    return this.page.locator(shell.mainHeading);
+    return this.main.getByRole("heading", { level: 1 });
   }
+  /** Paragraphs of the reading region that are rendered and exposed. */
   get mainCopy() {
-    return this.page.locator(shell.mainCopy);
+    return this.main.getByRole("paragraph");
   }
   get pageHeading() {
     return this.page.locator(shell.pageHeading);
   }
   get skipLink() {
-    return this.page.locator(shell.skipLink);
+    return this.page.getByRole("link", { name: this.t("nav.skip"), exact: true });
   }
   get topbar() {
-    return this.page.locator(shell.topbar);
+    return this.page.getByRole("banner");
   }
   get sidebar() {
     return this.page.locator(shell.sidebar);
   }
-  get searchBox() {
-    return this.page.locator(shell.searchBox);
+  /** Every search form; Home and Explore each render one. */
+  get searchField() {
+    return this.page.locator(shell.searchField);
   }
   get scenery() {
     return this.page.locator(shell.scenery);
   }
   get emptyState() {
     return this.page.locator(shell.emptyState);
-  }
-  get panels() {
-    return this.page.locator(shell.panel);
   }
   get readableText() {
     return this.page.locator(shell.readableText);
@@ -62,9 +63,6 @@ export class Shell {
   }
   get mobileNav() {
     return this.page.locator(shell.mobileNav);
-  }
-  get mobileNavButton() {
-    return this.page.locator(shell.mobileNavButton);
   }
   get moreButton() {
     return this.mobileNav.getByRole("button", { name: this.t("common.more"), exact: true });
@@ -89,7 +87,7 @@ export class Shell {
   }
   /** The live WebGL canvas; absent whenever the still poster is shown. */
   get gardenCanvas() {
-    return this.page.locator(garden.hostCanvas);
+    return this.gardenHost.locator(garden.canvas);
   }
 
   /** A primary navigation link by its message key under `nav`. */
@@ -100,22 +98,26 @@ export class Shell {
   dialogNavLink(key: "downloads" | "settings") {
     return this.dialog.getByRole("link", { name: this.t(`nav.${key}`), exact: true });
   }
-  sideNavLink(href: string) {
-    return this.page.locator(shell.sideNavLink(href));
+  /** A destination in the desktop sidebar's navigation, by its message key under `nav`. */
+  sideNavLink(key: SideNavRoute) {
+    return this.sidebar
+      .getByRole("navigation", { name: this.t("nav.label"), exact: true })
+      .getByRole("link", { name: this.t(`nav.${key}`), exact: true });
   }
   /** The live download progress line shown while a recording is being saved. */
   get downloadStatus() {
     return this.page.locator(shell.downloadStatus);
   }
   get downloadProgress() {
-    return this.downloadStatus.locator(status);
+    return this.downloadStatus.getByRole("status");
   }
   /** The visual confirmation toast (its text is also announced through the live region). */
   get toast() {
     return this.page.locator(shell.toast);
   }
+  /** Every link that switches to `locale`: the top bar's, and the Settings panel's there. */
   languageLink(locale: Locale) {
-    return this.page.locator(shell.languageLink(locale));
+    return this.page.getByRole("link").and(this.page.locator(shell.languageLink(locale)));
   }
 
   async expectTheme(theme: Theme) {
@@ -143,7 +145,7 @@ export class Shell {
     await this.app.evaluate((element, name) => element.classList.add(name), shell.calmClass);
   }
   async expectCurrentMoreButton() {
-    await expect(this.mobileNavButton).toHaveAttribute(shell.current, "true");
+    await expect(this.moreButton).toHaveAttribute(shell.current, "true");
   }
   async expectGardenState(state: string) {
     await expect(this.gardenHost).toHaveAttribute(garden.state, state);
@@ -153,9 +155,5 @@ export class Shell {
   }
   async expectGardenRenderer(renderer: string) {
     await expect(this.gardenHost).toHaveAttribute(garden.renderer, renderer);
-  }
-  /** The canvas inside the garden host, for context-loss checks. */
-  get gardenHostCanvas() {
-    return this.gardenHost.locator(garden.canvas);
   }
 }

@@ -72,10 +72,10 @@ test("guest session pauses on navigation, resumes explicitly and never creates d
   expect(await contextStates()).toEqual(["running"]);
   await shell.languageLink("en").click();
   await expect(binaural.button("pause")).toBeVisible();
-  await shell.sideNavLink("/en/explore").click();
+  await shell.sideNavLink("explore").click();
   await expect(page).toHaveURL(/\/en\/explore$/);
   await expect.poll(contextStates).toEqual(["suspended"]);
-  await shell.sideNavLink("/en/brainwave-entrainment").click();
+  await shell.sideNavLink("binaural").click();
   await expect(binaural.button("resume")).toBeEnabled();
   expect(await contextStates()).toEqual(["suspended"]);
   await binaural.button("resume").click();
@@ -224,11 +224,11 @@ test("licensed background uses one fresh grant, mixes independently and yields t
   await expect(binaural.button("resume")).toBeEnabled();
   await binaural.button("resume").click();
   await expect.poll(musicState).toEqual([true]);
-  await shell.sideNavLink("/en/explore").click();
+  await shell.sideNavLink("explore").click();
   await expect.poll(musicState).toEqual([false]);
   await new Recordings(page).plays.first().click();
   await expectPlaying(page);
-  await shell.sideNavLink("/en/brainwave-entrainment").click();
+  await shell.sideNavLink("binaural").click();
   await binaural.button("resume").click();
   await expectPaused(page);
   await expect.poll(musicState).toEqual([true]);
