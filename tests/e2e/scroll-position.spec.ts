@@ -1,4 +1,4 @@
-import { test, expect, expectMotionSettled } from "./support/test";
+import { test, expect } from "./support/test";
 import { Explore, Shell } from "./support/pages";
 
 test.use({ serviceWorkers: "block" });
@@ -27,11 +27,17 @@ for (const width of [390, 1440]) {
         await expect(lazyList).toHaveCount(0);
         await page.evaluate(() => scrollTo(0, 0));
       }
-      // The heading's entrance moves it for 550 ms; a click meanwhile measures the animation,
-      // not the click (the dialog above can now open with no download and finish sooner).
-      await expectMotionSettled(page);
+      // The heading may still be arriving (it moves for 550 ms), and the test driver scrolls an
+      // element it sees moving before it clicks. Let the driver finish that, then measure a plain
+      // pointer click, which may land during the entrance just as a listener's tap can.
+      const heading = page.getByRole("heading", { level: 1 });
+      await heading.click({ trial: true });
+      const target = await heading.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        return { x: box.x + Math.min(24, box.width / 2), y: box.y + box.height / 2 };
+      });
       const before = await page.evaluate(() => scrollY);
-      await page.getByRole("heading", { level: 1 }).click();
+      await page.mouse.click(target.x, target.y);
       await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
       // Clicking supporting copy after scrolling used to refocus the entire main container.
       const copy = shell.mainCopy.last();
