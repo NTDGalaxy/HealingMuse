@@ -499,6 +499,45 @@ describe("playback engine", () => {
   });
 });
 
+describe("interrupted play requests", () => {
+  it("reports no autoplay error for a start the listener skipped while it buffered", async () => {
+    const { engine, audio } = setup();
+    audio.buffering = true;
+    engine.play(a, [a, b]);
+    await flush();
+    engine.advance(1);
+    await flush();
+    audio.ready();
+    await flush();
+    expect(engine.state.getSnapshot()).toMatchObject({ current: b, playing: true, error: "" });
+  });
+
+  it("treats a pause while buffering as a pause, not an autoplay failure", async () => {
+    const { engine, audio } = setup();
+    audio.buffering = true;
+    engine.play(a);
+    await flush();
+    // A pause the engine did not ask for, such as an operating system control.
+    audio.pause();
+    await flush();
+    expect(engine.state.getSnapshot()).toMatchObject({ playing: false, error: "" });
+  });
+
+  it("reports no autoplay error for a Media Session resume interrupted by a newer start", async () => {
+    const { engine, audio } = setup();
+    engine.play(a, [a, b]);
+    await flush();
+    audio.pause();
+    audio.buffering = true;
+    engine.transport.play();
+    engine.play(b, [a, b]);
+    await flush();
+    audio.ready();
+    await flush();
+    expect(engine.state.getSnapshot()).toMatchObject({ current: b, playing: true, error: "" });
+  });
+});
+
 describe("resuming", () => {
   it("ignores a late resume source after the listener chose another recording", async () => {
     const late = deferred<string>();

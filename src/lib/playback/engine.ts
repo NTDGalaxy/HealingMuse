@@ -88,6 +88,18 @@ export type PlaybackDeps = {
   now?: () => number;
 };
 
+/**
+ * Whether a play() request was interrupted by pause() or a new load. That happens whenever the
+ * listener moves on while a recording buffers, and it is not a playback failure.
+ */
+function interrupted(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { name?: unknown }).name === "AbortError"
+  );
+}
+
 const initialState: PlayerState = {
   current: null,
   queue: [],
@@ -199,8 +211,9 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
       element.load();
       try {
         await element.play();
-      } catch {
-        patch({ error: "player.cannotAutoplay" });
+      } catch (error) {
+        // Only a refused play() of the current start needs the listener's tap.
+        if (version === epoch && !interrupted(error)) patch({ error: "player.cannotAutoplay" });
       }
       settle();
       const owner = deps.userId();
@@ -295,14 +308,18 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
       }
       await element.play();
       if (current()) patch({ error: "" });
-    } catch {
-      if (current()) patch({ error: online ? "player.playbackError" : "player.refreshFailed" });
+    } catch (error) {
+      if (current() && !interrupted(error))
+        patch({ error: online ? "player.playbackError" : "player.refreshFailed" });
     }
   }
 
   function resume() {
     focus.pauseOther();
-    void audio?.play().catch(() => patch({ error: "player.cannotAutoplay" }));
+    const version = epoch;
+    void audio?.play().catch((error: unknown) => {
+      if (version === epoch && !interrupted(error)) patch({ error: "player.cannotAutoplay" });
+    });
   }
 
   function seekTo(seconds: number) {

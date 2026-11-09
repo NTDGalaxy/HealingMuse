@@ -131,3 +131,19 @@ test("Retry after a saved recording recovers a streamed recording that failed", 
   await expectPlaying(page);
   expect(attempts).toBe(2);
 });
+
+test("choosing another recording while one loads shows no autoplay error", async ({ page }) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
+  await page.goto("/en");
+  // The first recording's audio never arrives, so its play() request is still pending when
+  // the listener moves on and the newer recording interrupts it.
+  const audio = await holdRequests(page, `**/api/local-audio/${A}`);
+  await recordings.listen(first).click();
+  await audio.reached;
+  await recordings.listen(second).click();
+  await expectPlaying(page);
+  await expect(player.currentTitle).toHaveText(second);
+  await expect(player.errorAlert).toHaveCount(0);
+  audio.release();
+});
