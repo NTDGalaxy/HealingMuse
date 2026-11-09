@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, Pencil, Headphones, ArrowUpRight } from "lucide-react";
 import { useAppActions, useOnline } from "@/components/app-state";
@@ -12,7 +12,8 @@ import { ReleaseReview } from "./release-review";
 import { emptyTrack, TrackEditor } from "./track-editor";
 import { api, mutation } from "@/lib/browser/api";
 import { trackInput } from "@/lib/validation";
-import type { CatalogPage, Locale, Track } from "@/lib/types";
+import type { Locale, Track } from "@/lib/types";
+import { useAdminTracks } from "./use-admin-tracks";
 
 /** The content studio for an administrator: recordings, release review and collections. */
 export default function AdminConsole() {
@@ -20,33 +21,14 @@ export default function AdminConsole() {
   const locale = useLocale() as Locale;
   const { announce } = useAppActions();
   const online = useOnline();
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [cursor, setCursor] = useState("");
-  const [page, setPage] = useState<CatalogPage>({ items: [], total: 0, nextCursor: null });
-  const [tracks, setTracks] = useState<Track[]>([]);
   const [edit, setEdit] = useState<Track | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    void api<CatalogPage>(
-      `/api/admin/tracks?${new URLSearchParams({ q: search, status, cursor })}`,
-      { signal: controller.signal },
-    )
-      .then((data) => {
-        if (controller.signal.aborted) return;
-        setError("");
-        setPage(data);
-        setTracks(data.items);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setError(t("errors.unavailable"));
-      });
-    return () => controller.abort();
-  }, [search, status, cursor, t]);
+  const recordings = useAdminTracks((ok) => setError(ok ? "" : t("errors.unavailable")));
+  const { page } = recordings;
+  const tracks = page.items;
   const update = <K extends keyof Track>(key: K, value: Track[K]) => {
     setEdit((previous) => (previous ? { ...previous, [key]: value } : null));
   };
@@ -67,11 +49,7 @@ export default function AdminConsole() {
     setError("");
     try {
       await mutation("/api/admin/tracks", parsed.data);
-      const data = await api<CatalogPage>(
-        `/api/admin/tracks?${new URLSearchParams({ q: search, status, cursor })}`,
-      );
-      setPage(data);
-      setTracks(data.items);
+      await recordings.reload();
       setEdit(null);
       setPreview(null);
       announce(t("admin.saved"));
@@ -104,19 +82,15 @@ export default function AdminConsole() {
         placeholder={t("catalog.searchPlaceholder")}
         onSubmit={(event) => {
           event.preventDefault();
-          setCursor("");
-          setSearch(String(new FormData(event.currentTarget).get("q") || ""));
+          recordings.search(String(new FormData(event.currentTarget).get("q") || ""));
         }}
       />
       <label className="review-filter" htmlFor="review-status">
         {t("admin.status")}
         <select
           id="review-status"
-          value={status}
-          onChange={(event) => {
-            setCursor("");
-            setStatus(event.target.value);
-          }}
+          value={recordings.status}
+          onChange={(event) => recordings.filter(event.target.value)}
         >
           <option value="">{t("common.all")}</option>
           {["draft", "published", "retired"].map((value) => (
@@ -181,13 +155,8 @@ export default function AdminConsole() {
       </div>
       <Pagination
         label={t("catalog.pages")}
-        back={cursor !== "" && { label: t("common.back"), onClick: () => setCursor("") }}
-        next={
-          !!page.nextCursor && {
-            label: t("catalog.next"),
-            onClick: () => setCursor(page.nextCursor!),
-          }
-        }
+        back={recordings.hasPrevious && { label: t("common.back"), onClick: recordings.back }}
+        next={!!page.nextCursor && { label: t("catalog.next"), onClick: recordings.next }}
       />
       {!edit && preview && (
         <div className="panel review-preview">

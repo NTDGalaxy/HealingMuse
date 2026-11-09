@@ -1167,3 +1167,50 @@ test("the content studio downloads only once the account is known to be an admin
   await expect(restricted).toHaveCount(0);
   expect(ui.moduleRequests(harness.modules.adminConsole)).toBe(1);
 });
+test("content studio Back returns to the previous page of recordings", async ({ page }) => {
+  const ui = screens(page);
+  const template = (await preparedCatalogue())[0];
+  // Three pages of studio rows behind opaque cursors, as /api/admin/tracks pages them.
+  const pages = [1, 2, 3].map((number) => ({
+    cursor: number === 1 ? "" : `synthetic-page-${number}`,
+    title: `Studio page ${number} recording`,
+  }));
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: personalData({ isAdmin: true }) }),
+  );
+  await page.route("**/api/admin/collections", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/admin/tracks?*", (route) => {
+    const cursor = new URL(route.request().url()).searchParams.get("cursor") ?? "";
+    const index = pages.findIndex((entry) => entry.cursor === cursor);
+    return route.fulfill({
+      json: {
+        items: [
+          {
+            ...template,
+            id: `70000000-0000-4000-8000-00000000000${index + 1}`,
+            title: { vi: pages[index].title, en: pages[index].title },
+          },
+        ],
+        total: pages.length,
+        nextCursor: pages[index + 1]?.cursor ?? null,
+      },
+    });
+  });
+  const row = (number: number) =>
+    page.getByRole("button", {
+      name: composed.editRecording("en", pages[number - 1].title),
+      exact: true,
+    });
+  await ui.open();
+  await ui.show("admin");
+  await expect(row(1)).toBeVisible();
+  await ui.button("catalog.next").click();
+  await expect(row(2)).toBeVisible();
+  await ui.button("catalog.next").click();
+  await expect(row(3)).toBeVisible();
+  await ui.button("common.back").click();
+  await expect(row(2)).toBeVisible();
+  await ui.button("common.back").click();
+  await expect(row(1)).toBeVisible();
+  await expect(ui.button("common.back")).toHaveCount(0);
+});
