@@ -29,9 +29,6 @@
     inset: 0;
     background: linear-gradient(180deg, #f3eff750 0%, #f3eff780 30%, #f3eff7d9 62%, var(--bg) 78%);
   }
-  .sanctuary-scenery.subdued::after {
-    background: linear-gradient(180deg, #f3eff7bd, var(--bg) 74%);
-  }
   .sidebar,
   .topbar,
   .search-box,
@@ -91,11 +88,9 @@
   .empty-state,
   .admin-item,
   .reading-surface,
-  .credit-list,
-  .legal-content {
+  .credit-list {
     background: var(--surface);
   }
-  .goal-card,
   .filter-chip {
     background: #fffcffe8;
     border-color: var(--line);
@@ -125,7 +120,6 @@
     color: var(--green);
     background: #d7e9e0;
   }
-  .nature-banner p,
   .legal-page p {
     color: var(--muted);
   }
@@ -190,8 +184,7 @@
     margin-block: 0;
   }
   .button:hover:not(:disabled),
-  .card-play:hover,
-  .main-play:hover {
+  .card-play:hover {
     background: #194c3e;
     color: white;
   }
@@ -302,7 +295,6 @@
     .search-box,
     .mobile-nav,
     .player-bar,
-    .goal-card,
     .filter-chip {
       background: var(--surface);
       backdrop-filter: none;

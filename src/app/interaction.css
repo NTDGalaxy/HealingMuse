@@ -44,8 +44,7 @@
   }
   .search-box,
   .discovery-categories a,
-  .filter-chip,
-  .goal-card {
+  .filter-chip {
     background: var(--glass);
     box-shadow: inset 0 1px 0 var(--glass-highlight);
   }
@@ -186,9 +185,7 @@
     .icon-button,
     .card-play,
     .play-button,
-    .main-play,
     .filter-chip,
-    .goal-card,
     .binaural-mode,
     .account-button,
     .more-navigation a,
@@ -208,9 +205,7 @@
       .icon-button,
       .card-play,
       .play-button,
-      .main-play,
       .filter-chip,
-      .goal-card,
       .binaural-mode,
       .account-button,
       .more-navigation a,
