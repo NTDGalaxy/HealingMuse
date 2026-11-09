@@ -35,6 +35,37 @@ test("phone recording actions stay above fixed navigation when reached by keyboa
   ).toBe(true);
 });
 
+test("keyboard focus under the expanded player is revealed above it on a phone", async ({
+  page,
+}) => {
+  const shell = new Shell(page);
+  const player = new Player(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/en/explore");
+  await new Recordings(page).mainPlays.first().click();
+  await player.button("expand").click();
+  // Keyboard modality, then focus that the browser does not scroll (as assistive technology or a
+  // returning dialog may move it): the player bar, not only the navigation, must be avoided.
+  await page.keyboard.press("Tab");
+  const bar = (await player.bar.boundingBox())!;
+  const nav = (await shell.mobileNav.boundingBox())!;
+  const outcome = await shell.main.getByRole("button").evaluateAll(
+    (buttons, { barTop, navTop }) => {
+      const target = (buttons as HTMLElement[]).find((element) => {
+        const box = element.getBoundingClientRect();
+        return box.height > 0 && box.top + box.height / 2 > barTop + 4 && box.bottom < navTop;
+      });
+      if (!target) return "no control under the player";
+      target.focus({ preventScroll: true });
+      const box = target.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return hit !== null && target.contains(hit) ? "revealed" : "covered";
+    },
+    { barTop: bar.y, navTop: nav.y },
+  );
+  expect(outcome).toBe("revealed");
+});
+
 for (const locale of ["en", "vi"] as const)
   for (const theme of ["day", "night"] as const) {
     test(`${locale} ${theme} keeps the first recording identified and immediately playable`, async ({

@@ -506,6 +506,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       <section
         style={controlsHidden || !current ? { display: "none" } : undefined}
         className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
+        data-bottom-overlay=""
         aria-label={t("player.nowPlaying")}
       >
         <div className="player-track">

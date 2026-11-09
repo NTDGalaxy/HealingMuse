@@ -15,24 +15,20 @@ import {
   Headphones,
   MoreHorizontal,
 } from "lucide-react";
-import {
-  useAppActions,
-  useCalm,
-  useDownloadError,
-  useDownloadProgress,
-  useIsAdmin,
-  useNotice,
-  useOnline,
-  useTrack,
-  useUserId,
-} from "./app-state";
+import { useAppActions, useCalm, useIsAdmin, useOnline, useUserId } from "./app-state";
 import { AuthDialog } from "./auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
-import { Fragment, useEffect, useLayoutEffect, useState } from "react";
+import { Fragment, useLayoutEffect, useState } from "react";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
 import { Dialog } from "./dialog";
+import {
+  BottomOverlayFocus,
+  DownloadStatus,
+  LiveAnnouncer,
+  ServiceWorkerRegistration,
+} from "./shell-runtime";
 import type { Locale } from "@/lib/types";
 import {
   isRouteActive,
@@ -60,47 +56,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const locale = useLocale();
   const pathname = usePathname();
-  const { openAuth, cancelDownload } = useAppActions();
+  const { openAuth } = useAppActions();
   const calm = useCalm();
   const isAdmin = useIsAdmin();
   const signedIn = useUserId() !== null;
-  const notice = useNotice();
-  const progress = useDownloadProgress();
-  const downloadError = useDownloadError();
-  const downloading = useTrack(progress?.id);
   const online = useOnline();
   const [more, setMore] = useState(false);
   // Readiness contract: navigation is hydrated and usable from this commit on.
   useLayoutEffect(() => markOnce(readinessMarks.shell), []);
-  useEffect(() => {
-    const revealFocus = (event: FocusEvent) => {
-      const element = event.target;
-      // Text clicks focus the tabindex=-1 main container. Its bottom is the whole page,
-      // not a covered control. Leave pointer focus and skip-link targets to the browser.
-      if (
-        !(element instanceof HTMLElement) ||
-        element.id === "main-content" ||
-        !element.closest("#main-content") ||
-        !element.matches(":focus-visible")
-      )
-        return;
-      const overlays = [...document.querySelectorAll(".mobile-nav, .player-bar")]
-        .map((overlay) => overlay.getBoundingClientRect())
-        .filter((box) => box.height > 0);
-      const bottom = Math.min(innerHeight, ...overlays.map((box) => box.top));
-      const box = element.getBoundingClientRect();
-      if (box.bottom > bottom - 16)
-        window.scrollBy({ top: box.bottom - bottom + 24, behavior: "instant" });
-    };
-    document.addEventListener("focusin", revealFocus);
-    return () => document.removeEventListener("focusin", revealFocus);
-  }, []);
-  useEffect(() => {
-    if ("serviceWorker" in navigator)
-      void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-        /* Online listening remains available. */
-      });
-  }, []);
   const active = (key: RouteKey) => isRouteActive(pathname, locale as Locale, key);
   const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
@@ -193,7 +156,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </main>
         <footer className="page-footer">{t("nav.footer")}</footer>
       </div>
-      <nav className="mobile-nav" aria-label={t("nav.label")}>
+      <nav className="mobile-nav" data-bottom-overlay="" aria-label={t("nav.label")}>
         {primaryRoutes.map(({ key }) => {
           const Icon = icons[key]!;
           return (
@@ -241,41 +204,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
       </Dialog>
-      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {notice}
-      </div>
-      {notice && (
-        <div className="toast" aria-hidden="true">
-          {notice}
-        </div>
-      )}
-      {(progress || downloadError) && (
-        <div className="download-status">
-          {progress ? (
-            <>
-              <p role="status">
-                {t("downloads.progress", {
-                  title: downloading?.title[locale as Locale] ?? "",
-                  percent: progress.percent,
-                })}
-              </p>
-              <progress
-                aria-label={t("downloads.downloadButton")}
-                max={100}
-                value={progress.percent}
-              />
-              <button className="text-button" onClick={cancelDownload}>
-                {t("downloads.cancel")}
-              </button>
-            </>
-          ) : (
-            <p role="alert" className="error">
-              {downloadError}
-            </p>
-          )}
-        </div>
-      )}
+      <LiveAnnouncer />
+      <DownloadStatus />
       <AuthDialog />
+      <BottomOverlayFocus />
+      <ServiceWorkerRegistration />
     </div>
   );
 }
