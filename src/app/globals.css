@@ -1,4 +1,7 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+/* Scan only the app's markup: automatic detection walked the whole repository (media included). */
+@source "../components";
+@source "../app";
 
 :root {
   --bg: #f3eff7;
