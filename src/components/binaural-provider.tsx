@@ -24,7 +24,7 @@ import {
 import type { BinauralEngine, BinauralSnapshot } from "@/lib/binaural/engine";
 import type { PlaybackGrant } from "@/lib/types";
 import { usePlayer } from "./player";
-import { useApp } from "./app-state";
+import { useAppActions, useDownloadedRecords } from "./app-state";
 
 const idleSnapshot: BinauralSnapshot = {
   status: "idle",
@@ -36,9 +36,9 @@ const idleSnapshot: BinauralSnapshot = {
 const emptySubscribe = () => () => {};
 const initialSnapshot = () => idleSnapshot;
 function useController() {
-  const app = useApp();
+  const { announce } = useAppActions();
+  const downloaded = useDownloadedRecords();
   const player = usePlayer();
-  const { announce, downloaded } = app;
   const { playing, controlsHidden, setControlsHidden, registerOtherAudio, pauseForOtherAudio } =
     player;
   const t = useTranslations("binaural");

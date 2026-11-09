@@ -15,7 +15,17 @@ import {
   Headphones,
   MoreHorizontal,
 } from "lucide-react";
-import { useApp, useOnline } from "./app-state";
+import {
+  useAppActions,
+  useCalm,
+  useDownloadError,
+  useDownloadProgress,
+  useIsAdmin,
+  useNotice,
+  useOnline,
+  useTrack,
+  useUserId,
+} from "./app-state";
 import { AuthDialog } from "./auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
@@ -50,7 +60,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const locale = useLocale();
   const pathname = usePathname();
-  const app = useApp();
+  const { openAuth, cancelDownload } = useAppActions();
+  const calm = useCalm();
+  const isAdmin = useIsAdmin();
+  const signedIn = useUserId() !== null;
+  const notice = useNotice();
+  const progress = useDownloadProgress();
+  const downloadError = useDownloadError();
+  const downloading = useTrack(progress?.id);
   const online = useOnline();
   const [more, setMore] = useState(false);
   // Readiness contract: navigation is hydrated and usable from this commit on.
@@ -87,7 +104,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const active = (key: RouteKey) => isRouteActive(pathname, locale as Locale, key);
   const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
-    <div className={`app-shell ${app.calm ? "calm-mode" : ""}`}>
+    <div className={`app-shell ${calm ? "calm-mode" : ""}`}>
       <Scenery pathname={pathname} />
       <a className="skip-link" href="#main-content">
         {t("nav.skip")}
@@ -112,7 +129,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          {app.personal?.isAdmin && (
+          {isAdmin && (
             <Link href={href("admin")} aria-current={active("admin") ? "page" : undefined}>
               <ShieldCheck size={21} aria-hidden="true" />
               {t("nav.admin")}
@@ -153,13 +170,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {app.user ? (
+            {signedIn ? (
               <Link className="account-button" href={`/${locale}/settings`}>
                 {t("nav.account")}
                 <ArrowRight size={17} aria-hidden="true" />
               </Link>
             ) : (
-              <button className="account-button" onClick={app.openAuth}>
+              <button className="account-button" onClick={openAuth}>
                 {t("nav.signIn")}
                 <ArrowRight size={17} aria-hidden="true" />
               </button>
@@ -212,7 +229,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          {app.personal?.isAdmin && (
+          {isAdmin && (
             <Link href={href("admin")} onClick={() => setMore(false)}>
               {t("nav.admin")}
             </Link>
@@ -225,38 +242,35 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
       </Dialog>
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {app.notice}
+        {notice}
       </div>
-      {app.notice && (
+      {notice && (
         <div className="toast" aria-hidden="true">
-          {app.notice}
+          {notice}
         </div>
       )}
-      {(app.progress || app.downloadError) && (
+      {(progress || downloadError) && (
         <div className="download-status">
-          {app.progress ? (
+          {progress ? (
             <>
               <p role="status">
                 {t("downloads.progress", {
-                  title:
-                    app.tracks.find((track) => track.id === app.progress?.id)?.title[
-                      locale as Locale
-                    ] ?? "",
-                  percent: app.progress.percent,
+                  title: downloading?.title[locale as Locale] ?? "",
+                  percent: progress.percent,
                 })}
               </p>
               <progress
                 aria-label={t("downloads.downloadButton")}
                 max={100}
-                value={app.progress.percent}
+                value={progress.percent}
               />
-              <button className="text-button" onClick={app.cancelDownload}>
+              <button className="text-button" onClick={cancelDownload}>
                 {t("downloads.cancel")}
               </button>
             </>
           ) : (
             <p role="alert" className="error">
-              {app.downloadError}
+              {downloadError}
             </p>
           )}
         </div>

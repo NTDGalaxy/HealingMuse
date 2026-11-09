@@ -30,7 +30,14 @@ import type { CatalogPage, CatalogQuery, Locale, PlaybackGrant, Track } from "@/
 import { api, mutation } from "@/lib/browser/api";
 import { clock } from "@/lib/audio";
 import { monitor } from "@/lib/browser/monitor";
-import { useApp, useOnline } from "./app-state";
+import {
+  useAppActions,
+  useAppStores,
+  useMoodConsent,
+  useOnline,
+  usePersonalError,
+  useUserId,
+} from "./app-state";
 import { Dialog } from "./dialog";
 import { NatureArt } from "./art";
 import { YouTubeEmbed } from "./youtube";
@@ -85,7 +92,13 @@ export function MoodScores({
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  // Narrow subscriptions: the player and its context must not change with download progress,
+  // notices or newly registered recordings. Current values are read from the stores on use.
+  const stores = useAppStores();
+  const { announce, perform, registerTracks } = useAppActions();
+  const userId = useUserId();
+  const moodConsent = useMoodConsent();
+  const personalError = usePersonalError();
   const online = useOnline();
   const audio = useRef<HTMLAudioElement>(null);
   // Readiness contract: the single persistent <audio> element is mounted.
@@ -121,12 +134,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [score, setScore] = useState<number | null>(null);
   const [external, setExternal] = useState<Track | null>(null);
   const [youtubeLoaded, setYoutubeLoaded] = useState(false);
-  const privacy = useRef({
-    owner: app.user?.id ?? null,
-    consent: !!app.personal?.profile.mood_consent_at,
-  });
+  const privacy = useRef({ owner: userId, consent: !!moodConsent });
   useLayoutEffect(() => {
-    const next = { owner: app.user?.id ?? null, consent: !!app.personal?.profile.mood_consent_at };
+    const next = { owner: userId, consent: !!moodConsent };
     if (privacy.current.owner !== next.owner || (privacy.current.consent && !next.consent)) {
       epoch.current++;
       browsingVersion.current++;
@@ -144,7 +154,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
     }
     privacy.current = next;
-  }, [app.user?.id, app.personal?.profile.mood_consent_at]);
+  }, [userId, moodConsent]);
   const endSession = useCallback(
     async (showFeedback = true) => {
       const id = session.current;
@@ -158,11 +168,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             setScore(null);
           }
         } catch {
-          if (privacy.current.owner === owner) app.announce(t("player.sessionSaveFailed"));
+          if (privacy.current.owner === owner) announce(t("player.sessionSaveFailed"));
         }
       }
     },
-    [app, t],
+    [announce, t],
   );
   const endSessionRef = useRef(endSession);
   useEffect(() => {
@@ -214,9 +224,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       queueRef.current = nextQueue;
       setCurrent(track);
       setQueue(nextQueue);
-      app.announce(t("player.loadingStatus", { title: track.title[locale] }));
+      announce(t("player.loadingStatus", { title: track.title[locale] }));
       try {
-        const downloaded = app.downloaded.find((item) => item.id === track.id);
+        const downloaded = stores.downloads.records
+          .getSnapshot()
+          .items.find((item) => item.id === track.id);
         const source = downloaded
           ? URL.createObjectURL(downloaded.blob)
           : (await api<PlaybackGrant>(`/api/grants/${track.id}`)).url;
@@ -233,10 +245,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         } catch {
           setError(t("player.cannotAutoplay"));
         }
+        const user = stores.session.getSnapshot().user;
         if (
           version === epoch.current &&
-          app.user &&
-          privacy.current.owner === app.user.id &&
+          user &&
+          privacy.current.owner === user.id &&
           privacy.current.consent &&
           online
         ) {
@@ -248,13 +261,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
                 ...(beforeScore ? { beforeScore } : {}),
               },
               "POST",
-              app.user.id,
+              user.id,
             );
             if (version === epoch.current) session.current = result.id;
-            else if (privacy.current.owner === app.user.id)
-              await mutation("/api/sessions", { sessionId: result.id }, "PATCH", app.user.id);
+            else if (privacy.current.owner === user.id)
+              await mutation("/api/sessions", { sessionId: result.id }, "PATCH", user.id);
           } catch {
-            if (version === epoch.current) app.announce(t("player.sessionSaveFailed"));
+            if (version === epoch.current) announce(t("player.sessionSaveFailed"));
           }
         }
       } catch {
@@ -266,7 +279,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         if (version === epoch.current) setLoading(false);
       }
     },
-    [app, endSession, locale, online, t],
+    [announce, endSession, locale, online, stores, t],
   );
   const play = useCallback(
     (track: Track, selection?: Track[], continuation?: CatalogQuery) => {
@@ -275,18 +288,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       browseAbort.current?.abort();
       advancing.current = false;
       continuationRef.current = continuation || null;
-      const next = (selection ?? app.tracks).filter((item) => item.source.kind === "hosted");
+      // Read at the moment of the tap, so play keeps one identity while recordings, the
+      // account and personal data change.
+      const known = stores.tracks.getSnapshot().list;
+      const next = (selection ?? known).filter((item) => item.source.kind === "hosted");
       if (
         track.source.kind === "hosted" &&
-        app.user &&
-        app.personal?.profile.mood_consent_at &&
+        stores.session.getSnapshot().user &&
+        stores.personal.getSnapshot().data?.profile.mood_consent_at &&
         online
       ) {
         setPending({ track, queue: next });
         setScore(null);
       } else void start(track, next);
     },
-    [app.tracks, app.user, app.personal, online, start],
+    [online, start, stores],
   );
   const playerContext = useMemo(
     () => ({
@@ -329,7 +345,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             continuationRef.current = page.nextCursor
               ? { ...continuationRef.current, cursor: page.nextCursor }
               : null;
-            app.registerTracks(page.items);
+            registerTracks(page.items);
             if (incoming.length) void start(incoming[0], [...list, ...incoming]);
             else {
               audio.current?.pause();
@@ -449,7 +465,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (remaining <= 0) {
         deadline.current = null;
         audio.current?.pause();
-        app.announce(t("player.timerEnded"));
+        announce(t("player.timerEnded"));
         void endSession();
         setTimerMinutes(null);
       }
@@ -460,7 +476,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", tick);
     };
-  }, [app, t, endSession]);
+  }, [announce, t, endSession]);
   useEffect(
     () => () => {
       epoch.current++;
@@ -477,7 +493,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         onPlay={() => {
           setPlaying(true);
           if (currentRef.current)
-            app.announce(t("player.playingStatus", { title: currentRef.current.title[locale] }));
+            announce(t("player.playingStatus", { title: currentRef.current.title[locale] }));
         }}
         onPause={() => setPlaying(false)}
         onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
@@ -698,14 +714,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
               if (
                 after &&
                 score &&
-                (await app.perform(
-                  "/api/sessions",
-                  { sessionId: after, afterScore: score },
-                  "PATCH",
-                ))
+                (await perform("/api/sessions", { sessionId: after, afterScore: score }, "PATCH"))
               ) {
                 setAfter(null);
-                app.announce(t("mood.saved"));
+                announce(t("mood.saved"));
               }
             }}
           >
@@ -715,9 +727,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             {t("mood.skip")}
           </button>
         </div>
-        {app.error && (
+        {personalError && (
           <p role="alert" className="error">
-            {app.error}
+            {personalError}
           </p>
         )}
       </Dialog>

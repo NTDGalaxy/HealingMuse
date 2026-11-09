@@ -7,14 +7,15 @@ import { catalogMatcher } from "@/lib/catalog-match";
 import type { CatalogPage, CatalogQuery, Locale } from "@/lib/types";
 import { CatalogControls } from "./catalog-controls";
 import { Empty, TrackCard } from "./catalog";
-import { useApp, useOnline } from "./app-state";
+import { useAppActions, useDownloadedRecords, useOnline, useTrack } from "./app-state";
 import { useBinaural } from "./binaural-provider";
 
 const pageSize = 24;
 export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  const { registerTracks, ensureTracks } = useAppActions();
+  const downloaded = useDownloadedRecords();
   const session = useBinaural();
   const online = useOnline();
   const [page, setPage] = useState(initial);
@@ -29,7 +30,6 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
   const opened = useRef(initial.total > 0);
   const section = useRef<HTMLElement | null>(null);
   const request = useRef<AbortController | null>(null);
-  const { registerTracks, ensureTracks } = app;
   useEffect(() => registerTracks(page.items), [page.items, registerTracks]);
   useEffect(() => {
     if (session.backgroundId) void ensureTracks([session.backgroundId]);
@@ -110,8 +110,8 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
     void load({ ...queryRef.current, cursor: "", ...patch }, []);
   const localMode = !online || error;
   const localTracks = useMemo(
-    () => app.downloaded.map((item) => item.track).filter(catalogMatcher(query)),
-    [app.downloaded, query],
+    () => downloaded.map((item) => item.track).filter(catalogMatcher(query)),
+    [downloaded, query],
   );
   const localOffset =
     Math.min(localPage, Math.max(0, Math.ceil(localTracks.length / pageSize) - 1)) * pageSize;
@@ -119,9 +119,8 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
     ? { items: localTracks.slice(localOffset, localOffset + pageSize), total: localTracks.length }
     : page;
   const offset = localMode ? localOffset : history.length * pageSize;
-  const selected =
-    app.tracks.find((track) => track.id === session.backgroundId) ??
-    app.downloaded.find((item) => item.id === session.backgroundId)?.track;
+  const cached = useTrack(session.backgroundId);
+  const selected = cached ?? downloaded.find((item) => item.id === session.backgroundId)?.track;
   return (
     <section
       ref={section}

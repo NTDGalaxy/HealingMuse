@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
 import { Dialog } from "./dialog";
 import { PasswordInput } from "./password-input";
-import { useApp } from "./app-state";
+import { useAppActions, useAuthOpen } from "./app-state";
 import { monitor } from "@/lib/browser/monitor";
 
 type Method = "password" | "code" | "recovery";
@@ -12,7 +12,8 @@ type Method = "password" | "code" | "recovery";
 export function AuthDialog() {
   const t = useTranslations();
   const locale = useLocale();
-  const { authOpen, closeAuth, announce } = useApp();
+  const { closeAuth, announce } = useAppActions();
+  const authOpen = useAuthOpen();
   const [method, setMethod] = useState<Method>("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

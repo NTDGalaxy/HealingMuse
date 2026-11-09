@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { memo, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,7 +14,14 @@ import {
   Check,
   Plus,
 } from "lucide-react";
-import { useApp } from "./app-state";
+import {
+  useAppActions,
+  useDownloadState,
+  useIsFavorite,
+  usePersonalData,
+  usePersonalError,
+  useUserId,
+} from "./app-state";
 import { usePlayer } from "./player";
 import { NatureArt } from "./art";
 import { Dialog } from "./dialog";
@@ -49,7 +56,9 @@ export function Empty({
     </div>
   );
 }
-export function TrackCard({
+// Memoised: a card re-renders only for its own favourite, download and sign-in state, never for
+// download progress, notices or other recordings.
+export const TrackCard = memo(function TrackCard({
   track,
   compact = false,
   queue,
@@ -67,12 +76,13 @@ export function TrackCard({
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  const actions = useAppActions();
   const player = usePlayer();
   const [details, setDetails] = useState(false);
   const [add, setAdd] = useState(false);
-  const saved = app.personal?.favorites.includes(track.id) ?? false;
-  const downloaded = app.downloaded.some((item) => item.id === track.id);
+  const saved = useIsFavorite(track.id);
+  const { downloaded, busy } = useDownloadState(track.id);
+  const signedIn = useUserId() !== null;
   const title = track.title[locale];
   return (
     <article
@@ -126,7 +136,7 @@ export function TrackCard({
               aria-label={t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
               aria-pressed={saved}
               onClick={() =>
-                void app.perform("/api/favorites", { trackId: track.id, saved: !saved })
+                void actions.perform("/api/favorites", { trackId: track.id, saved: !saved })
               }
             >
               <Heart size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
@@ -135,8 +145,8 @@ export function TrackCard({
               <button
                 className="icon-button"
                 aria-label={t("catalog.download", { title })}
-                disabled={!!app.progress || downloaded}
-                onClick={() => void app.download(track)}
+                disabled={busy || downloaded}
+                onClick={() => void actions.download(track)}
               >
                 <Download size={18} aria-hidden="true" />
               </button>
@@ -177,7 +187,7 @@ export function TrackCard({
           className="button secondary"
           onClick={() => {
             setDetails(false);
-            if (!app.user) app.openAuth();
+            if (!signedIn) actions.openAuth();
             else setAdd(true);
           }}
         >
@@ -186,46 +196,57 @@ export function TrackCard({
         </button>
       </Dialog>
       <Dialog open={add} onOpenChange={setAdd} title={t("library.addTitle")}>
-        <div className="form-stack">
-          {app.personal?.playlists.map((playlist) => (
-            <button
-              className="button secondary"
-              key={playlist.id}
-              disabled={playlist.trackIds.includes(track.id)}
-              onClick={async () => {
-                if (
-                  await app.perform(
-                    `/api/playlists/${playlist.id}`,
-                    {
-                      title: playlist.title,
-                      revision: playlist.revision,
-                      trackIds: [...playlist.trackIds, track.id],
-                    },
-                    "PATCH",
-                  )
-                ) {
-                  setAdd(false);
-                  app.announce(t("library.added"));
-                }
-              }}
-            >
-              {playlist.title}
-              {playlist.trackIds.includes(track.id) && <Check size={16} />}
-            </button>
-          ))}
-          {!app.personal?.playlists.length && (
-            <Link className="button" href={`/${locale}/library`} onClick={() => setAdd(false)}>
-              {t("library.newPlaylist")}
-            </Link>
-          )}
-          {app.error && (
-            <p role="alert" className="error">
-              {app.error}
-            </p>
-          )}
-        </div>
+        <PlaylistChoices track={track} close={() => setAdd(false)} />
       </Dialog>
     </article>
+  );
+});
+/** Mounted only while the add-to-playlist dialog is shown, so closed cards ignore playlists. */
+function PlaylistChoices({ track, close }: { track: Track; close: () => void }) {
+  const t = useTranslations();
+  const locale = useLocale() as Locale;
+  const actions = useAppActions();
+  const playlists = usePersonalData()?.playlists;
+  const error = usePersonalError();
+  return (
+    <div className="form-stack">
+      {playlists?.map((playlist) => (
+        <button
+          className="button secondary"
+          key={playlist.id}
+          disabled={playlist.trackIds.includes(track.id)}
+          onClick={async () => {
+            if (
+              await actions.perform(
+                `/api/playlists/${playlist.id}`,
+                {
+                  title: playlist.title,
+                  revision: playlist.revision,
+                  trackIds: [...playlist.trackIds, track.id],
+                },
+                "PATCH",
+              )
+            ) {
+              close();
+              actions.announce(t("library.added"));
+            }
+          }}
+        >
+          {playlist.title}
+          {playlist.trackIds.includes(track.id) && <Check size={16} />}
+        </button>
+      ))}
+      {!playlists?.length && (
+        <Link className="button" href={`/${locale}/library`} onClick={close}>
+          {t("library.newPlaylist")}
+        </Link>
+      )}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 const emptyCollections: CuratedCollection[] = [];
@@ -312,7 +333,7 @@ export function HomeView({
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const { registerTracks } = useApp();
+  const { registerTracks } = useAppActions();
   const tracks = initialPage.items;
   useEffect(() => {
     registerTracks([...tracks, ...collectionTracks]);
@@ -412,7 +433,7 @@ export function ExploreView({
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const { registerTracks } = useApp();
+  const { registerTracks } = useAppActions();
   const [pending, transition] = useTransition();
   const tracks = initialPage.items;
   useEffect(() => registerTracks(tracks), [tracks, registerTracks]);

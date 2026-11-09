@@ -1,9 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowUp, ArrowDown, Trash2, Plus, Play, Download, ShieldCheck } from "lucide-react";
-import { useApp, useOnline } from "./app-state";
+import {
+  useApp,
+  useAppActions,
+  useAuthLoading,
+  useOnline,
+  usePersonalData,
+  usePersonalError,
+  useTrackLookup,
+  useUserId,
+} from "./app-state";
 import { Dialog } from "./dialog";
 import { Empty, PageHeading, TrackCard } from "./catalog";
 import { usePlayer } from "./player";
@@ -22,9 +31,12 @@ export function AccountGate({
   context?: "mood" | "admin";
 }) {
   const t = useTranslations();
-  const app = useApp();
-  if (app.authLoading) return <p role="status">{t("common.loading")}</p>;
-  if (!app.user)
+  const { openAuth } = useAppActions();
+  const authLoading = useAuthLoading();
+  const signedIn = useUserId() !== null;
+  const error = usePersonalError();
+  if (authLoading) return <p role="status">{t("common.loading")}</p>;
+  if (!signedIn)
     return (
       <Empty
         title={t(
@@ -42,7 +54,7 @@ export function AccountGate({
               : "auth.requiredText",
         )}
       >
-        <button className="button" onClick={app.openAuth} {...primaryControl()}>
+        <button className="button" onClick={openAuth} {...primaryControl()}>
           {t("nav.signIn")}
         </button>
       </Empty>
@@ -50,9 +62,9 @@ export function AccountGate({
   return (
     <>
       {children}
-      {app.error && (
+      {error && (
         <p role="alert" className="error">
-          {app.error}
+          {error}
         </p>
       )}
     </>
@@ -61,7 +73,10 @@ export function AccountGate({
 export function LibraryView() {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  const actions = useAppActions();
+  const personal = usePersonalData();
+  const tracks = useTrackLookup();
+  const error = usePersonalError();
   const player = usePlayer();
   const online = useOnline();
   const [create, setCreate] = useState(false);
@@ -71,9 +86,9 @@ export function LibraryView() {
   const [busy, setBusy] = useState(false);
   const [favoritePage, setFavoritePage] = useState(0);
   const editingIds = edit?.trackIds;
-  const { ensureTracks, announce } = app;
-  const favoriteIds = app.personal?.favorites;
-  const playlists = app.personal?.playlists;
+  const { ensureTracks, announce } = actions;
+  const favoriteIds = personal?.favorites;
+  const playlists = personal?.playlists;
   useEffect(() => {
     const ids = [
       ...(favoriteIds || []).slice(favoritePage * 24, (favoritePage + 1) * 24),
@@ -82,9 +97,14 @@ export function LibraryView() {
     ];
     if (online && ids.length) void ensureTracks(ids).catch(() => announce(t("errors.unavailable")));
   }, [favoriteIds, playlists, editingIds, favoritePage, ensureTracks, online, announce, t]);
-  const favorites = (favoriteIds || [])
-    .slice(favoritePage * 24, (favoritePage + 1) * 24)
-    .flatMap((id) => app.tracks.find((track) => track.id === id) || []);
+  // Stable while nothing it reads changes, so the memoised cards below can skip renders.
+  const favorites = useMemo(
+    () =>
+      (favoriteIds || [])
+        .slice(favoritePage * 24, (favoritePage + 1) * 24)
+        .flatMap((id) => tracks.get(id) || []),
+    [favoriteIds, favoritePage, tracks],
+  );
   return (
     <>
       <PageHeading title={t("library.title")} subtitle={t("library.subtitle")} />
@@ -137,10 +157,8 @@ export function LibraryView() {
             </button>
           </div>
           <div className="playlist-grid">
-            {app.personal?.playlists.map((playlist) => {
-              const recordings = playlist.trackIds.flatMap(
-                (id) => app.tracks.find((track) => track.id === id) ?? [],
-              );
+            {personal?.playlists.map((playlist) => {
+              const recordings = playlist.trackIds.flatMap((id) => tracks.get(id) ?? []);
               return (
                 <article className="panel playlist-panel" key={playlist.id}>
                   <span className="playlist-icon">
@@ -175,7 +193,7 @@ export function LibraryView() {
                       className="button secondary"
                       disabled={!online}
                       onClick={() => {
-                        app.clearError();
+                        actions.clearError();
                         setEdit({ ...playlist, trackIds: [...playlist.trackIds] });
                       }}
                     >
@@ -186,9 +204,7 @@ export function LibraryView() {
               );
             })}
           </div>
-          {!app.personal?.playlists.length && (
-            <p className="muted">{t("library.emptyPlaylists")}</p>
-          )}
+          {!personal?.playlists.length && <p className="muted">{t("library.emptyPlaylists")}</p>}
         </section>
       </AccountGate>
       <Dialog open={create} onOpenChange={setCreate} title={t("library.newPlaylist")}>
@@ -197,7 +213,7 @@ export function LibraryView() {
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
-            if (await app.perform("/api/playlists", { title })) setCreate(false);
+            if (await actions.perform("/api/playlists", { title })) setCreate(false);
             setBusy(false);
           }}
         >
@@ -213,9 +229,9 @@ export function LibraryView() {
           <button className="button" disabled={busy || !online}>
             {t("common.save")}
           </button>
-          {app.error && (
+          {error && (
             <p className="error" role="alert">
-              {app.error}
+              {error}
             </p>
           )}
         </form>
@@ -233,7 +249,7 @@ export function LibraryView() {
             if (!edit) return;
             setBusy(true);
             if (
-              await app.perform(
+              await actions.perform(
                 `/api/playlists/${edit.id}`,
                 { title: edit.title, revision: edit.revision, trackIds: edit.trackIds },
                 "PATCH",
@@ -241,7 +257,7 @@ export function LibraryView() {
             )
               setEdit(null);
             else {
-              const latest = await app.refresh();
+              const latest = await actions.refresh();
               const fresh = latest?.playlists.find((item) => item.id === edit.id);
               if (fresh && fresh.revision !== edit.revision)
                 setEdit({ ...fresh, trackIds: [...fresh.trackIds] });
@@ -259,7 +275,7 @@ export function LibraryView() {
           />
           <ol className="edit-list">
             {edit?.trackIds.map((id, index) => {
-              const name = app.tracks.find((track) => track.id === id)?.title[locale] ?? id;
+              const name = tracks.get(id)?.title[locale] ?? id;
               const move = (offset: number) => {
                 if (!edit) return;
                 const ids = [...edit.trackIds];
@@ -320,9 +336,9 @@ export function LibraryView() {
               {t("common.delete")}
             </button>
           </div>
-          {app.error && (
+          {error && (
             <p className="error" role="alert">
-              {app.error}
+              {error}
             </p>
           )}
         </form>
@@ -336,7 +352,7 @@ export function LibraryView() {
         <button
           className="button danger"
           onClick={async () => {
-            if (deleting && (await app.perform(`/api/playlists/${deleting.id}`, {}, "DELETE")))
+            if (deleting && (await actions.perform(`/api/playlists/${deleting.id}`, {}, "DELETE")))
               setDeleting(null);
           }}
         >
