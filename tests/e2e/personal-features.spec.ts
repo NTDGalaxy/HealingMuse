@@ -1113,3 +1113,33 @@ test("keyboard focus stays in the playlist editor when an item reaches an end or
   await expect(ui.dialog).toHaveCount(0);
   expect(saved).toEqual([[first.id, second.id]]);
 });
+test("signed-in screens wait for personal data instead of offering consent again", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  let requested!: () => void;
+  const reached = new Promise<void>((resolve) => (requested = resolve));
+  await page.route("**/api/me", async (route) => {
+    requested();
+    await held;
+    await route.fulfill({ json: personalData({ consent: new Date().toISOString() }) });
+  });
+  await ui.open();
+  await ui.show("mood");
+  // The account is known once its personal data is requested; the response is still held.
+  await reached;
+  await expect(page.getByRole("status")).toHaveText(ui.t("common.loading"));
+  await expect(ui.button("mood.enable")).toHaveCount(0);
+  await ui.show("library");
+  await expect(page.getByRole("status")).toHaveText(ui.t("common.loading"));
+  await expect(ui.button("library.newPlaylist")).toHaveCount(0);
+  release();
+  await expect(ui.button("library.newPlaylist")).toBeVisible();
+  await ui.show("mood");
+  await expect(
+    page.getByRole("heading", { name: ui.t("mood.trendTitle"), exact: true }),
+  ).toBeVisible();
+  await expect(ui.button("mood.enable")).toHaveCount(0);
+});

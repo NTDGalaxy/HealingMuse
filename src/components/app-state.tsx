@@ -197,6 +197,16 @@ export function useMoodConsent(): string | null {
     (personal) => personal.data?.profile.mood_consent_at ?? null,
   );
 }
+/**
+ * True while a signed-in account's personal data is still on its way: online, not loaded yet and
+ * not failed. Offline, or after a failure, screens render without it as they always have.
+ */
+export function usePersonalPending(): boolean {
+  const { session, personal } = useAppStores();
+  const signedIn = useStore(session, (snapshot) => snapshot.userId !== null);
+  const waiting = useStore(personal, (snapshot) => snapshot.data === null && !snapshot.error);
+  return useOnline() && signedIn && waiting;
+}
 /** The last personal request error, translated. */
 export function usePersonalError(): string {
   const t = useTranslations();

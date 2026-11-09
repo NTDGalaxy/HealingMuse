@@ -1,12 +1,22 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { useAppActions, useAuthLoading, usePersonalError, useUserId } from "@/components/app-state";
+import {
+  useAppActions,
+  useAuthLoading,
+  usePersonalError,
+  usePersonalPending,
+  useUserId,
+} from "@/components/app-state";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { primaryControl } from "@/lib/perf/readiness";
 
-/** Shows its children to a signed-in account and a sign-in invitation to a guest. */
+/**
+ * Shows its children to a signed-in account once its personal data has arrived, and a sign-in
+ * invitation to a guest. Until both are known it shows a loading status, so a screen never
+ * offers what the account already has (mood consent, an empty library) in the meantime.
+ */
 export function AccountGate({
   children,
   context,
@@ -18,8 +28,9 @@ export function AccountGate({
   const { openAuth } = useAppActions();
   const authLoading = useAuthLoading();
   const signedIn = useUserId() !== null;
+  const pending = usePersonalPending();
   const error = usePersonalError();
-  if (authLoading) return <p role="status">{t("common.loading")}</p>;
+  if (authLoading || pending) return <p role="status">{t("common.loading")}</p>;
   if (!signedIn)
     return (
       <EmptyState
