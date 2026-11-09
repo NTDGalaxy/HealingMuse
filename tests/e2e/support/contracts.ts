@@ -36,6 +36,8 @@ export const shell = {
   current: "data-current",
   languageLink: (locale: Locale) => `.language-switch a[lang="${locale}"]`,
   searchBox: ".search-box",
+  downloadStatus: ".download-status",
+  toast: ".toast",
   scenery: "#sanctuary-scenery",
   sceneryShift: "--scenic-shift",
   pageHeading: ".page-heading",
@@ -53,6 +55,9 @@ export const dialog = {
 } as const;
 
 export const status = '[role="status"]';
+
+/** The personal-data endpoint the account store reads. */
+export const personalDataPath = "/api/me";
 
 export const garden = {
   host: ".garden-canvas",
@@ -249,6 +254,7 @@ export const harness = {
   audioPage: "tests/browser-fixtures/binaural-audio.html",
   navigation: "Fixture screens",
   signIn: "Sign in",
+  switchLanguage: "Switch language",
   recording: {
     id: "00000000-0000-4000-8000-000000000001",
     title: { en: "Synthetic recording", vi: "Bản thu thử" },

@@ -103,6 +103,18 @@ export class HarnessScreens {
   get dialog() {
     return this.page.getByRole("dialog");
   }
+  /** The harness control that switches the rendered locale without a page load. */
+  get switchLanguage() {
+    return this.page.getByRole("button", { name: harness.switchLanguage, exact: true });
+  }
+  /** Auth listeners and Realtime channels the stubbed client has handed out. */
+  subscriptions() {
+    return this.page.evaluate(() => window.__syntheticSubscriptions);
+  }
+  /** Delivers a Realtime broadcast to every subscribed synthetic channel. */
+  async broadcast(event: string) {
+    await this.page.evaluate((event) => window.__syntheticBroadcast(event), event);
+  }
   /** A button by message key, matched exactly. */
   button(key: MessageKey, values?: MessageValues) {
     return this.page.getByRole("button", { name: this.t(key, values), exact: true });

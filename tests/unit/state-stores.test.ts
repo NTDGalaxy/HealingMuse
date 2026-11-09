@@ -1,0 +1,457 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DownloadedTrack, PersonalData, Track } from "@/lib/types";
+
+const fake = vi.hoisted(() => {
+  type AuthListener = (event: string, session: { user: { id: string } } | null) => void;
+  type Channel = {
+    name: string;
+    invalidate?: () => void;
+    status?: (status: string) => void;
+    on(type: string, filter: { event: string }, handler: () => void): Channel;
+    subscribe(listener: (status: string) => void): Channel;
+  };
+  const state = {
+    auth: new Set<AuthListener>(),
+    channels: [] as Channel[],
+    removed: [] as Channel[],
+    signOutError: null as null | { message: string },
+  };
+  const client = {
+    auth: {
+      onAuthStateChange(listener: AuthListener) {
+        state.auth.add(listener);
+        return { data: { subscription: { unsubscribe: () => state.auth.delete(listener) } } };
+      },
+      async signOut() {
+        return { error: state.signOutError };
+      },
+    },
+    channel(name: string) {
+      const channel: Channel = {
+        name,
+        on(_type, _filter, handler) {
+          channel.invalidate = handler;
+          return channel;
+        },
+        subscribe(listener) {
+          channel.status = listener;
+          return channel;
+        },
+      };
+      state.channels.push(channel);
+      return channel;
+    },
+    async removeChannel(channel: Channel) {
+      state.removed.push(channel);
+    },
+  };
+  const emit = (user: { id: string } | null) => {
+    for (const listener of state.auth) listener("SIGNED_IN", user && { user });
+  };
+  return { state, client, emit };
+});
+vi.mock("@/lib/supabase/client", () => ({ browserClient: () => fake.client }));
+vi.mock("@/lib/supabase/config", () => ({ isConfigured: true }));
+vi.mock("@/lib/browser/monitor", () => ({ monitor: vi.fn() }));
+vi.mock("@/lib/browser/api", async (original) => ({
+  ...(await original<typeof import("@/lib/browser/api")>()),
+  api: vi.fn(),
+  mutation: vi.fn(),
+}));
+vi.mock("@/lib/browser/downloads", () => ({
+  listDownloads: vi.fn(),
+  downloadRecording: vi.fn(),
+  removeDownload: vi.fn(),
+  clearDownloads: vi.fn(),
+}));
+
+import { api, ApiError, mutation } from "@/lib/browser/api";
+import { monitor } from "@/lib/browser/monitor";
+import {
+  clearDownloads,
+  downloadRecording,
+  listDownloads,
+  removeDownload,
+} from "@/lib/browser/downloads";
+import { createStore } from "@/lib/state/create-store";
+import { createAnnouncer } from "@/lib/state/announcer";
+import { createTrackCache, trackCacheLimit } from "@/lib/state/track-cache";
+import { createSession } from "@/lib/state/session";
+import { createPersonal, echoWindow } from "@/lib/state/personal";
+import { createDownloads } from "@/lib/state/downloads";
+
+const apiMock = vi.mocked(api);
+const mutationMock = vi.mocked(mutation);
+const track = (n: number) =>
+  ({
+    id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
+    title: { vi: `Bản ${n}`, en: `Recording ${n}` },
+  }) as Track;
+const personal = (id: string, favorites: string[] = []): PersonalData => ({
+  profile: { id, locale: "en", calm_mode: false, mood_consent_at: null },
+  favorites,
+  playlists: [],
+  checkins: [],
+  isAdmin: false,
+});
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  fake.state.auth.clear();
+  fake.state.channels.length = 0;
+  fake.state.removed.length = 0;
+  fake.state.signOutError = null;
+});
+
+describe("createStore", () => {
+  it("notifies only for a different value and keeps the initial server snapshot", () => {
+    const store = createStore({ count: 0 });
+    const listener = vi.fn();
+    const stop = store.subscribe(listener);
+    const first = store.getSnapshot();
+    store.set(first);
+    expect(listener).not.toHaveBeenCalled();
+    store.set((current) => ({ count: current.count + 1 }));
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(store.getServerSnapshot()).toBe(first);
+    stop();
+    store.set({ count: 5 });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("announcer", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+  it("shows one notice and clears it after six seconds", () => {
+    const announcer = createAnnouncer();
+    announcer.announce("Saved");
+    expect(announcer.getSnapshot()).toBe("Saved");
+    vi.advanceTimersByTime(5000);
+    announcer.announce("Saved");
+    vi.advanceTimersByTime(1000);
+    expect(announcer.getSnapshot()).toBe("");
+    announcer.announce("First");
+    vi.advanceTimersByTime(4000);
+    announcer.announce("Second");
+    vi.advanceTimersByTime(4000);
+    expect(announcer.getSnapshot()).toBe("Second");
+    announcer.dispose();
+    vi.advanceTimersByTime(10000);
+    expect(announcer.getSnapshot()).toBe("Second");
+  });
+});
+
+describe("track cache", () => {
+  it("keeps the most recently registered recordings within the limit", () => {
+    const cache = createTrackCache([track(1), track(2)]);
+    const initial = cache.getSnapshot();
+    cache.register([track(1)]);
+    expect(cache.getSnapshot().list.map((item) => item.id)).toEqual([track(2).id, track(1).id]);
+    expect(cache.getServerSnapshot()).toBe(initial);
+    cache.register(Array.from({ length: trackCacheLimit + 10 }, (_, index) => track(index + 10)));
+    const { list, byId } = cache.getSnapshot();
+    expect(list).toHaveLength(trackCacheLimit);
+    expect(byId.has(track(1).id)).toBe(false);
+    expect(list.at(-1)!.id).toBe(track(trackCacheLimit + 19).id);
+  });
+  it("does not notify when the registered recordings are already the most recent", () => {
+    const tracks = [track(1), track(2), track(3)];
+    const cache = createTrackCache(tracks);
+    const listener = vi.fn();
+    cache.subscribe(listener);
+    cache.register(tracks.slice(1));
+    cache.register([]);
+    expect(listener).not.toHaveBeenCalled();
+    cache.register([{ ...track(3) }]);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+  it("fetches only unknown recordings, one hundred per request", async () => {
+    const cache = createTrackCache([track(1)]);
+    apiMock.mockImplementation(async (url: string) =>
+      new URL(url, "http://local").searchParams
+        .get("ids")!
+        .split(",")
+        .map((id) => ({ ...track(0), id })),
+    );
+    const ids = Array.from({ length: 250 }, (_, index) => track(index + 1).id);
+    await cache.ensure([...ids, ids[5]]);
+    expect(apiMock).toHaveBeenCalledTimes(3);
+    expect(apiMock.mock.calls.map(([url]) => url.split(",").length)).toEqual([100, 100, 49]);
+    expect(apiMock.mock.calls[0][0]).not.toContain(track(1).id);
+    expect(cache.get(ids[249])?.id).toBe(ids[249]);
+    await cache.ensure(ids);
+    expect(apiMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("session", () => {
+  it("follows auth events and only settles loading once", () => {
+    const session = createSession();
+    expect(session.getSnapshot()).toMatchObject({ user: null, authLoading: true });
+    const stop = session.start();
+    fake.emit(null);
+    expect(session.getSnapshot()).toMatchObject({ userId: null, authLoading: false });
+    fake.emit({ id: "a" });
+    expect(session.getSnapshot().userId).toBe("a");
+    stop();
+    expect(fake.state.auth.size).toBe(0);
+  });
+  it("opens the sign-in dialog and signs out only when Supabase confirms", async () => {
+    const session = createSession();
+    session.start();
+    fake.emit({ id: "a" });
+    session.openAuth();
+    expect(session.getSnapshot().authOpen).toBe(true);
+    session.closeAuth();
+    expect(session.getSnapshot().authOpen).toBe(false);
+    fake.state.signOutError = { message: "down" };
+    expect(await session.signOut()).toBe(false);
+    expect(session.getSnapshot().userId).toBe("a");
+    fake.state.signOutError = null;
+    expect(await session.signOut()).toBe(true);
+    expect(session.getSnapshot().user).toBeNull();
+  });
+});
+
+describe("personal data", () => {
+  let clock: number;
+  let page: EventTarget & { visibilityState: string };
+  beforeEach(() => {
+    clock = 1000;
+    page = Object.assign(new EventTarget(), { visibilityState: "visible" });
+    vi.stubGlobal("window", new EventTarget());
+    vi.stubGlobal("document", page);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+  const setup = () => {
+    const session = createSession();
+    const onData = vi.fn();
+    const store = createPersonal({ session, onData, now: () => clock, online: () => true });
+    session.start();
+    const stop = store.start();
+    return { session, store, onData, stop };
+  };
+  const signIn = async (id = "a") => {
+    fake.emit({ id });
+    await settle();
+  };
+
+  it("coalesces overlapping refreshes into one trailing request", async () => {
+    const { store } = setup();
+    const requests: ReturnType<typeof deferred<PersonalData>>[] = [];
+    apiMock.mockImplementation(() => {
+      const request = deferred<PersonalData>();
+      requests.push(request);
+      return request.promise as Promise<never>;
+    });
+    await signIn();
+    // Sign-in starts one request; the subscription confirmation and two more callers wait.
+    fake.state.channels[0].status!("SUBSCRIBED");
+    const calls = [store.refresh(), store.refresh()];
+    expect(requests).toHaveLength(1);
+    requests[0].resolve(personal("a"));
+    await settle();
+    expect(requests).toHaveLength(2);
+    requests[1].resolve(personal("a", ["x"]));
+    expect((await Promise.all(calls)).map((data) => data?.favorites)).toEqual([["x"], ["x"]]);
+    expect(store.getSnapshot().data?.favorites).toEqual(["x"]);
+  });
+  it("drops a response that belongs to the previous account", async () => {
+    const { store, onData } = setup();
+    const first = deferred<PersonalData>();
+    apiMock.mockReturnValueOnce(first.promise as Promise<never>);
+    await signIn("a");
+    apiMock.mockResolvedValue(personal("b") as never);
+    await signIn("b");
+    first.resolve(personal("a"));
+    await settle();
+    expect(store.getSnapshot().data?.profile.id).toBe("b");
+    expect(onData).toHaveBeenCalledTimes(1);
+    expect(fake.state.removed.map((channel) => channel.name)).toEqual(["user:a"]);
+    fake.emit(null);
+    expect(store.getSnapshot().data).toBeNull();
+  });
+  it("re-subscribes Realtime only when the account changes", async () => {
+    const { session } = setup();
+    apiMock.mockResolvedValue(personal("a") as never);
+    await signIn("a");
+    fake.emit({ id: "a" });
+    session.openAuth();
+    await settle();
+    expect(fake.state.channels.map((channel) => channel.name)).toEqual(["user:a"]);
+    fake.state.channels[0].status!("CHANNEL_ERROR");
+    expect(monitor).toHaveBeenCalledWith("synchronization_failed");
+  });
+  it("asks a guest to sign in instead of sending a change", async () => {
+    const { session, store } = setup();
+    fake.emit(null);
+    expect(await store.perform("/api/favorites", { trackId: "x", saved: true })).toEqual({
+      ok: false,
+      code: "unauthorized",
+    });
+    expect(session.getSnapshot().authOpen).toBe(true);
+    expect(mutationMock).not.toHaveBeenCalled();
+  });
+  it("sends a change for the signed-in owner and reports failures by code", async () => {
+    const { store } = setup();
+    apiMock.mockResolvedValue(personal("a") as never);
+    await signIn("a");
+    apiMock.mockClear();
+    mutationMock.mockResolvedValueOnce(undefined as never);
+    expect(await store.perform("/api/me", { calmMode: true }, "PATCH")).toEqual({ ok: true });
+    expect(mutationMock).toHaveBeenCalledWith("/api/me", { calmMode: true }, "PATCH", "a");
+    expect(apiMock).toHaveBeenCalledTimes(1);
+    mutationMock.mockRejectedValueOnce(new ApiError("conflict", 409));
+    expect(await store.perform("/api/playlists/p", {}, "PATCH")).toEqual({
+      ok: false,
+      code: "conflict",
+    });
+    expect(store.getSnapshot().error).toBe("conflict");
+    expect(apiMock).toHaveBeenCalledTimes(2);
+    mutationMock.mockRejectedValueOnce(new Error("network"));
+    expect(await store.perform("/api/favorites", {})).toEqual({ ok: false, code: "unavailable" });
+    expect(apiMock).toHaveBeenCalledTimes(2);
+  });
+  it("ignores the Realtime echo of its own change but not other devices' changes", async () => {
+    const { store } = setup();
+    apiMock.mockResolvedValue(personal("a") as never);
+    await signIn("a");
+    await settle();
+    apiMock.mockClear();
+    store.invalidate();
+    expect(apiMock).toHaveBeenCalledTimes(1);
+    await settle();
+    const committed = deferred<void>();
+    mutationMock.mockReturnValueOnce(committed.promise as Promise<never>);
+    const saving = store.perform("/api/favorites", { trackId: "x", saved: true });
+    store.invalidate();
+    committed.resolve();
+    await saving;
+    store.invalidate();
+    clock += echoWindow - 1;
+    store.invalidate();
+    expect(apiMock).toHaveBeenCalledTimes(2);
+    clock += 1;
+    store.invalidate();
+    expect(apiMock).toHaveBeenCalledTimes(3);
+  });
+  it("refreshes after a failed change when another device changed data meanwhile", async () => {
+    const { store } = setup();
+    apiMock.mockResolvedValue(personal("a") as never);
+    await signIn("a");
+    await settle();
+    apiMock.mockClear();
+    const failing = deferred<void>();
+    mutationMock.mockReturnValueOnce(failing.promise as Promise<never>);
+    const saving = store.perform("/api/favorites", {});
+    store.invalidate();
+    failing.reject(new ApiError("invalid", 400));
+    await saving;
+    await settle();
+    expect(apiMock).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot().error).toBe("invalid");
+    store.invalidate();
+    expect(apiMock).toHaveBeenCalledTimes(2);
+  });
+  it("refreshes when the tab becomes visible or the device comes back online", async () => {
+    const { store, stop } = setup();
+    apiMock.mockResolvedValue(personal("a") as never);
+    await signIn("a");
+    await settle();
+    apiMock.mockClear();
+    page.dispatchEvent(new Event("visibilitychange"));
+    await settle();
+    window.dispatchEvent(new Event("online"));
+    await settle();
+    page.visibilityState = "hidden";
+    page.dispatchEvent(new Event("visibilitychange"));
+    expect(apiMock).toHaveBeenCalledTimes(2);
+    expect(store.getSnapshot().error).toBe("");
+    stop();
+    page.visibilityState = "visible";
+    page.dispatchEvent(new Event("visibilitychange"));
+    expect(apiMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("downloads", () => {
+  const saved = (id: string) => ({ id, bytes: 10 }) as DownloadedTrack;
+  it("publishes progress separately and relists after saving", async () => {
+    const downloads = createDownloads();
+    const progressListener = vi.fn();
+    const recordsListener = vi.fn();
+    downloads.progress.subscribe(progressListener);
+    downloads.records.subscribe(recordsListener);
+    vi.mocked(listDownloads).mockResolvedValue([saved(track(1).id)]);
+    vi.mocked(downloadRecording).mockImplementation(async (_track, progress) => {
+      progress(10);
+      progress(10);
+      progress(55);
+      expect(await downloads.download(track(2))).toEqual({ status: "busy" });
+    });
+    expect(await downloads.download(track(1))).toEqual({ status: "saved" });
+    // Start (0), 10 and 55 percent, then cleared; the repeated 10 percent is skipped.
+    expect(progressListener).toHaveBeenCalledTimes(4);
+    expect(downloads.progress.getSnapshot()).toBeNull();
+    expect(downloads.records.getSnapshot().items).toEqual([saved(track(1).id)]);
+    expect(recordsListener).toHaveBeenCalledTimes(1);
+  });
+  it("cancels silently and maps failures to message keys", async () => {
+    const downloads = createDownloads();
+    vi.mocked(downloadRecording).mockImplementationOnce(
+      (_track, _progress, signal) =>
+        new Promise((_, reject) =>
+          signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))),
+        ),
+    );
+    const pending = downloads.download(track(1));
+    downloads.cancel();
+    expect(await pending).toEqual({ status: "cancelled" });
+    expect(downloads.records.getSnapshot().error).toBe("");
+    for (const [error, code] of [
+      [new ApiError("rate_limited", 429), "rate_limited"],
+      [new DOMException("Full", "QuotaExceededError"), "storageFull"],
+      [new Error("integrity"), "integrity"],
+      [new Error("unsupported"), "unsupported"],
+      [new Error("storage_full"), "interrupted"],
+    ] as const) {
+      vi.mocked(downloadRecording).mockRejectedValueOnce(error);
+      expect(await downloads.download(track(1))).toEqual({ status: "failed", code });
+      expect(downloads.records.getSnapshot().error).toBe(code);
+    }
+  });
+  it("loads, removes and reports unavailable storage", async () => {
+    const downloads = createDownloads();
+    vi.mocked(listDownloads).mockRejectedValueOnce(new Error("unsupported"));
+    await downloads.load();
+    expect(downloads.records.getSnapshot().error).toBe("unsupported");
+    vi.mocked(listDownloads).mockResolvedValue([]);
+    await downloads.remove("x");
+    expect(removeDownload).toHaveBeenCalledWith("x");
+    await downloads.remove();
+    expect(clearDownloads).toHaveBeenCalled();
+  });
+  it("never applies a stale listing over a newer one", async () => {
+    const downloads = createDownloads();
+    const slow = deferred<DownloadedTrack[]>();
+    vi.mocked(listDownloads).mockReturnValueOnce(slow.promise);
+    vi.mocked(listDownloads).mockResolvedValueOnce([saved("new")]);
+    vi.mocked(downloadRecording).mockResolvedValueOnce(undefined);
+    const loading = downloads.load();
+    await downloads.download(track(1));
+    slow.resolve([]);
+    await loading;
+    expect(downloads.records.getSnapshot().items).toEqual([saved("new")]);
+  });
+});

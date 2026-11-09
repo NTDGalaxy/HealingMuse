@@ -3,8 +3,10 @@ import {
   test,
   expect,
   expectAccessible,
+  countPersonalReads,
   expectNoHorizontalOverflow,
   expectPlaying,
+  personalReads,
 } from "./support/test";
 import type { PersonalData, Playlist, Track } from "@/lib/types";
 import { paginateTracks } from "../../src/lib/catalog-query";
@@ -930,3 +932,51 @@ for (const locale of ["en", "vi"] as const)
     await expect(page.getByText(ui.t("admin.release.offline"), { exact: true })).toBeVisible();
     await context.setOffline(false);
   });
+test("a language switch keeps account subscriptions and personal data", async ({ page }) => {
+  const ui = screens(page);
+  await countPersonalReads(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  await ui.open();
+  await expect(
+    page.getByRole("heading", { name: ui.t("library.favorites"), exact: true }),
+  ).toBeVisible();
+  // Initial session plus the Realtime subscription confirmation.
+  await expect.poll(() => personalReads(page)).toBe(2);
+  const subscriptions = await ui.subscriptions();
+  expect(subscriptions).toEqual({ auth: 1, channels: 1 });
+  for (const locale of ["vi", "en"] as const) {
+    await ui.switchLanguage.click();
+    await new Shell(page, locale).expectLang(locale);
+    await expect(
+      page.getByRole("heading", { name: t(locale, "library.favorites"), exact: true }),
+    ).toBeVisible();
+    expect(await personalReads(page)).toBe(2);
+    expect(await ui.subscriptions()).toEqual(subscriptions);
+  }
+});
+test("the Realtime echo of a saved favorite does not reload personal data again", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const title = harness.recording.title.en;
+  await countPersonalReads(page);
+  const favorites: string[] = [];
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData({ favorites }) }));
+  await page.route("**/api/favorites", async (route) => {
+    favorites.push(JSON.parse(route.request().postData()!).trackId);
+    // The database trigger broadcasts on commit, before and around the HTTP response.
+    await ui.broadcast("invalidate");
+    await route.fulfill({ json: { ok: true } });
+    await ui.broadcast("invalidate");
+  });
+  await ui.open();
+  await ui.show("recording");
+  await expect.poll(() => personalReads(page)).toBe(2);
+  // A change made on another device still reloads personal data.
+  await ui.broadcast("invalidate");
+  await expect.poll(() => personalReads(page)).toBe(3);
+  await ui.button("catalog.favorite", { title }).click();
+  await expect(ui.button("catalog.unfavorite", { title })).toHaveAttribute("aria-pressed", "true");
+  await ui.broadcast("invalidate");
+  expect(await personalReads(page)).toBe(4);
+});

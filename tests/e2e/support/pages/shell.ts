@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { documentRoot, garden, shell } from "../contracts";
+import { documentRoot, garden, shell, status } from "../contracts";
 import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 import type { GardenDetail, Theme } from "../test";
 
@@ -102,6 +102,17 @@ export class Shell {
   }
   sideNavLink(href: string) {
     return this.page.locator(shell.sideNavLink(href));
+  }
+  /** The live download progress line shown while a recording is being saved. */
+  get downloadStatus() {
+    return this.page.locator(shell.downloadStatus);
+  }
+  get downloadProgress() {
+    return this.downloadStatus.locator(status);
+  }
+  /** The visual confirmation toast (its text is also announced through the live region). */
+  get toast() {
+    return this.page.locator(shell.toast);
   }
   languageLink(locale: Locale) {
     return this.page.locator(shell.languageLink(locale));

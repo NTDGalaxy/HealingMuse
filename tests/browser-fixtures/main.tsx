@@ -92,7 +92,7 @@ function CatalogueFixture() {
   }, []);
   return <ExploreView query={query} initialPage={page} unavailable={unavailable} />;
 }
-function Views() {
+function Views({ switchLocale }: { switchLocale: () => void }) {
   const [view, setView] = useState("library");
   const app = useApp();
   return (
@@ -115,6 +115,9 @@ function Views() {
           ))}
           <button className="button" onClick={app.openAuth}>
             Sign in
+          </button>
+          <button className="button secondary" onClick={switchLocale}>
+            Switch language
           </button>
         </nav>
       </header>
@@ -149,20 +152,28 @@ function Views() {
     </>
   );
 }
-const locale = new URL(location.href).searchParams.get("locale") === "vi" ? "vi" : "en";
-document.documentElement.lang = locale;
-createRoot(document.getElementById("root")!).render(
-  <NextIntlClientProvider
-    locale={locale}
-    messages={locale === "vi" ? vi : en}
-    timeZone="Asia/Ho_Chi_Minh"
-  >
-    <AppearanceProvider>
-      <AppProvider tracks={tracks} collections={[]}>
-        <PlayerProvider>
-          <Views />
-        </PlayerProvider>
-      </AppProvider>
-    </AppearanceProvider>
-  </NextIntlClientProvider>,
-);
+const initialLocale = new URL(location.href).searchParams.get("locale") === "vi" ? "vi" : "en";
+// Mirrors Application: a language switch swaps messages without remounting the providers.
+function Root() {
+  const [locale, setLocale] = useState<"vi" | "en">(initialLocale);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+  return (
+    <NextIntlClientProvider
+      locale={locale}
+      messages={locale === "vi" ? vi : en}
+      timeZone="Asia/Ho_Chi_Minh"
+    >
+      <AppearanceProvider>
+        <AppProvider tracks={tracks} collections={[]}>
+          <PlayerProvider>
+            <Views switchLocale={() => setLocale(locale === "vi" ? "en" : "vi")} />
+          </PlayerProvider>
+        </AppProvider>
+      </AppearanceProvider>
+    </NextIntlClientProvider>
+  );
+}
+document.documentElement.lang = initialLocale;
+createRoot(document.getElementById("root")!).render(<Root />);

@@ -1,7 +1,7 @@
 import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Track } from "@/lib/types";
-import { motionTargets, player, storage } from "./contracts";
+import { motionTargets, personalDataPath, player, storage } from "./contracts";
 
 export { expect };
 
@@ -102,6 +102,33 @@ export async function expectPlaying(page: Page, options: { beyond?: number } = {
     },
     { box: true },
   );
+}
+
+/**
+ * Counts the page's own personal-data reads (GET /api/me) from its first script, so no request
+ * can be missed or counted late. Call before navigating; read the count with `personalReads`.
+ */
+export async function countPersonalReads(page: Page) {
+  await page.addInitScript((path) => {
+    const original = window.fetch.bind(window);
+    const counted = window as Window & { __personalReads?: number };
+    counted.__personalReads = 0;
+    window.fetch = (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (new URL(url, location.href).pathname === path && (init?.method ?? "GET") === "GET")
+        counted.__personalReads!++;
+      return original(input, init);
+    };
+  }, personalDataPath);
+}
+
+/** Personal-data reads started so far, after letting already scheduled account work begin. */
+export function personalReads(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    // Account work is scheduled in microtasks; a task boundary lets every pending read start.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return (window as Window & { __personalReads?: number }).__personalReads ?? 0;
+  });
 }
 
 export async function expectPaused(page: Page) {

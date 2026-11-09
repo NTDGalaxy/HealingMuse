@@ -9,9 +9,14 @@ declare global {
   interface Window {
     __syntheticAuthCalls: string[];
     __syntheticRecoveryPath?: string;
+    /** Totals of auth listeners and Realtime channels the app has ever opened. */
+    __syntheticSubscriptions: { auth: number; channels: number };
+    /** Delivers a Realtime broadcast to every open channel, like the database trigger does. */
+    __syntheticBroadcast: (event: string) => void;
   }
 }
 window.__syntheticAuthCalls = [];
+window.__syntheticSubscriptions = { auth: 0, channels: 0 };
 function record(method: string) {
   window.__syntheticAuthCalls.push(method);
 }
@@ -19,22 +24,41 @@ function signedIn() {
   for (const listener of listeners) listener("SIGNED_IN", { user });
   return { data: { session: { user } }, error: null };
 }
-const channel = {
-  on() {
-    return this;
-  },
-  subscribe(listener: (status: string) => void) {
-    queueMicrotask(() => listener("SUBSCRIBED"));
-    return this;
-  },
+type Channel = {
+  handlers: { event: string; handler: () => void }[];
+  on(type: string, filter: { event: string }, handler: () => void): Channel;
+  subscribe(listener: (status: string) => void): Channel;
 };
+const channels = new Set<Channel>();
+window.__syntheticBroadcast = (event) => {
+  for (const channel of channels)
+    for (const entry of channel.handlers) if (entry.event === event) entry.handler();
+};
+function createChannel(): Channel {
+  window.__syntheticSubscriptions.channels++;
+  const channel: Channel = {
+    handlers: [],
+    on(_type, filter, handler) {
+      channel.handlers.push({ event: filter.event, handler });
+      return channel;
+    },
+    subscribe(listener) {
+      channels.add(channel);
+      queueMicrotask(() => listener("SUBSCRIBED"));
+      return channel;
+    },
+  };
+  return channel;
+}
 const client = {
   auth: {
     onAuthStateChange(listener: Listener) {
+      window.__syntheticSubscriptions.auth++;
       listeners.add(listener);
-      queueMicrotask(() =>
-        listener("INITIAL_SESSION", location.search.includes("guest") ? null : { user }),
-      );
+      queueMicrotask(() => {
+        if (listeners.has(listener))
+          listener("INITIAL_SESSION", location.search.includes("guest") ? null : { user });
+      });
       return { data: { subscription: { unsubscribe: () => listeners.delete(listener) } } };
     },
     async signOut() {
@@ -76,7 +100,9 @@ const client = {
       return signedIn();
     },
   },
-  channel: () => channel,
-  removeChannel: async () => {},
+  channel: () => createChannel(),
+  removeChannel: async (channel: Channel) => {
+    channels.delete(channel);
+  },
 };
 export const browserClient = () => client;

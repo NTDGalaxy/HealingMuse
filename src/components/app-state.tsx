@@ -1,26 +1,22 @@
 "use client";
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
-  useRef,
+  useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useLocale, useTranslations } from "next-intl";
-import { browserClient } from "@/lib/supabase/client";
-import { isConfigured } from "@/lib/supabase/config";
-import { api, ApiError, mutation } from "@/lib/browser/api";
-import {
-  clearDownloads,
-  downloadRecording,
-  listDownloads,
-  removeDownload,
-} from "@/lib/browser/downloads";
-import type { CuratedCollection, DownloadedTrack, PersonalData, Track } from "@/lib/types";
-import { monitor } from "@/lib/browser/monitor";
+import type { CuratedCollection, DownloadedTrack, Locale, PersonalData, Track } from "@/lib/types";
+import type { PreferencesStore } from "@/lib/preferences-store";
+import { createStore, useStore, type Store } from "@/lib/state/create-store";
+import { createAnnouncer } from "@/lib/state/announcer";
+import { createTrackCache } from "@/lib/state/track-cache";
+import { createSession } from "@/lib/state/session";
+import { createPersonal } from "@/lib/state/personal";
+import { createDownloads, type DownloadsSnapshot } from "@/lib/state/downloads";
 import { usePreference, usePreferencesStore } from "./appearance";
 
 const subscribeOnline = (listener: () => void) => {
@@ -38,36 +34,66 @@ export function useOnline() {
     () => true,
   );
 }
-const AppContext = createContext<{
-  tracks: Track[];
-  registerTracks: (tracks: Track[]) => void;
-  ensureTracks: (ids: string[]) => Promise<void>;
-  collections: CuratedCollection[];
-  user: User | null;
-  personal: PersonalData | null;
-  authLoading: boolean;
-  refresh: () => Promise<PersonalData | null>;
-  perform: (url: string, data: unknown, method?: string) => Promise<boolean>;
-  authOpen: boolean;
-  openAuth: () => void;
-  closeAuth: () => void;
-  signOut: () => Promise<void>;
-  notice: string;
-  announce: (message: string) => void;
-  error: string;
-  clearError: () => void;
-  downloaded: DownloadedTrack[];
-  download: (track: Track) => Promise<void>;
-  remove: (id?: string) => Promise<void>;
-  progress: { id: string; percent: number } | null;
-  cancelDownload: () => void;
-  downloadError: string;
-  calm: boolean;
-  setCalm: (value: boolean) => Promise<void>;
-} | null>(null);
+
+type Translate = ReturnType<typeof useTranslations>;
+type I18n = { t: Translate; locale: Locale };
+
+function createAppStores(tracks: Track[], preferences: PreferencesStore) {
+  const session = createSession();
+  return {
+    announcer: createAnnouncer(),
+    tracks: createTrackCache(tracks),
+    session,
+    personal: createPersonal({
+      session,
+      // The signed-in profile decides Calm while it is loaded, as before.
+      onData: (data) => preferences.adoptCalm(data.profile.calm_mode),
+    }),
+    downloads: createDownloads(),
+  };
+}
+export type AppStores = ReturnType<typeof createAppStores>;
+
+// Stable for the provider's lifetime. Messages are read when an action finishes, so a language
+// switch neither recreates the actions nor restarts the work they started.
+function createActions(stores: AppStores, preferences: PreferencesStore, i18n: Store<I18n>) {
+  const { announcer, tracks, session, personal, downloads } = stores;
+  return {
+    registerTracks: tracks.register,
+    ensureTracks: tracks.ensure,
+    refresh: personal.refresh,
+    perform: async (url: string, data: unknown, method?: string) =>
+      (await personal.perform(url, data, method)).ok,
+    openAuth: session.openAuth,
+    closeAuth: session.closeAuth,
+    async signOut() {
+      if (!(await session.signOut())) {
+        personal.setError("unavailable");
+        return;
+      }
+      personal.clearError();
+      announcer.announce(i18n.getSnapshot().t("settings.signOutNote"));
+    },
+    announce: announcer.announce,
+    clearError: personal.clearError,
+    async download(track: Track) {
+      const result = await downloads.download(track);
+      if (result.status !== "saved") return;
+      const { t, locale } = i18n.getSnapshot();
+      announcer.announce(t("downloads.saved", { title: track.title[locale] }));
+    },
+    remove: downloads.remove,
+    cancelDownload: downloads.cancel,
+    setCalm: preferences.setCalm,
+  };
+}
+export type AppActions = ReturnType<typeof createActions>;
+
+const StoresContext = createContext<{ stores: AppStores; actions: AppActions } | null>(null);
+const CollectionsContext = createContext<CuratedCollection[]>([]);
 
 export function AppProvider({
-  tracks: initialTracks,
+  tracks,
   collections,
   children,
 }: {
@@ -76,248 +102,182 @@ export function AppProvider({
   children: React.ReactNode;
 }) {
   const t = useTranslations();
-  const locale = useLocale() as "vi" | "en";
-  const [tracks, setTracks] = useState(initialTracks);
-  const knownTracks = useRef(new Map(initialTracks.map((track) => [track.id, track])));
-  const registerTracks = useCallback((incoming: Track[]) => {
-    if (!incoming.length) return;
-    for (const track of incoming) {
-      knownTracks.current.delete(track.id);
-      knownTracks.current.set(track.id, track);
-    }
-    while (knownTracks.current.size > 512)
-      knownTracks.current.delete(knownTracks.current.keys().next().value!);
-    setTracks([...knownTracks.current.values()]);
-  }, []);
-  const ensureTracks = useCallback(
-    async (ids: string[]) => {
-      const missing = [...new Set(ids)].filter((id) => !knownTracks.current.has(id));
-      for (let offset = 0; offset < missing.length; offset += 100) {
-        const found = await api<Track[]>(
-          `/api/tracks?ids=${missing.slice(offset, offset + 100).join(",")}`,
-        );
-        registerTracks(found);
-      }
-    },
-    [registerTracks],
-  );
-  const [user, setUser] = useState<User | null>(null);
-  const [personal, setPersonal] = useState<PersonalData | null>(null);
-  const [authLoading, setAuthLoading] = useState(isConfigured);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
-  const [downloadError, setDownloadError] = useState("");
-  const [downloaded, setDownloaded] = useState<DownloadedTrack[]>([]);
-  const [progress, setProgress] = useState<{ id: string; percent: number } | null>(null);
+  const locale = useLocale() as Locale;
   const preferences = usePreferencesStore();
-  const calm = usePreference((value) => value.calm);
-  const abort = useRef<AbortController | null>(null);
-  const requestVersion = useRef(0);
-  const userId = useRef<string | null>(null);
-  const refresh = useCallback(async () => {
-    const version = ++requestVersion.current;
-    if (!userId.current || !navigator.onLine) return null;
-    try {
-      const data = await api<PersonalData>("/api/me");
-      if (version === requestVersion.current && data.profile.id === userId.current) {
-        setPersonal(data);
-        preferences.adoptCalm(data.profile.calm_mode);
-        return data;
-      }
-    } catch (e) {
-      if (version === requestVersion.current)
-        setError(t(`errors.${e instanceof ApiError ? e.code : "unavailable"}`));
-    }
-    return null;
-  }, [t, preferences]);
+  // One set of stores per provider instance (never module singletons: this module also runs
+  // during server rendering). The initial tracks seed the cache once, as before.
+  const [i18n] = useState(() => createStore<I18n>({ t, locale }));
+  const [stores] = useState(() => createAppStores(tracks, preferences));
+  const value = useMemo(
+    () => ({ stores, actions: createActions(stores, preferences, i18n) }),
+    [stores, preferences, i18n],
+  );
+  useEffect(() => i18n.set({ t, locale }), [i18n, t, locale]);
+  // Keyed on the stores only: auth, Realtime and downloads live as long as the provider and are
+  // never restarted by a language switch or a new User object for the same account.
   useEffect(() => {
-    const client = browserClient();
-    if (!client) return;
-    const {
-      data: { subscription },
-    } = client.auth.onAuthStateChange((_event, session) => {
-      const nextUser = session?.user ?? null;
-      if (userId.current !== (nextUser?.id ?? null)) {
-        requestVersion.current++;
-        setPersonal(null);
-        setError("");
-      }
-      userId.current = nextUser?.id ?? null;
-      setUser(nextUser);
-      setAuthLoading(false);
-      if (nextUser)
-        queueMicrotask(() => {
-          void refresh();
-        });
+    const stopPersonal = stores.personal.start();
+    const stopSession = stores.session.start();
+    void stores.downloads.load();
+    const stopCalm = preferences.setCalmSync(async (calm) => {
+      if (stores.session.getSnapshot().userId)
+        await stores.personal.perform("/api/me", { calmMode: calm }, "PATCH");
     });
     return () => {
-      subscription.unsubscribe();
+      stopCalm();
+      stopSession();
+      stopPersonal();
+      stores.downloads.cancel();
+      stores.announcer.dispose();
     };
-  }, [refresh]);
-  useEffect(() => {
-    const client = browserClient();
-    if (!client || !user) return;
-    const channel = client
-      .channel(`user:${user.id}`, { config: { private: true } })
-      .on("broadcast", { event: "invalidate" }, () => {
-        void refresh();
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") void refresh();
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") monitor("synchronization_failed");
-      });
-    const onFocus = () => {
-      if (document.visibilityState === "visible") void refresh();
-    };
-    window.addEventListener("online", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      void client.removeChannel(channel);
-      window.removeEventListener("online", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
-  }, [user, refresh]);
-  useEffect(() => {
-    void listDownloads()
-      .then(setDownloaded)
-      .catch(() => setDownloadError(t("downloads.unsupported")));
-    return () => abort.current?.abort();
-  }, [t]);
-  useEffect(() => {
-    if (notice) {
-      const timer = setTimeout(() => setNotice(""), 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [notice]);
-
-  const perform = async (url: string, data: unknown, method = "POST") => {
-    setError("");
-    if (!user) {
-      setAuthOpen(true);
-      return false;
-    }
-    try {
-      await mutation(url, data, method, user.id);
-      if (userId.current !== user.id) return false;
-      await refresh();
-      return true;
-    } catch (e) {
-      if (userId.current !== user.id) return false;
-      setError(t(`errors.${e instanceof ApiError ? e.code : "unavailable"}`));
-      if (e instanceof ApiError && e.code === "conflict") await refresh();
-      return false;
-    }
-  };
-  const download = async (track: Track) => {
-    if (abort.current) return;
-    setDownloadError("");
-    const controller = new AbortController();
-    abort.current = controller;
-    setProgress({ id: track.id, percent: 0 });
-    try {
-      await downloadRecording(
-        track,
-        (percent) => setProgress({ id: track.id, percent }),
-        controller.signal,
-      );
-      setDownloaded(await listDownloads());
-      setNotice(t("downloads.saved", { title: track.title[locale] }));
-    } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) {
-        const quota = e instanceof DOMException && e.name === "QuotaExceededError";
-        const code = quota
-          ? "storageFull"
-          : e instanceof Error && e.message === "integrity"
-            ? "integrity"
-            : e instanceof Error && e.message === "unsupported"
-              ? "unsupported"
-              : "interrupted";
-        setDownloadError(
-          e instanceof ApiError && e.code === "rate_limited"
-            ? t("errors.rate_limited")
-            : t(`downloads.${code}`),
-        );
-      }
-    } finally {
-      abort.current = null;
-      setProgress(null);
-    }
-  };
-  const remove = async (id?: string) => {
-    try {
-      if (id) await removeDownload(id);
-      else await clearDownloads();
-      setDownloaded(await listDownloads());
-    } catch {
-      setDownloadError(t("downloads.unsupported"));
-    }
-  };
-  // Calm lives in the preferences store; a signed-in change is also saved to the profile.
-  const account = useRef({ user, perform });
-  useEffect(() => {
-    account.current = { user, perform };
-  });
-  useEffect(
-    () =>
-      preferences.setCalmSync(async (value) => {
-        if (account.current.user)
-          await account.current.perform("/api/me", { calmMode: value }, "PATCH");
-      }),
-    [preferences],
-  );
-  const signOut = async () => {
-    const client = browserClient();
-    if (client) {
-      const { error: authError } = await client.auth.signOut();
-      if (authError) {
-        setError(t("errors.unavailable"));
-        return;
-      }
-    }
-    requestVersion.current++;
-    userId.current = null;
-    setUser(null);
-    setPersonal(null);
-    setError("");
-    setNotice(t("settings.signOutNote"));
-  };
+  }, [stores, preferences]);
   return (
-    <AppContext.Provider
-      value={{
-        tracks,
-        registerTracks,
-        ensureTracks,
-        collections,
-        user,
-        personal,
-        authLoading,
-        refresh,
-        perform,
-        authOpen,
-        openAuth: () => setAuthOpen(true),
-        closeAuth: () => setAuthOpen(false),
-        signOut,
-        notice,
-        announce: setNotice,
-        error,
-        clearError: () => setError(""),
-        downloaded,
-        download,
-        remove,
-        progress,
-        cancelDownload: () => abort.current?.abort(),
-        downloadError,
-        calm,
-        setCalm: preferences.setCalm,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <StoresContext.Provider value={value}>
+      <CollectionsContext.Provider value={collections}>{children}</CollectionsContext.Provider>
+    </StoresContext.Provider>
   );
 }
-export function useApp() {
-  const context = useContext(AppContext);
+
+function useAppContext() {
+  const context = useContext(StoresContext);
   if (!context) throw new Error("AppProvider missing");
   return context;
+}
+/** Actions that keep their identity for the provider's lifetime. */
+export function useAppActions() {
+  return useAppContext().actions;
+}
+/** The raw stores, for reading current values inside event handlers. */
+export function useAppStores() {
+  return useAppContext().stores;
+}
+
+function personalErrorMessage(t: Translate, code: string) {
+  return code ? t(`errors.${code}`) : "";
+}
+function downloadErrorMessage(t: Translate, code: DownloadsSnapshot["error"]) {
+  if (!code) return "";
+  return code === "rate_limited" ? t("errors.rate_limited") : t(`downloads.${code}`);
+}
+
+// Selector hooks: each re-renders its component only when the selected value changes.
+export function useTrack(id: string | null | undefined): Track | undefined {
+  return useStore(useAppStores().tracks, (cache) => (id ? cache.byId.get(id) : undefined));
+}
+export function useTrackLookup(): ReadonlyMap<string, Track> {
+  return useStore(useAppStores().tracks, (cache) => cache.byId);
+}
+export function useUser(): User | null {
+  return useStore(useAppStores().session, (session) => session.user);
+}
+export function useUserId(): string | null {
+  return useStore(useAppStores().session, (session) => session.userId);
+}
+export function useAuthLoading(): boolean {
+  return useStore(useAppStores().session, (session) => session.authLoading);
+}
+export function useAuthOpen(): boolean {
+  return useStore(useAppStores().session, (session) => session.authOpen);
+}
+export function usePersonalData(): PersonalData | null {
+  return useStore(useAppStores().personal, (personal) => personal.data);
+}
+export function useIsFavorite(id: string): boolean {
+  return useStore(
+    useAppStores().personal,
+    (personal) => personal.data?.favorites.includes(id) ?? false,
+  );
+}
+export function useIsAdmin(): boolean {
+  return useStore(useAppStores().personal, (personal) => !!personal.data?.isAdmin);
+}
+export function useMoodConsent(): string | null {
+  return useStore(
+    useAppStores().personal,
+    (personal) => personal.data?.profile.mood_consent_at ?? null,
+  );
+}
+/** The last personal request error, translated. */
+export function usePersonalError(): string {
+  const t = useTranslations();
+  return personalErrorMessage(
+    t,
+    useStore(useAppStores().personal, (personal) => personal.error),
+  );
+}
+export function useNotice(): string {
+  return useStore(useAppStores().announcer);
+}
+export function useDownloadedRecords(): DownloadedTrack[] {
+  return useStore(useAppStores().downloads.records, (records) => records.items);
+}
+/** Whether this recording is saved, and whether any download is running. */
+export function useDownloadState(id: string): { downloaded: boolean; busy: boolean } {
+  const { downloads } = useAppStores();
+  const downloaded = useStore(downloads.records, (records) =>
+    records.items.some((item) => item.id === id),
+  );
+  const busy = useStore(downloads.progress, (progress) => progress !== null);
+  return { downloaded, busy };
+}
+export function useDownloadProgress() {
+  return useStore(useAppStores().downloads.progress);
+}
+/** The last download error, translated. */
+export function useDownloadError(): string {
+  const t = useTranslations();
+  return downloadErrorMessage(
+    t,
+    useStore(useAppStores().downloads.records, (records) => records.error),
+  );
+}
+export function useCalm(): boolean {
+  return usePreference((preferences) => preferences.calm);
+}
+
+/**
+ * Everything at once, in the shape the app has always used. It re-renders with every change in
+ * any store (download progress included), so hot paths use the selector hooks above instead.
+ */
+export function useApp() {
+  const { stores, actions } = useAppContext();
+  const collections = useContext(CollectionsContext);
+  const t = useTranslations();
+  const tracks = useStore(stores.tracks, (cache) => cache.list);
+  const session = useStore(stores.session);
+  const personal = useStore(stores.personal);
+  const notice = useStore(stores.announcer);
+  const records = useStore(stores.downloads.records);
+  const progress = useStore(stores.downloads.progress);
+  const calm = useCalm();
+  return useMemo(
+    () => ({
+      tracks,
+      registerTracks: actions.registerTracks,
+      ensureTracks: actions.ensureTracks,
+      collections,
+      user: session.user,
+      personal: personal.data,
+      authLoading: session.authLoading,
+      refresh: actions.refresh,
+      perform: actions.perform,
+      authOpen: session.authOpen,
+      openAuth: actions.openAuth,
+      closeAuth: actions.closeAuth,
+      signOut: actions.signOut,
+      notice,
+      announce: actions.announce,
+      error: personalErrorMessage(t, personal.error),
+      clearError: actions.clearError,
+      downloaded: records.items,
+      download: actions.download,
+      remove: actions.remove,
+      progress,
+      cancelDownload: actions.cancelDownload,
+      downloadError: downloadErrorMessage(t, records.error),
+      calm,
+      setCalm: actions.setCalm,
+    }),
+    [tracks, collections, session, personal, notice, records, progress, calm, actions, t],
+  );
 }
