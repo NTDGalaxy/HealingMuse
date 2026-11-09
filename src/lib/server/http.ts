@@ -6,10 +6,13 @@ import { privilegedClient } from "@/lib/supabase/admin";
 import type { ApiErrorCode } from "@/lib/types";
 import { hasSameOrigin } from "@/lib/request-origin";
 
+/** Fixed failure categories that may appear in logs. Never data, messages or identifiers. */
+export type FailureCategory = "db" | "rate_limit" | "auth";
 export class HttpError extends Error {
   constructor(
     public status: number,
     public code: ApiErrorCode,
+    public category?: FailureCategory,
   ) {
     super(code);
   }
@@ -20,11 +23,24 @@ export function json(value: unknown, status = 200) {
     headers: { "Cache-Control": "private, no-store, max-age=0", Vary: "Cookie" },
   });
 }
-export function safeHandler(fn: () => Promise<Response>) {
+/** route is a fixed, data-free name from the route definition. */
+export function safeHandler(fn: () => Promise<Response>, route?: string) {
   return fn().catch((error: unknown) => {
-    if (error instanceof HttpError) return json({ error: { code: error.code } }, error.status);
-    // No request bodies, patient values, emails, tokens, or database messages.
-    console.error(JSON.stringify({ event: "request_failed", code: "unavailable" }));
+    // Fixed fields only: no request bodies, patient values, emails, tokens or database messages.
+    if (error instanceof HttpError) {
+      if (error.status >= 500)
+        console.error(
+          JSON.stringify({
+            event: "request_failed",
+            route,
+            code: error.code,
+            status: error.status,
+            category: error.category,
+          }),
+        );
+      return json({ error: { code: error.code } }, error.status);
+    }
+    console.error(JSON.stringify({ event: "request_failed", route, code: "unavailable" }));
     return json({ error: { code: "unavailable" } }, 503);
   });
 }
@@ -68,15 +84,15 @@ export async function body<T>(request: Request, schema: ZodType<T>): Promise<T> 
 }
 export async function requireUser(request?: Request) {
   const db = await serverClient();
-  if (!db) throw new HttpError(503, "unavailable");
+  if (!db) throw new HttpError(503, "unavailable", "auth");
   const { data, error } = await db.auth.getUser();
   if (error || !data.user) throw new HttpError(401, "unauthorized");
   const expected = request?.headers.get("X-HealingMuse-Account");
   if (expected && expected !== data.user.id) throw new HttpError(403, "forbidden");
   return { db, user: data.user };
 }
-export async function requireAdmin() {
-  const context = await requireUser();
+export async function requireAdmin(request?: Request) {
+  const context = await requireUser(request);
   const { data, error } = await context.db.rpc("is_content_admin");
   if (error || data !== true) throw new HttpError(403, "forbidden");
   return context;
@@ -91,7 +107,7 @@ export function assertDb(error: { code?: string; message?: string } | null) {
       403,
       error.message === "consent_required" ? "consent_required" : "forbidden",
     );
-  throw new HttpError(503, "unavailable");
+  throw new HttpError(503, "unavailable", "db");
 }
 export async function rateLimit(request: Request, bucket: string, limit: number, owner?: string) {
   const identity =
@@ -105,6 +121,6 @@ export async function rateLimit(request: Request, bucket: string, limit: number,
     p_limit: limit,
     p_seconds: 60,
   });
-  if (error) throw new HttpError(503, "unavailable");
+  if (error) throw new HttpError(503, "unavailable", "rate_limit");
   if (!data) throw new HttpError(429, "rate_limited");
 }

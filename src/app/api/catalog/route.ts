@@ -1,18 +1,20 @@
 import { getCatalogPage } from "@/lib/server/catalog";
-import { json, safeHandler, HttpError } from "@/lib/server/http";
+import { HttpError, json } from "@/lib/server/http";
+import { defineRoute } from "@/lib/server/route";
 import { catalogQueryInput, decodeCursor } from "@/lib/catalog-query";
 export const dynamic = "force-dynamic";
-export function GET(request: Request) {
-  return safeHandler(async () => {
-    const parsed = catalogQueryInput.safeParse(
-      Object.fromEntries(new URL(request.url).searchParams),
-    );
-    if (!parsed.success || parsed.data.status) throw new HttpError(400, "invalid");
+export const GET = defineRoute({
+  name: "catalog",
+  auth: "public",
+  query: catalogQueryInput,
+  rateLimit: { exempt: "public catalogue reads are served from the 60 s data cache" },
+  handler: async ({ query }) => {
+    if (query.status) throw new HttpError(400, "invalid");
     try {
-      decodeCursor(parsed.data.cursor);
+      decodeCursor(query.cursor);
     } catch {
       throw new HttpError(400, "invalid");
     }
-    return json(await getCatalogPage(parsed.data));
-  });
-}
+    return json(await getCatalogPage(query));
+  },
+});
