@@ -1,6 +1,6 @@
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
-import { body, json, safeHandler, requireAdmin, assertDb } from "@/lib/server/http";
+import { assertDb, json } from "@/lib/server/http";
+import { defineRoute } from "@/lib/server/route";
 
 const publication = z
   .object({
@@ -14,18 +14,20 @@ const publication = z
   })
   .strict();
 
-export function POST(request: Request) {
-  return safeHandler(async () => {
-    const input = await body(request, publication);
-    const { db } = await requireAdmin();
+export const POST = defineRoute({
+  name: "admin-release-publish",
+  auth: "admin",
+  body: publication,
+  rateLimit: { bucket: "admin_writes", limit: 60, per: "user" },
+  revalidate: ["catalog"],
+  handler: async ({ body, db }) => {
     const { data, error } = await db.rpc("publish_catalogue_release", {
-      p_release_id: input.releaseId,
-      p_manifest_hash: input.manifestHash,
-      p_reviewer_name: input.reviewerName,
-      p_attestation_version: input.attestationVersion,
+      p_release_id: body.releaseId,
+      p_manifest_hash: body.manifestHash,
+      p_reviewer_name: body.reviewerName,
+      p_attestation_version: body.attestationVersion,
     });
     assertDb(error);
-    revalidateTag("catalog", { expire: 0 });
     return json(data);
-  });
-}
+  },
+});

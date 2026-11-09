@@ -625,7 +625,9 @@ test("a selected private check-in remains readable in Night appearance", async (
     ).violations,
   ).toEqual([]);
 });
-test("content publication requires review and supports retirement", async ({ page }) => {
+test("recording saves cannot publish outside release review and support retirement", async ({
+  page,
+}) => {
   const data: PersonalData = {
     profile: { id: owner, locale: "en", calm_mode: false, mood_consent_at: null },
     favorites: [],
@@ -659,10 +661,10 @@ test("content publication requires review and supports retirement", async ({ pag
     ["Storage path, video ID, or Spotify URL", "synthetic.mp3"],
   ])
     await page.getByRole("textbox", { name: label, exact: true }).fill(value);
-  await page.getByLabel("Publication status", { exact: true }).selectOption("published");
-  await page.getByRole("button", { name: "Save recording", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Review all required fields");
-  expect(tracks).toHaveLength(0);
+  // Publishing happens only through release review: an unpublished recording cannot be
+  // published from the editor, even with every review box checked.
+  const status = page.getByLabel("Publication status", { exact: true });
+  await expect(status.locator("option")).toHaveText(["Draft", "Retired"]);
   await page
     .getByRole("checkbox", {
       name: "I reviewed distribution rights and attribution.",
@@ -683,10 +685,18 @@ test("content publication requires review and supports retirement", async ({ pag
     .check();
   await page.getByRole("button", { name: "Save recording", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".status-pill")).toHaveText("Draft");
+  expect(tracks).toMatchObject([{ status: "draft" }]);
+  // Once release review has published it, metadata edits keep the published status available.
+  (tracks[0] as { status: string }).status = "published";
+  await page.reload();
+  await page.getByRole("button", { name: "admin", exact: true }).click();
   await expect(page.locator(".status-pill")).toHaveText("Published");
   await page
     .getByRole("button", { name: "Edit recording: Synthetic studio recording", exact: true })
     .click();
+  await expect(status).toHaveValue("published");
+  await expect(status.locator("option")).toHaveText(["Draft", "Published", "Retired"]);
   await page.getByRole("button", { name: "Reject recording", exact: true }).click();
   await expect(page.locator(".status-pill")).toHaveText("Retired");
 });

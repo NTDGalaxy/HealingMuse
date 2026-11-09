@@ -430,11 +430,18 @@ export function AdminView() {
                 value={edit?.status}
                 onChange={(e) => update("status", e.target.value as Track["status"])}
               >
-                {["draft", "published", "retired"].map((value) => (
-                  <option value={value} key={value}>
-                    {t(`admin.${value}`)}
-                  </option>
-                ))}
+                {["draft", "published", "retired"]
+                  // Publishing happens only through release review; keep it for published rows.
+                  .filter(
+                    (value) =>
+                      value !== "published" ||
+                      tracks.some((track) => track.id === edit?.id && track.status === "published"),
+                  )
+                  .map((value) => (
+                    <option value={value} key={value}>
+                      {t(`admin.${value}`)}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
