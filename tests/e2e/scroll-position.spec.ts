@@ -19,6 +19,16 @@ for (const width of [390, 1440]) {
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toHaveCount(0);
+      // A lazily loaded recording list (Binaural) inserts content when scrolled near, and scroll
+      // anchoring then moves scrollY. Settle it first so only the user's click is measured.
+      const lazyList = page.locator("#main-content .results-note:visible", {
+        hasText: /^Loading$/,
+      });
+      if (await lazyList.count()) {
+        await lazyList.scrollIntoViewIfNeeded();
+        await expect(lazyList).toHaveCount(0);
+        await page.evaluate(() => scrollTo(0, 0));
+      }
       const before = await page.evaluate(() => scrollY);
       await page.getByRole("heading", { level: 1 }).click();
       await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
