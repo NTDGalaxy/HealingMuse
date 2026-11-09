@@ -74,6 +74,9 @@ export const garden = {
 /** Local recordings served by the preview, for holding a recording while it starts. */
 export const localAudioRoute = "**/api/local-audio/*";
 
+/** Every emitted JavaScript chunk, for failing one that contains a given marker. */
+export const chunkRoute = "**/_next/static/chunks/*.js";
+
 export const card = {
   root: trackCard,
   className: trackCard.slice(1),

@@ -1,4 +1,4 @@
-import { fallbackScene, routeForPath, type SceneId } from "../routes";
+import type { SceneId } from "../routes";
 
 export type { Appearance, GardenPreference, GardenTheme } from "../preferences";
 type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
@@ -17,8 +17,6 @@ export const gardens = {
   sculpture: { plant: "flower", form: "gallery", seed: 12 },
 } as const satisfies Record<SceneId, GardenDefinition>;
 export type GardenId = keyof typeof gardens;
-export const gardenForPath = (pathname: string): GardenId =>
-  routeForPath(pathname)?.scene ?? fallbackScene;
 /** Detail tiers: 2 is full detail; quality only ever steps down during a visit. */
 export type QualityTier = 0 | 1 | 2;
 export type GardenQuality = { tier: QualityTier; fps: number; pixelRatio: number };

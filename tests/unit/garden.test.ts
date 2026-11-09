@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { gardenForPath, initialQuality, lowerQuality } from "../../src/lib/garden/config";
+import { initialQuality, lowerQuality } from "../../src/lib/garden/config";
+import { gardenForPath } from "../../src/lib/garden/route";
 import { appearanceBootstrap } from "../../src/components/appearance";
 
 describe("garden route and resource policy", () => {

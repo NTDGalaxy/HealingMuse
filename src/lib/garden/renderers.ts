@@ -2,6 +2,7 @@
 // host element and removes it on dispose. The worker renderer draws through OffscreenCanvas in
 // src/lib/garden/worker.ts; the main-thread renderer loads the scene module on demand and starts
 // one quality tier lower.
+import type { GraphicsMarker } from "./budget-markers";
 import type { RendererFactory } from "./controller";
 import { gardenProtocol, readWorkerMessage, type HostCommand } from "./protocol";
 import type { Garden } from "./scene";
@@ -22,7 +23,10 @@ export function workerRenderer(host: HTMLElement): RendererFactory {
       if (typeof Worker === "undefined" || !("transferControlToOffscreen" in canvas))
         throw new Error("OffscreenCanvas workers are unavailable");
       const offscreen = canvas.transferControlToOffscreen();
-      worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
+      worker = new Worker(new URL("./worker.ts", import.meta.url), {
+        type: "module",
+        name: "healingmuse-graphics:host" satisfies GraphicsMarker<"host">,
+      });
       worker.onmessage = (message: MessageEvent<unknown>) => emit(readWorkerMessage(message.data));
       worker.onerror = () => emit({ type: "failed" });
       worker.postMessage(

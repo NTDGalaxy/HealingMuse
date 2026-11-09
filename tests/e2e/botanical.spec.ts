@@ -9,12 +9,14 @@ import {
 import {
   dialog as dialogs,
   shell as chrome,
+  chunkRoute,
   garden,
   localAudioRoute,
   size,
 } from "./support/contracts";
 import { firstSoundTime, pageTime, sceneWaitedForSound, watchFirstSound } from "./support/motion";
 import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
+import { graphicsMarkers } from "../../src/lib/garden/budget-markers";
 test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
@@ -226,6 +228,30 @@ test.describe("WebGL lifecycle", () => {
     await expect
       .poll(buffer)
       .toEqual({ width: Math.floor(800 * scale), height: Math.floor(600 * scale), scale });
+  });
+
+  test("garden code that fails to load leaves the poster and a working page", async ({ page }) => {
+    const shell = new Shell(page);
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    // The scene runtime and the GSAP layer load on demand; offline, or after a newer deploy, the
+    // request fails. Decoration is optional, so the page must carry on with the poster.
+    const lazy = [graphicsMarkers.host.marker, graphicsMarkers.motion.marker];
+    let refused = 0;
+    await page.route(chunkRoute, async (route) => {
+      const response = await route.fetch();
+      const body = await response.text();
+      if (!lazy.some((marker) => body.includes(marker))) return route.fulfill({ response, body });
+      refused++;
+      return route.abort("failed");
+    });
+    await page.goto("/en");
+    await expect.poll(() => refused).toBe(lazy.length);
+    await shell.expectGardenState("still");
+    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await new Recordings(page).featuredPlay.click();
+    await expectPlaying(page);
+    expect(errors).toEqual([]);
   });
 
   test("main-thread fallback and context loss preserve active audio", async ({ page }) => {

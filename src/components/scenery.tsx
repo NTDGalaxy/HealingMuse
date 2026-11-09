@@ -1,42 +1,17 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
-import { gardenForPath } from "@/lib/garden/config";
-import {
-  createGardenController,
-  type GardenController,
-  type GardenState,
-} from "@/lib/garden/controller";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { gardenForPath } from "@/lib/garden/route";
 import type { SceneSpec } from "@/lib/garden/protocol";
-import { mainThreadRenderer, workerRenderer } from "@/lib/garden/renderers";
-import { readViewport, watchViewport } from "@/lib/garden/viewport";
-import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
+import type { GardenRuntime } from "@/lib/garden/runtime";
+import { decorationMayStart } from "@/lib/perf/audio-first";
 import { usePreference } from "./appearance";
 import { useMotionPolicy } from "./motion-policy";
-const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
 
-const hostStates: Record<GardenState["phase"], string> = {
-  idle: "waiting",
-  waiting: "waiting",
-  starting: "starting",
-  ready: "ready",
-  degraded: "ready",
-  poster: "still",
-};
-const running = (state: GardenState) => state.phase === "ready" || state.phase === "degraded";
-
-/** Mirrors the controller state onto the host for its styles, the tests and the perf harness. */
-function reflect(element: HTMLElement, state: GardenState, previous: GardenState) {
-  const data = element.dataset;
-  data.state = hostStates[state.phase];
-  if ("renderer" in state) data.renderer = state.renderer;
-  else delete data.renderer;
-  if (!running(state)) delete data.readyMs;
-  else if (!running(previous)) data.readyMs = String(Math.round(performance.now()));
-  const tier = "tier" in state ? state.tier : null;
-  if (tier === null) delete data.quality;
-  else data.quality = String(tier);
-}
+// Startup keeps only the markup, the motion policy and the audio-first wait. The scene runtime
+// and the GSAP layer are imported once decoration may start, and only when the policy allows
+// them. Neither goes through next/dynamic: decoration is optional, so a chunk that fails to load
+// (offline, or after a newer deploy) leaves the poster instead of throwing into React, where it
+// would replace the whole application.
 
 /** Turns true once decoration may start (audio-first), then stays true for this mount. */
 function useDecorationAllowed() {
@@ -49,49 +24,52 @@ function useDecorationAllowed() {
   return allowed;
 }
 
+// A failed import resolves to a layer that renders nothing, so it never reaches an error boundary.
+const GardenMotion = lazy(() => import("./garden-motion").catch(() => ({ default: () => null })));
+
 export function Scenery({ pathname }: { pathname: string }) {
   const policy = useMotionPolicy();
   const decorated = useDecorationAllowed();
   const theme = usePreference((value) => value.theme);
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null);
-  const controller = useRef<GardenController | null>(null);
+  const runtime = useRef<GardenRuntime | null>(null);
   const scene = useRef<SceneSpec>({ garden, theme });
   useEffect(() => {
     scene.current = { garden, theme };
-    controller.current?.setScene(scene.current);
+    runtime.current?.setScene(scene.current);
   }, [garden, theme]);
   useEffect(() => {
     const element = host.current;
     if (!element) return;
-    const instance = createGardenController({
-      renderers: { worker: workerRenderer(element), main: mainThreadRenderer(element) },
-      decoration: (signal) => decorationMayStart({ signal }),
-      mark: () => performance.mark(decorationMarks.scene),
-      scene: scene.current,
-      viewport: readViewport(),
-      visible: document.visibilityState === "visible",
-    });
-    controller.current = instance;
-    let previous = instance.getSnapshot();
-    const unsubscribe = instance.subscribe(() => {
-      const next = instance.getSnapshot();
-      reflect(element, next, previous);
-      previous = next;
-    });
-    const unwatch = watchViewport((viewport) => instance.resize(viewport));
-    const visibility = () => instance.setVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", visibility);
+    // Once loaded, the runtime's controller follows the policy and waits for decoration itself.
+    if (runtime.current) {
+      runtime.current.setPolicy(policy.scene);
+      return;
+    }
+    element.dataset.state = policy.scene ? "waiting" : "still";
+    if (!policy.scene || !decorated) return;
+    let active = true;
+    import("@/lib/garden/runtime")
+      .then(({ startGardenRuntime }) => {
+        if (!active) return;
+        runtime.current = startGardenRuntime(element, scene.current);
+        runtime.current.setPolicy(true);
+      })
+      .catch(() => {
+        if (active) element.dataset.state = "still";
+      });
     return () => {
-      unwatch();
-      document.removeEventListener("visibilitychange", visibility);
-      unsubscribe();
-      instance.stop();
-      controller.current = null;
+      active = false;
     };
-  }, []);
-  // After the controller exists: the policy starts it, stills it or restarts it.
-  useEffect(() => controller.current?.setPolicy(policy.scene), [policy.scene]);
+  }, [policy.scene, decorated]);
+  useEffect(
+    () => () => {
+      runtime.current?.stop();
+      runtime.current = null;
+    },
+    [],
+  );
   return (
     <>
       <div
@@ -123,7 +101,11 @@ export function Scenery({ pathname }: { pathname: string }) {
         <div className="garden-canvas" ref={host} data-state="waiting" />
       </div>
       {/* decorated is false through hydration, so the live policy never picks hydrated markup. */}
-      {decorated && policy.reveals && <GardenMotion pathname={pathname} />}
+      {decorated && policy.reveals && (
+        <Suspense fallback={null}>
+          <GardenMotion pathname={pathname} />
+        </Suspense>
+      )}
     </>
   );
 }
