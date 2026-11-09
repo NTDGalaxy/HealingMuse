@@ -127,6 +127,14 @@ export class Shell {
   async expectGardenDetail(detail: GardenDetail) {
     await expect(this.document).toHaveAttribute(documentRoot.garden, detail);
   }
+  /** Turns Calm on or off from the appearance dialog and waits until the shell follows. */
+  async setCalm(on: boolean) {
+    await this.gardenButton.click();
+    await this.dialog.getByRole("checkbox").setChecked(on);
+    await this.page.keyboard.press("Escape");
+    if (on) await this.expectCalm();
+    else await expect(this.app).not.toHaveClass(new RegExp(shell.calmClass));
+  }
   async expectCalm() {
     await expect(this.app).toHaveClass(new RegExp(shell.calmClass));
   }

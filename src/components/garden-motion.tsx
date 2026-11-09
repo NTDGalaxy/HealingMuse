@@ -1,20 +1,33 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { GraphicsMarker } from "@/lib/garden/budget-markers";
-import { decorationMarks } from "@/lib/perf/audio-first";
-import { markOnce } from "@/lib/perf/readiness";
+import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
 import { useMotionPolicy } from "./motion-policy";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 // GSAP layer: content reveals, the scenery fade-in and scroll parallax. useMotionPolicy() decides
 // what may run; a route or policy change reverts every tween, trigger and inline style before the
-// layer runs again.
+// layer runs again. Scenery mounts it anew, after decorationMayStart(), whenever the policy allows
+// it again.
 export default function GardenMotion({ pathname }: { pathname: string }) {
   const { reveals, parallax } = useMotionPolicy();
+  // A recording may have started while this code downloaded, so the first pass waits for
+  // decorationMayStart() once more. A route change before it resolves starts a new wait; once the
+  // layer runs, route changes re-run it at once, before the new page paints.
+  const [allowed, setAllowed] = useState(false);
+  const waitFor = allowed || !reveals ? null : pathname;
+  useEffect(() => {
+    if (waitFor === null) return;
+    const wait = new AbortController();
+    void decorationMayStart({ signal: wait.signal }).then((value) => value && setAllowed(true));
+    return () => wait.abort();
+  }, [waitFor]);
+  const started = useRef(false);
   useGSAP(
     () => {
-      if (!reveals) return;
+      if (!reveals || !allowed) return;
       const media = gsap.matchMedia();
       // "all" always matches; the desktop query re-runs the layer when the width crosses 1100 px.
       media.add({ always: "all", desktop: "(min-width: 1100px)" }, (condition) => {
@@ -131,7 +144,10 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
             if (changed) ScrollTrigger.refresh();
           });
         observe();
-        markOnce(decorationMarks.motion);
+        if (!started.current) {
+          started.current = true;
+          performance.mark(decorationMarks.motion);
+        }
         const observer = new MutationObserver((records) => {
           records.forEach((record) => {
             record.removedNodes.forEach((node) => {
@@ -179,7 +195,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
       });
       return () => media.revert();
     },
-    { dependencies: [pathname, reveals, parallax], revertOnUpdate: true },
+    { dependencies: [pathname, reveals, parallax, allowed], revertOnUpdate: true },
   );
   return null;
 }

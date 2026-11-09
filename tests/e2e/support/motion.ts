@@ -10,6 +10,7 @@ type Probes = typeof window & {
   arrivals?: string[];
   cardMoves?: string[];
   firstSound?: number;
+  motionPasses?: number[];
 };
 
 /**
@@ -88,16 +89,20 @@ export function cardMoved(page: Page, which: "first" | "later") {
   return page.evaluate((which) => (window as Probes).cardMoves!.includes(which), which);
 }
 
-/** Waits until the GSAP garden layer has run its first pass, so later reveals can be observed. */
-export async function expectMotionStarted(page: Page) {
+/**
+ * Waits until the GSAP garden layer has run a first pass (at or after the page-clock time `since`,
+ * when given), so later reveals can be observed.
+ */
+export async function expectMotionStarted(page: Page, since = 0) {
   await expect
     .poll(() =>
       page.evaluate(
-        (mark) => performance.getEntriesByName(mark, "mark").length,
-        garden.motionStartMark,
+        ({ mark, since }) =>
+          performance.getEntriesByName(mark, "mark").some((entry) => entry.startTime >= since),
+        { mark: garden.motionStartMark, since },
       ),
     )
-    .toBeGreaterThan(0);
+    .toBe(true);
 }
 
 /** Records, from the first document onwards, when the first media element starts playing. */
@@ -111,6 +116,45 @@ export async function watchFirstSound(page: Page) {
   );
 }
 
+/**
+ * Records, from the first document onwards, the page-clock time of every GSAP layer pass: each
+ * pass starts by fading the scenery in, which writes an inline opacity onto it.
+ */
+export async function watchMotionPasses(page: Page) {
+  await page.addInitScript((scenery) => {
+    const passes: number[] = [];
+    (window as Probes).motionPasses = passes;
+    let fading = false;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const target = record.target as HTMLElement;
+        if (!target.matches(scenery)) continue;
+        const now = target.style.opacity !== "";
+        if (now && !fading) passes.push(performance.now());
+        fading = now;
+      }
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ["style"] });
+  }, shell.scenery);
+}
+
+/** Page-clock times of the GSAP layer passes recorded by `watchMotionPasses`. */
+export function motionPassTimes(page: Page) {
+  return page.evaluate(() => (window as Probes).motionPasses ?? []);
+}
+
+/**
+ * Whether decoration that started at `start` waited for the first sound: it started after
+ * `sound`, or only once decorationMayStart's whole audio wait had passed since `allowed` (when
+ * decoration was allowed while a start was pending). All are page-clock times; a slow machine
+ * only moves the start later, so the outcome never depends on machine speed.
+ */
+export function waitedForSound(
+  start: number,
+  { allowed, sound }: { allowed: number; sound: number },
+) {
+  return start >= sound || start - allowed >= decorationBounds.audioWithin;
+}
+
 /** The page's clock, the one performance marks use. */
 export function pageTime(page: Page) {
   return page.evaluate(() => performance.now());
@@ -122,17 +166,22 @@ export function firstSoundTime(page: Page) {
 }
 
 /**
- * Whether the last garden scene start came after `sound`, or only once decorationMayStart's whole
- * audio wait had passed since `allowed` (when the scene was allowed while a start was pending).
- * Both are page-clock times. A slow machine only moves the scene start later, so the outcome
- * never depends on machine speed; starting before the sound and before that wait is the bug.
+ * Whether the last decoration start recorded under `mark` (the scene's or the GSAP layer's) came
+ * after `sound`, or only once decorationMayStart's whole audio wait had passed since `allowed`
+ * (when decoration was allowed while a start was pending). Both are page-clock times. A slow
+ * machine only moves the start later, so the outcome never depends on machine speed; starting
+ * before the sound and before that wait is the bug.
  */
-export function sceneWaitedForSound(page: Page, times: { allowed: number; sound: number }) {
+export function decorationWaitedForSound(
+  page: Page,
+  mark: string,
+  times: { allowed: number; sound: number },
+) {
   return page.evaluate(
     ({ mark, allowed, sound, wait }) => {
       const start = performance.getEntriesByName(mark, "mark").at(-1)?.startTime;
       return start !== undefined && (start >= sound || start - allowed >= wait);
     },
-    { mark: garden.sceneStartMark, ...times, wait: decorationBounds.audioWithin },
+    { mark, ...times, wait: decorationBounds.audioWithin },
   );
 }

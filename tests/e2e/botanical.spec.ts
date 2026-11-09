@@ -14,7 +14,16 @@ import {
   localAudioRoute,
   size,
 } from "./support/contracts";
-import { firstSoundTime, pageTime, sceneWaitedForSound, watchFirstSound } from "./support/motion";
+import {
+  decorationWaitedForSound,
+  expectMotionStarted,
+  firstSoundTime,
+  motionPassTimes,
+  pageTime,
+  waitedForSound,
+  watchFirstSound,
+  watchMotionPasses,
+} from "./support/motion";
 import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 import { graphicsMarkers } from "../../src/lib/garden/budget-markers";
 test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
@@ -308,7 +317,9 @@ test.describe("audio-first decoration", () => {
     await shell.expectGardenState("ready");
     const sound = await firstSoundTime(page);
     expect(sound).not.toBeNull();
-    expect(await sceneWaitedForSound(page, { allowed, sound: sound! })).toBe(true);
+    expect(
+      await decorationWaitedForSound(page, garden.sceneStartMark, { allowed, sound: sound! }),
+    ).toBe(true);
   });
 
   test("a scene allowed while binaural tones start begins after they start", async ({
@@ -328,6 +339,40 @@ test.describe("audio-first decoration", () => {
     const sound = await releaseTones();
     await binaural.expectState("playing");
     await shell.expectGardenState("ready");
-    expect(await sceneWaitedForSound(page, { allowed, sound })).toBe(true);
+    expect(await decorationWaitedForSound(page, garden.sceneStartMark, { allowed, sound })).toBe(
+      true,
+    );
+  });
+
+  test("motion allowed again while a recording starts begins after its first sound", async ({
+    page,
+    appearance,
+  }) => {
+    const shell = new Shell(page);
+    // Still keeps the scene on its poster, so only the GSAP layer decorates.
+    await appearance({ theme: "day", garden: "still" });
+    await watchFirstSound(page);
+    await watchMotionPasses(page);
+    const recording = await holdRequests(page, localAudioRoute);
+    await page.goto("/en");
+    // The layer has run once, so its code is already loaded when Calm is turned off again and
+    // nothing but the audio-first wait can delay its next pass.
+    await expectMotionStarted(page);
+    await shell.setCalm(true);
+    await new Recordings(page).featuredPlay.click();
+    await recording.reached;
+    const allowed = await pageTime(page);
+    await shell.setCalm(false);
+    recording.release();
+    await expectPlaying(page);
+    const passAfter = async () => (await motionPassTimes(page)).find((time) => time >= allowed);
+    await expect.poll(passAfter).toBeDefined();
+    const sound = await firstSoundTime(page);
+    expect(sound).not.toBeNull();
+    expect(waitedForSound((await passAfter())!, { allowed, sound: sound! })).toBe(true);
+    await expectMotionStarted(page, allowed);
+    expect(
+      await decorationWaitedForSound(page, garden.motionStartMark, { allowed, sound: sound! }),
+    ).toBe(true);
   });
 });
