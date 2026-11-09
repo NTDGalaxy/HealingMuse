@@ -1332,3 +1332,45 @@ test("a content studio that cannot download offers Try again instead of breaking
   await expect(ui.button("admin.new")).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+test("after personal data fails to load, Enable keeps the consent panel and its focus", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("**/api/me", async (route) => {
+    if (route.request().method() !== "PATCH")
+      return route.fulfill({ status: 503, json: { error: { code: "unavailable" } } });
+    await held;
+    return route.fulfill({ json: { ok: true } });
+  });
+  await ui.open();
+  await ui.show("mood");
+  await expect(page.getByRole("alert")).toHaveText(ui.t("errors.unavailable"));
+  const enable = ui.button("mood.enable");
+  await enable.focus();
+  await page.keyboard.press("Enter");
+  // While the change is on its way the panel stays, and so does keyboard focus.
+  await expect(enable).toBeFocused();
+  release();
+  await expect(page.getByRole("alert")).toHaveText(ui.t("errors.unavailable"));
+  await expect(enable).toBeFocused();
+});
+test("after personal data fails to load, saving a new playlist returns focus to New playlist", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ status: 503, json: { error: { code: "unavailable" } } }),
+  );
+  await page.route("**/api/playlists", (route) => route.fulfill({ json: { id } }));
+  await ui.open();
+  await expect(page.getByRole("alert")).toHaveText(ui.t("errors.unavailable"));
+  const create = ui.button("library.newPlaylist");
+  await create.focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("textbox", { name: ui.t("library.playlistTitle") }).fill("Evening");
+  await ui.button("common.save").click();
+  await expect(ui.dialog).toHaveCount(0);
+  await expect(create).toBeFocused();
+});

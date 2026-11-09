@@ -16,6 +16,11 @@ export type PersonalSnapshot = Readonly<{
   data: PersonalData | null;
   /** API error code of the last failed personal request, or "" (translated when rendered). */
   error: string;
+  /**
+   * Whether /api/me has answered, with data or a failure, for the current account. Screens wait
+   * on this, not on data and error, so a later change clearing the error never looks like loading.
+   */
+  settled: boolean;
 }>;
 
 export type PerformResult = { ok: true } | { ok: false; code: string };
@@ -48,7 +53,7 @@ export function createPersonal({
   now?: () => number;
   online?: () => boolean;
 }): Personal {
-  const store = createStore<PersonalSnapshot>({ data: null, error: "" });
+  const store = createStore<PersonalSnapshot>({ data: null, error: "", settled: false });
   const owner = () => session.getSnapshot().userId;
   const setError = (error: string) =>
     store.set((current) => (current.error === error ? current : { ...current, error }));
@@ -68,12 +73,19 @@ export function createPersonal({
       try {
         const data = await api<PersonalData>("/api/me");
         if (started === epoch && data.profile.id === owner()) {
-          store.set((current) => ({ ...current, data }));
+          store.set((current) => ({ ...current, data, settled: true }));
           onData?.(data);
           return data;
         }
       } catch (error) {
-        if (started === epoch) setError(error instanceof ApiError ? error.code : "unavailable");
+        if (started === epoch) {
+          const code = error instanceof ApiError ? error.code : "unavailable";
+          store.set((current) =>
+            current.error === code && current.settled
+              ? current
+              : { ...current, error: code, settled: true },
+          );
+        }
       }
       return null;
     })();
@@ -111,7 +123,9 @@ export function createPersonal({
     missedInvalidation = false;
     lastCommit = -Infinity;
     store.set((current) =>
-      current.data === null && current.error === "" ? current : { data: null, error: "" },
+      current.data === null && current.error === "" && !current.settled
+        ? current
+        : { data: null, error: "", settled: false },
     );
   };
 

@@ -465,6 +465,23 @@ describe("personal data", () => {
     store.invalidate();
     expect(apiMock).toHaveBeenCalledTimes(2);
   });
+  it("settles once /api/me answers, and a later change never unsettles it", async () => {
+    const { store } = await setup();
+    apiMock.mockRejectedValue(new ApiError("unavailable", 503) as never);
+    expect(store.getSnapshot().settled).toBe(false);
+    await signIn();
+    expect(store.getSnapshot()).toMatchObject({ data: null, error: "unavailable", settled: true });
+    const committed = deferred<void>();
+    mutationMock.mockReturnValueOnce(committed.promise as Promise<never>);
+    const saving = store.perform("/api/me", { moodConsent: true }, "PATCH");
+    // The change clears the error while it runs; the account's data is still known to be missing.
+    expect(store.getSnapshot()).toMatchObject({ error: "", settled: true });
+    committed.resolve();
+    await saving;
+    expect(store.getSnapshot().settled).toBe(true);
+    fake.emit(null);
+    expect(store.getSnapshot()).toMatchObject({ data: null, error: "", settled: false });
+  });
   it("refreshes when the tab becomes visible or the device comes back online", async () => {
     const { store, stop } = await setup();
     apiMock.mockResolvedValue(personal("a") as never);

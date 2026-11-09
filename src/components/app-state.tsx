@@ -200,14 +200,15 @@ export function useMoodConsent(): string | null {
   );
 }
 /**
- * True while a signed-in account's personal data is still on its way: online, not loaded yet and
- * not failed. Offline, or after a failure, screens render without it as they always have.
+ * True while a signed-in account's personal data is still on its way: online and /api/me has not
+ * answered yet. Offline, or once it answered (even with a failure), screens render as they always
+ * have, and a later change never brings the wait back.
  */
 export function usePersonalPending(): boolean {
   const { session, personal } = useAppStores();
   const signedIn = useStore(session, (snapshot) => snapshot.userId !== null);
-  const waiting = useStore(personal, (snapshot) => snapshot.data === null && !snapshot.error);
-  return useOnline() && signedIn && waiting;
+  const settled = useStore(personal, (snapshot) => snapshot.settled);
+  return useOnline() && signedIn && !settled;
 }
 /** The last personal request error, translated. */
 export function usePersonalError(): string {
