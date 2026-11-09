@@ -1,7 +1,15 @@
 import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Track } from "@/lib/types";
-import { motionTargets, personalDataPath, playbackGrantPath, player, storage } from "./contracts";
+import {
+  chunkRoute,
+  marks,
+  motionTargets,
+  personalDataPath,
+  playbackGrantPath,
+  player,
+  storage,
+} from "./contracts";
 
 export { expect };
 
@@ -383,4 +391,42 @@ export async function seedDownload(page: Page, track: Track, audioUrl: string) {
     },
     { track, audioUrl, database: storage.downloads },
   );
+}
+
+/** Waits until the Shell has preloaded the on-demand dialog code (it does so while idle). */
+export async function expectOnDemandReady(page: Page) {
+  await test.step(
+    "on-demand dialog code is preloaded",
+    async () => {
+      await expect
+        .poll(() =>
+          page.evaluate(
+            (name) => performance.getEntriesByName(name, "mark").length > 0,
+            marks.onDemandReady,
+          ),
+        )
+        .toBe(true);
+    },
+    { box: true },
+  );
+}
+
+/**
+ * Makes every script chunk whose source contains `marker` fail to download, as it would offline,
+ * until `unblock` runs. Other scripts load normally.
+ */
+export async function blockScriptsContaining(page: Page, marker: string) {
+  let blocked = true;
+  await page.route(chunkRoute, async (route) => {
+    if (!blocked) return route.fallback();
+    const response = await route.fetch();
+    const body = await response.text();
+    if (body.includes(marker)) return route.abort("internetdisconnected");
+    return route.fulfill({ response, body });
+  });
+  return {
+    unblock() {
+      blocked = false;
+    },
+  };
 }

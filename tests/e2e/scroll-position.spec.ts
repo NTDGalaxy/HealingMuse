@@ -1,4 +1,4 @@
-import { test, expect } from "./support/test";
+import { test, expect, expectMotionSettled } from "./support/test";
 import { Explore, Shell } from "./support/pages";
 
 test.use({ serviceWorkers: "block" });
@@ -27,6 +27,9 @@ for (const width of [390, 1440]) {
         await expect(lazyList).toHaveCount(0);
         await page.evaluate(() => scrollTo(0, 0));
       }
+      // The heading's entrance moves it for 550 ms; a click meanwhile measures the animation,
+      // not the click (the dialog above can now open with no download and finish sooner).
+      await expectMotionSettled(page);
       const before = await page.evaluate(() => scrollY);
       await page.getByRole("heading", { level: 1 }).click();
       await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);

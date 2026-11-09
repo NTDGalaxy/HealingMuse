@@ -16,17 +16,18 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useAppActions, useCalm, useIsAdmin, useOnline, useUserId } from "./app-state";
-import dynamic from "next/dynamic";
+import { AuthDialogOnDemand, authDialogCode } from "@/features/account/auth-dialog-on-demand";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
 import { Fragment, useLayoutEffect, useState } from "react";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
-import { Dialog } from "./dialog";
+import { Dialog, dialogCode } from "./dialog";
 import {
   BottomOverlayFocus,
   DownloadStatus,
   LiveAnnouncer,
+  PreloadOnDemand,
   ServiceWorkerRegistration,
 } from "./shell-runtime";
 import type { Locale } from "@/lib/types";
@@ -39,11 +40,8 @@ import {
   type RouteKey,
 } from "@/lib/routes";
 
-// The sign-in dialog, and the Supabase client it uses, load on demand.
-const AuthDialog = dynamic(
-  () => import("@/features/account/auth-dialog").then((module) => module.AuthDialog),
-  { ssr: false },
-);
+// Interface code the Shell fetches while idle once listening has begun, so it still opens offline.
+const onDemandCode = [dialogCode, authDialogCode];
 
 const icons: Partial<Record<RouteKey, typeof House>> = {
   home: House,
@@ -212,9 +210,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </Dialog>
       <LiveAnnouncer />
       <DownloadStatus />
-      <AuthDialog />
+      <AuthDialogOnDemand />
       <BottomOverlayFocus />
       <ServiceWorkerRegistration />
+      <PreloadOnDemand modules={onDemandCode} />
     </div>
   );
 }

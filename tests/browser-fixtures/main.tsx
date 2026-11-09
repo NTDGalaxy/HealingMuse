@@ -11,7 +11,7 @@ import { LibraryView } from "@/features/library/library-view";
 import { MoodView } from "@/features/mood/mood-view";
 import { SettingsView } from "@/features/settings/settings-view";
 import { AdminView } from "@/features/admin/admin-view";
-import { AuthDialog } from "@/features/account/auth-dialog";
+import { AuthDialogOnDemand } from "@/features/account/auth-dialog-on-demand";
 import { PasswordResetView } from "@/features/account/password-reset";
 import { AppearanceProvider } from "@/components/appearance";
 import { TrackCard, ExploreView } from "@/components/catalog";
@@ -152,7 +152,7 @@ function Views({ switchLocale }: { switchLocale: () => void }) {
           </div>
         )}
       </main>
-      <AuthDialog />
+      <AuthDialogOnDemand />
     </>
   );
 }

@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 import {
   test,
   expect,
@@ -1311,4 +1311,24 @@ test("Settings waits for personal data before showing the private check-in choic
   await expect(settings.privacy.getByText(ui.t("settings.enabled"), { exact: true })).toBeVisible();
   await expect(ui.button("mood.revoke")).toBeVisible();
   await expect(ui.button("mood.enable")).toHaveCount(0);
+});
+test("a content studio that cannot download offers Try again instead of breaking the page", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: personalData({ isAdmin: true }) }),
+  );
+  await emptyStudio(page);
+  const studio = `**/${harness.modules.adminConsole}*`;
+  const offline = (route: Route) => route.abort("internetdisconnected");
+  await page.route(studio, offline);
+  await ui.open();
+  await ui.show("admin");
+  await expect(page.getByRole("alert")).toContainText(ui.t("errors.unavailable"));
+  await expect(ui.view("library")).toBeVisible();
+  await page.unroute(studio, offline);
+  await ui.button("common.retry").click();
+  await expect(ui.button("admin.new")).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });

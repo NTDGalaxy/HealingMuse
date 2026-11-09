@@ -104,6 +104,8 @@ The PWA provides an installable shell, local fonts and an offline library view.
 Installation prompts and instructions depend on the browser.
 The service worker caches the public shell and decorative assets, while authenticated responses, playback grants and streamed music stay outside its caches.
 Only an explicit download retains music for offline listening.
+Once a route is usable and any first sound has started, the app fetches its dialog code while idle, so the queue, sleep timer and recording details still open after the connection drops.
+Interface code that cannot download never stops the page or the music: a dialog stays closed with a short notice, the content studio offers Try again, and the next attempt downloads it again.
 
 ### Optional mood check-ins
 

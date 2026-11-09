@@ -56,6 +56,12 @@ export const dialog = {
 
 export const status = '[role="status"]';
 
+/** Performance marks the application records (src/lib/perf/readiness.ts). */
+export const marks = {
+  /** The Shell has preloaded the code of its on-demand dialogs. */
+  onDemandReady: "hm:on-demand-ready",
+} as const;
+
 /** The personal-data endpoint the account store reads. */
 export const personalDataPath = "/api/me";
 
@@ -76,6 +82,17 @@ export const localAudioRoute = "**/api/local-audio/*";
 
 /** Every emitted JavaScript chunk, for failing one that contains a given marker. */
 export const chunkRoute = "**/_next/static/chunks/*.js";
+
+/**
+ * Strings that survive minification inside one emitted script chunk, to find that chunk in a
+ * production build (the budget check uses the same markers).
+ */
+export const chunkMarkers = {
+  /** Radix dialog, the code every dialog downloads on first use. */
+  dialog: '"DialogContentModal"',
+  /** The sign-in dialog (an element id it renders). */
+  authDialog: '"auth-recovery-status"',
+} as const;
 
 export const card = {
   root: trackCard,

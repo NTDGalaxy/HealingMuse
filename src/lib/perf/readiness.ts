@@ -7,6 +7,8 @@ export const readinessMarks = {
   shell: "hm:shell-ready",
   player: "hm:player-ready",
   primary: "hm:primary-ready",
+  /** The Shell has preloaded the on-demand dialog code (after the primary mark and first sound). */
+  onDemand: "hm:on-demand-ready",
 } as const;
 
 export function markOnce(name: string) {

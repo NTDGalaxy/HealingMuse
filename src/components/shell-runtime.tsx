@@ -2,6 +2,9 @@
 import { useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/types";
+import type { OnDemand } from "@/lib/on-demand";
+import { decorationMayStart } from "@/lib/perf/audio-first";
+import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import {
   useAppActions,
   useDownloadError,
@@ -104,4 +107,35 @@ export function DownloadStatus() {
       )}
     </div>
   );
+}
+
+/**
+ * Downloads on-demand interface code while the page is idle, once the route is usable and any
+ * first sound has started (decorationMayStart), so the queue, the sleep timer and other dialogs
+ * still open after the connection drops, and preloading never competes with the first tap or
+ * sound. Records hm:on-demand-ready once everything arrived; a failure just leaves each piece to
+ * load, and retry, when it is opened.
+ */
+export function PreloadOnDemand({ modules }: { modules: readonly OnDemand<unknown>[] }) {
+  useEffect(() => {
+    const controller = new AbortController();
+    let idle = 0;
+    void decorationMayStart({ signal: controller.signal }).then((ready) => {
+      if (!ready) return;
+      const run = () =>
+        void Promise.all(modules.map((module) => module.load())).then(
+          () => markOnce(readinessMarks.onDemand),
+          () => {},
+        );
+      if (typeof requestIdleCallback === "function")
+        idle = requestIdleCallback(run, { timeout: 2000 });
+      else idle = window.setTimeout(run, 0);
+    });
+    return () => {
+      controller.abort();
+      if (typeof cancelIdleCallback === "function") cancelIdleCallback(idle);
+      else clearTimeout(idle);
+    };
+  }, [modules]);
+  return null;
 }
