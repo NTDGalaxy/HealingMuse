@@ -19,20 +19,32 @@ import { useApp, useOnline } from "./app-state";
 import { AuthDialog } from "./auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { AppearanceButton } from "./appearance";
 import { Dialog } from "./dialog";
 import type { Locale } from "@/lib/types";
+import {
+  isRouteActive,
+  localizedPath,
+  locales,
+  routeHref,
+  routesIn,
+  type RouteKey,
+} from "@/lib/routes";
 
-const links = [
-  ["home", "", House],
-  ["explore", "/explore", Compass],
-  ["binaural", "/brainwave-entrainment", Headphones],
-  ["library", "/library", Library],
-  ["downloads", "/downloads", Download],
-  ["mood", "/mood", Heart],
-  ["settings", "/settings", Settings],
-] as const;
+const icons: Partial<Record<RouteKey, typeof House>> = {
+  home: House,
+  explore: Compass,
+  binaural: Headphones,
+  library: Library,
+  downloads: Download,
+  mood: Heart,
+  settings: Settings,
+};
+const primaryRoutes = routesIn("primary");
+const secondaryRoutes = routesIn("more");
+const legalRoutes = routesIn("legal");
+const moreRoutes = routesIn("more", "admin", "legal");
 export function Shell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -69,7 +81,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
         /* Online listening remains available. */
       });
   }, []);
-  const active = (suffix: string) => pathname === `/${locale}${suffix}`;
+  const active = (key: RouteKey) => isRouteActive(pathname, locale as Locale, key);
+  const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
     <div className={`app-shell ${app.calm ? "calm-mode" : ""}`}>
       <Scenery pathname={pathname} calm={app.calm} />
@@ -87,18 +100,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </span>
         </Link>
         <nav aria-label={t("nav.label")} className="side-nav">
-          {links.map(([key, suffix, Icon]) => (
-            <Link
-              key={key}
-              href={`/${locale}${suffix}`}
-              aria-current={active(suffix) ? "page" : undefined}
-            >
-              <Icon size={21} aria-hidden="true" />
-              <span>{t(`nav.${key}`)}</span>
-            </Link>
-          ))}
+          {[...primaryRoutes, ...secondaryRoutes].map(({ key }) => {
+            const Icon = icons[key]!;
+            return (
+              <Link key={key} href={href(key)} aria-current={active(key) ? "page" : undefined}>
+                <Icon size={21} aria-hidden="true" />
+                <span>{t(`nav.${key}`)}</span>
+              </Link>
+            );
+          })}
           {app.personal?.isAdmin && (
-            <Link href={`/${locale}/admin`} aria-current={active("/admin") ? "page" : undefined}>
+            <Link href={href("admin")} aria-current={active("admin") ? "page" : undefined}>
               <ShieldCheck size={21} aria-hidden="true" />
               {t("nav.admin")}
             </Link>
@@ -109,10 +121,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <p>{t("home.gentleNote")}</p>
         </div>
         <div className="sidebar-footer">
-          <Link href={`/${locale}/privacy`}>{t("nav.privacy")}</Link>
-          <span>·</span>
-          <Link href={`/${locale}/terms`}>{t("nav.terms")}</Link>
-          <Link href={`/${locale}/credits`}>{t("nav.credits")}</Link>
+          {legalRoutes.map(({ key }, index) => (
+            <Fragment key={key}>
+              {index === 1 && <span>·</span>}
+              <Link href={href(key)}>{t(`nav.${key}`)}</Link>
+            </Fragment>
+          ))}
         </div>
       </aside>
       <div className="main-column">
@@ -125,10 +139,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="topbar-actions">
             <AppearanceButton />
             <nav className="language-switch" aria-label={t("nav.language")}>
-              {["vi", "en"].map((language) => (
+              {locales.map((language) => (
                 <Link
                   key={language}
-                  href={pathname.replace(/^\/(vi|en)/, `/${language}`)}
+                  href={localizedPath(pathname, language)}
                   lang={language}
                   aria-current={language === locale ? "true" : undefined}
                 >
@@ -160,27 +174,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <footer className="page-footer">{t("nav.footer")}</footer>
       </div>
       <nav className="mobile-nav" aria-label={t("nav.label")}>
-        {links.slice(0, 4).map(([key, suffix, Icon]) => (
-          <Link
-            key={key}
-            href={`/${locale}${suffix}`}
-            aria-current={active(suffix) ? "page" : undefined}
-          >
-            <Icon size={21} aria-hidden="true" />
-            <span>{t(`nav.${key}`)}</span>
-          </Link>
-        ))}
+        {primaryRoutes.map(({ key }) => {
+          const Icon = icons[key]!;
+          return (
+            <Link key={key} href={href(key)} aria-current={active(key) ? "page" : undefined}>
+              <Icon size={21} aria-hidden="true" />
+              <span>{t(`nav.${key}`)}</span>
+            </Link>
+          );
+        })}
         <button
           aria-haspopup="dialog"
-          data-current={[
-            "/downloads",
-            "/mood",
-            "/settings",
-            "/admin",
-            "/privacy",
-            "/terms",
-            "/credits",
-          ].some(active)}
+          data-current={moreRoutes.some(({ key }) => active(key))}
           aria-expanded={more}
           onClick={() => setMore(true)}
         >
@@ -190,24 +195,27 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </nav>
       <Dialog open={more} onOpenChange={setMore} title={t("common.more")}>
         <nav className="more-navigation" aria-label={t("nav.label")}>
-          {links.slice(4).map(([key, suffix, Icon]) => (
-            <Link
-              key={key}
-              href={`/${locale}${suffix}`}
-              aria-current={active(suffix) ? "page" : undefined}
-              onClick={() => setMore(false)}
-            >
-              <Icon size={21} aria-hidden="true" />
-              {t(`nav.${key}`)}
-            </Link>
-          ))}
+          {secondaryRoutes.map(({ key }) => {
+            const Icon = icons[key]!;
+            return (
+              <Link
+                key={key}
+                href={href(key)}
+                aria-current={active(key) ? "page" : undefined}
+                onClick={() => setMore(false)}
+              >
+                <Icon size={21} aria-hidden="true" />
+                {t(`nav.${key}`)}
+              </Link>
+            );
+          })}
           {app.personal?.isAdmin && (
-            <Link href={`/${locale}/admin`} onClick={() => setMore(false)}>
+            <Link href={href("admin")} onClick={() => setMore(false)}>
               {t("nav.admin")}
             </Link>
           )}
-          {(["privacy", "terms", "credits"] as const).map((key) => (
-            <Link key={key} href={`/${locale}/${key}`} onClick={() => setMore(false)}>
+          {legalRoutes.map(({ key }) => (
+            <Link key={key} href={href(key)} onClick={() => setMore(false)}>
               {t(`nav.${key}`)}
             </Link>
           ))}

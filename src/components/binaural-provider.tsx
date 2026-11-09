@@ -13,6 +13,7 @@ import {
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { api } from "@/lib/browser/api";
+import { isRoutePath } from "@/lib/routes";
 import {
   defaultConfig,
   parsePreferences,
@@ -43,7 +44,7 @@ function useController() {
   const t = useTranslations("binaural");
   const locale = useLocale();
   const pathname = usePathname();
-  const onPage = /\/(?:en|vi)\/brainwave-entrainment$/.test(pathname);
+  const onPage = isRoutePath(pathname, "binaural");
   const [engine, setEngine] = useState<BinauralEngine | null>(null);
   const [engineUnavailable, setEngineUnavailable] = useState(false);
   const engineRef = useRef<BinauralEngine | null>(null);

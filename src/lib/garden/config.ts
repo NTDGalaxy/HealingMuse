@@ -1,6 +1,9 @@
+import { fallbackScene, routeForPath, type SceneId } from "../routes";
+
 export type GardenTheme = "day" | "night";
 export type Appearance = "system" | GardenTheme;
 export type GardenPreference = "auto" | "still";
+type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
 export const gardens = {
   lotus: { plant: "lotus", form: "court", seed: 1 },
   fern: { plant: "fern", form: "ravine", seed: 2 },
@@ -14,24 +17,10 @@ export const gardens = {
   cloister: { plant: "fern", form: "arbor", seed: 10 },
   cypress: { plant: "cypress", form: "court", seed: 11 },
   sculpture: { plant: "flower", form: "gallery", seed: 12 },
-} as const;
+} as const satisfies Record<SceneId, GardenDefinition>;
 export type GardenId = keyof typeof gardens;
-const routes: Record<string, GardenId> = {
-  "": "lotus",
-  explore: "fern",
-  "brainwave-entrainment": "moonflower",
-  library: "wisteria",
-  downloads: "seed",
-  mood: "lily",
-  settings: "bonsai",
-  admin: "propagation",
-  "reset-password": "orchid",
-  privacy: "cloister",
-  terms: "cypress",
-  credits: "sculpture",
-};
 export const gardenForPath = (pathname: string): GardenId =>
-  routes[pathname.split("/")[2] ?? ""] ?? "cloister";
+  routeForPath(pathname)?.scene ?? fallbackScene;
 export type GardenQuality = { tier: number; fps: number; pixelRatio: number };
 export function initialQuality(mobile: boolean): GardenQuality {
   return { tier: 2, fps: mobile ? 30 : 60, pixelRatio: mobile ? 1 : 1.5 };
