@@ -105,6 +105,18 @@ export async function expectMotionStarted(page: Page, since = 0) {
     .toBe(true);
 }
 
+/** Waits until the GSAP layer's code has arrived and the layer has mounted. */
+export async function expectMotionLoaded(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (mark) => performance.getEntriesByName(mark, "mark").length > 0,
+        garden.motionLoadedMark,
+      ),
+    )
+    .toBe(true);
+}
+
 /** Records, from the first document onwards, when the first media element starts playing. */
 export async function watchFirstSound(page: Page) {
   await page.addInitScript(() =>
@@ -160,9 +172,15 @@ export function pageTime(page: Page) {
   return page.evaluate(() => performance.now());
 }
 
-/** When the first media element started playing, as recorded by `watchFirstSound`. */
-export function firstSoundTime(page: Page) {
-  return page.evaluate(() => (window as Probes).firstSound ?? null);
+/**
+ * Waits until the first media element has started playing, as recorded by `watchFirstSound`,
+ * and returns that page-clock time. (A media element stops being paused as soon as play() is
+ * called, before it has data, so expectPlaying alone does not mean it has sounded yet.)
+ */
+export async function firstSound(page: Page): Promise<number> {
+  const read = () => page.evaluate(() => (window as Probes).firstSound ?? null);
+  await expect.poll(read).not.toBeNull();
+  return (await read())!;
 }
 
 /**

@@ -17,6 +17,9 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
   // decorationMayStart() once more. A route change before it resolves starts a new wait; once the
   // layer runs, route changes re-run it at once, before the new page paints.
   const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    performance.mark(decorationMarks.motionLoaded);
+  }, []);
   const waitFor = allowed || !reveals ? null : pathname;
   useEffect(() => {
     if (waitFor === null) return;

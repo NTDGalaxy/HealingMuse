@@ -75,6 +75,7 @@ export const garden = {
   /** Performance marks of the audio-first start (src/lib/perf/audio-first.ts). */
   sceneStartMark: "hm:scene-start",
   motionStartMark: "hm:motion-start",
+  motionLoadedMark: "hm:motion-loaded",
 } as const;
 
 /** Local recordings served by the preview, for holding a recording while it starts. */

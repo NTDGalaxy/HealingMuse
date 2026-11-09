@@ -7,12 +7,14 @@
 import { readinessMarks } from "./readiness";
 
 /**
- * Performance marks recorded when decoration starts, so the local timed harness and the
- * end-to-end suite can check that it followed the first sound.
+ * Performance marks recorded when decoration starts (and when the GSAP layer's code has arrived
+ * and mounted), so the local timed harness and the end-to-end suite can check that it followed
+ * the first sound.
  */
 export const decorationMarks = {
   scene: "hm:scene-start",
   motion: "hm:motion-start",
+  motionLoaded: "hm:motion-loaded",
 } as const;
 
 /** decorationMayStart's default bounds, in milliseconds. */

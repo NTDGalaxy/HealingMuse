@@ -4,6 +4,7 @@ import {
   expectAccessible,
   expectNoHorizontalOverflow,
   expectPlaying,
+  holdChunk,
   holdRequests,
 } from "./support/test";
 import {
@@ -16,8 +17,9 @@ import {
 } from "./support/contracts";
 import {
   decorationWaitedForSound,
+  expectMotionLoaded,
   expectMotionStarted,
-  firstSoundTime,
+  firstSound,
   motionPassTimes,
   pageTime,
   waitedForSound,
@@ -315,11 +317,10 @@ test.describe("audio-first decoration", () => {
     recording.release();
     await expectPlaying(page);
     await shell.expectGardenState("ready");
-    const sound = await firstSoundTime(page);
-    expect(sound).not.toBeNull();
-    expect(
-      await decorationWaitedForSound(page, garden.sceneStartMark, { allowed, sound: sound! }),
-    ).toBe(true);
+    const sound = await firstSound(page);
+    expect(await decorationWaitedForSound(page, garden.sceneStartMark, { allowed, sound })).toBe(
+      true,
+    );
   });
 
   test("a scene allowed while binaural tones start begins after they start", async ({
@@ -367,12 +368,40 @@ test.describe("audio-first decoration", () => {
     await expectPlaying(page);
     const passAfter = async () => (await motionPassTimes(page)).find((time) => time >= allowed);
     await expect.poll(passAfter).toBeDefined();
-    const sound = await firstSoundTime(page);
-    expect(sound).not.toBeNull();
-    expect(waitedForSound((await passAfter())!, { allowed, sound: sound! })).toBe(true);
+    const sound = await firstSound(page);
+    expect(waitedForSound((await passAfter())!, { allowed, sound })).toBe(true);
     await expectMotionStarted(page, allowed);
-    expect(
-      await decorationWaitedForSound(page, garden.motionStartMark, { allowed, sound: sound! }),
-    ).toBe(true);
+    expect(await decorationWaitedForSound(page, garden.motionStartMark, { allowed, sound })).toBe(
+      true,
+    );
+  });
+
+  test("motion whose code arrives while a recording starts begins after its first sound", async ({
+    page,
+    appearance,
+  }) => {
+    await appearance({ theme: "day", garden: "still" });
+    await watchFirstSound(page);
+    await watchMotionPasses(page);
+    const motion = await holdChunk(page, graphicsMarkers.motion.marker);
+    const recording = await holdRequests(page, localAudioRoute);
+    await page.goto("/en");
+    // Decoration was allowed and the layer's code is downloading when the Play tap lands.
+    await motion.reached;
+    await new Recordings(page).featuredPlay.click();
+    await recording.reached;
+    const allowed = await pageTime(page);
+    motion.release();
+    await expectMotionLoaded(page);
+    recording.release();
+    await expectPlaying(page);
+    const firstPass = async () => (await motionPassTimes(page))[0];
+    await expect.poll(firstPass).toBeDefined();
+    const sound = await firstSound(page);
+    expect(waitedForSound((await firstPass())!, { allowed, sound })).toBe(true);
+    await expectMotionStarted(page);
+    expect(await decorationWaitedForSound(page, garden.motionStartMark, { allowed, sound })).toBe(
+      true,
+    );
   });
 });

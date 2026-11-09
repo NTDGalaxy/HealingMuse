@@ -209,6 +209,27 @@ export async function holdRequests(
   return { reached, release };
 }
 
+/**
+ * Holds the script chunk whose source contains `marker` (see src/lib/garden/budget-markers.ts)
+ * until `release` runs; every other chunk passes untouched.
+ */
+export async function holdChunk(page: Page, marker: string): Promise<HeldRequests> {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let arrive!: () => void;
+  const reached = new Promise<void>((resolve) => (arrive = resolve));
+  await page.route(chunkRoute, async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    if (body.includes(marker)) {
+      arrive();
+      await released;
+    }
+    await route.fulfill({ response, body }).catch(() => {});
+  });
+  return { reached, release };
+}
+
 /** How many responses for `path` the page has received so far (resource timing entries). */
 export function responsesReceived(page: Page, path: string): Promise<number> {
   return page.evaluate(
