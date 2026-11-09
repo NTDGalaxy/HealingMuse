@@ -1,0 +1,8 @@
+/*
+ * Tailwind comes first: it declares the cascade layer order (theme, base, components, utilities)
+ * that every later stylesheet relies on. Only the app's markup is scanned; automatic detection
+ * walked the whole repository, media included.
+ */
+@import "tailwindcss" source(none);
+@source "../components";
+@source "../app";

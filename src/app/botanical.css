@@ -1,41 +1,11 @@
 @layer components {
   /* Authored botanical world. Controls remain in semantic DOM above decorative WebGL. */
   :root {
-    --bg: #f3eff7;
-    --surface: #fffcff;
-    --text: #382b44;
-    --muted: #665571;
-    --green: #236553;
-    --line: #d9cfe2;
-    --tint: #e8e0f0;
-    --jade-tint: #e4f0ea;
-    --glass: #fffcffed;
-    --focus: #765297;
-    --on-green: #ffffff;
-    --danger: #963f34;
-    --danger-tint: #fae7e1;
-    --on-danger: #ffffff;
-    --sidebar: 216px;
-    --radius: 16px;
     color-scheme: light;
     font-size: 16px;
     scrollbar-color: #ab99b8 var(--bg);
   }
   :root[data-theme="night"] {
-    --bg: #191522;
-    --surface: #282232;
-    --text: #f5eff9;
-    --muted: #c4b6d0;
-    --green: #95d7b9;
-    --line: #57485f;
-    --tint: #382e45;
-    --jade-tint: #293f39;
-    --glass: #282232f0;
-    --focus: #d8b6f5;
-    --on-green: #173b2e;
-    --danger: #ffb4a4;
-    --danger-tint: #482d31;
-    --on-danger: #482d31;
     color-scheme: dark;
   }
   ::selection {
@@ -543,9 +513,6 @@
     }
   }
   @media (max-width: 1100px) and (min-width: 901px) {
-    :root {
-      --sidebar: 190px;
-    }
     .brand {
       font-size: 17px;
     }

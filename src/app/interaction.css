@@ -1,22 +1,5 @@
 @layer components {
   /* Botanical glass: translucent material, reflective edges and stable listening targets. */
-  :root {
-    --glass: #fffcffc7;
-    --panel-glass: #fffcffb8;
-    --reading-glass: #fffcffe6;
-    --glass-highlight: #ffffffb8;
-    --glass-shadow: #382b4414;
-    --glass-reflection: #ffffff54;
-    --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  :root[data-theme="night"] {
-    --glass: #282232c7;
-    --panel-glass: #282232b8;
-    --reading-glass: #282232e8;
-    --glass-highlight: #e8d9f52e;
-    --glass-shadow: #100c1a33;
-    --glass-reflection: #c1a6dd12;
-  }
 
   /* Moving scenery remains visible through scrolling surfaces without a blur pass per card. */
   .track-card,
@@ -368,13 +351,6 @@
     }
   }
   @media (prefers-reduced-transparency: reduce) {
-    :root,
-    :root[data-theme="night"] {
-      --glass: var(--surface);
-      --panel-glass: var(--surface);
-      --reading-glass: var(--surface);
-      --glass-reflection: transparent;
-    }
     .sidebar,
     .topbar,
     .mobile-nav,

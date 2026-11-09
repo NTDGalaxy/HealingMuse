@@ -1,18 +1,5 @@
-@import "tailwindcss" source(none);
-/* Scan only the app's markup: automatic detection walked the whole repository (media included). */
-@source "../components";
-@source "../app";
-
 @layer components {
   :root {
-    --bg: #f3eff7;
-    --surface: #fffcff;
-    --text: #382b44;
-    --muted: #665571;
-    --green: #236553;
-    --line: #d9cfe2;
-    --sidebar: 242px;
-    --player: 124px;
     font-family: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
     color: var(--text);
     background: var(--bg);
@@ -1279,9 +1266,6 @@
     }
   }
   @media (max-width: 1200px) {
-    :root {
-      --sidebar: 210px;
-    }
     .sidebar {
       padding: 30px 15px;
     }
@@ -1339,9 +1323,6 @@
     }
   }
   @media (max-width: 900px) {
-    :root {
-      --sidebar: 0px;
-    }
     .sidebar {
       display: none;
     }
@@ -1759,10 +1740,6 @@
     min-height: 200px;
   }
   @media (max-width: 900px) {
-    :root {
-      --player: 158px;
-      --mobile-nav: calc(67px + env(safe-area-inset-bottom));
-    }
     .main-column {
       padding-bottom: calc(var(--player) + var(--mobile-nav) + 24px);
     }
@@ -1840,17 +1817,6 @@
 
   /* HealingMuse discovery system: reading surfaces, forest navigation, bounded glass. */
   :root {
-    --bg: #f3eff7;
-    --surface: #fffcff;
-    --text: #382b44;
-    --muted: #665571;
-    --green: #236553;
-    --line: #d9cfe2;
-    --sidebar: 248px;
-    --player: 96px;
-    --forest: #382b44;
-    --mint: #e5f0eb;
-    --radius: 14px;
     font-size: 16px;
     accent-color: var(--green);
     scrollbar-color: #b5a1c4 var(--bg);
@@ -2229,9 +2195,6 @@
     border-radius: 16px;
   }
   @media (max-width: 1200px) {
-    :root {
-      --sidebar: 218px;
-    }
     .sidebar {
       padding-inline: 14px;
     }
@@ -2249,9 +2212,6 @@
     }
   }
   @media (max-width: 900px) {
-    :root {
-      --player: 72px;
-    }
     .topbar {
       height: 72px;
       padding-inline: 22px;
