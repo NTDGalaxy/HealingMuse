@@ -170,6 +170,66 @@ export function playbackGrantRequests(page: Page): string[] {
   return requested;
 }
 
+/** A request held by `holdRequests` until the test releases it. */
+export type HeldRequests = {
+  /** Resolves when the first held request arrives. */
+  reached: Promise<void>;
+  /** Lets every held request continue. */
+  release: () => void;
+};
+
+/**
+ * Holds requests matching `url` (after letting the first `pass` through) until `release` runs.
+ * A request the page cancelled meanwhile is dropped quietly.
+ */
+export async function holdRequests(
+  page: Page,
+  url: string,
+  { pass = 0 }: { pass?: number } = {},
+): Promise<HeldRequests> {
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  let arrive!: () => void;
+  const reached = new Promise<void>((resolve) => (arrive = resolve));
+  let seen = 0;
+  await page.route(url, async (route) => {
+    if (seen++ < pass) return route.continue();
+    arrive();
+    await released;
+    await route.continue().catch(() => {});
+  });
+  return { reached, release };
+}
+
+/** How many responses for `path` the page has received so far (resource timing entries). */
+export function responsesReceived(page: Page, path: string): Promise<number> {
+  return page.evaluate(
+    (path) =>
+      performance
+        .getEntriesByType("resource")
+        .filter((entry) => new URL(entry.name).pathname === path).length,
+    path,
+  );
+}
+
+/**
+ * Waits until the page has received more than `before` responses for `path`, then lets the work
+ * those responses trigger run to completion (a few task turns, not wall-clock time), so a test
+ * can assert that a late response changed nothing.
+ */
+export async function expectResponseHandled(page: Page, path: string, before: number) {
+  await test.step(
+    `response for ${path} handled`,
+    async () => {
+      await expect.poll(() => responsesReceived(page, path)).toBeGreaterThan(before);
+      await page.evaluate(async () => {
+        for (let turn = 0; turn < 3; turn++) await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    },
+    { box: true },
+  );
+}
+
 export async function expectPaused(page: Page) {
   await test.step(
     "audio is paused",

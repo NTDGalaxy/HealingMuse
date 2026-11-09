@@ -1,12 +1,16 @@
 import {
   test,
   expect,
+  audioSource,
   countDownloads,
   expectPaused,
   expectPlaying,
+  expectResponseHandled,
+  holdRequests,
   playbackGrantRequests,
+  responsesReceived,
 } from "./support/test";
-import { recordings as prepared } from "./support/contracts";
+import { playbackGrantPath, recordings as prepared } from "./support/contracts";
 import { Player, Recordings, Shell, TrackCard } from "./support/pages";
 
 test("offline Downloads queues only the recordings it shows and never streams", async ({
@@ -50,4 +54,23 @@ test("offline Downloads queues only the recordings it shows and never streams", 
   await expect(player.errorAlert).toHaveCount(0);
   expect(grants).toEqual([]);
   await context.setOffline(false);
+});
+
+const A = prepared.first.id;
+const first = prepared.first.title.en;
+
+test("Finish while a recording is still loading keeps it from starting later", async ({ page }) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
+  await page.goto("/en");
+  const grant = await holdRequests(page, `**${playbackGrantPath}${A}`);
+  await recordings.listen(first).click();
+  await grant.reached;
+  await player.button("finish").click();
+  const before = await responsesReceived(page, `${playbackGrantPath}${A}`);
+  grant.release();
+  await expectResponseHandled(page, `${playbackGrantPath}${A}`, before);
+  await expectPaused(page);
+  expect(await audioSource(page)).toBeNull();
+  await expect(player.playButton).toBeEnabled();
 });

@@ -136,6 +136,7 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
   const timer = createSleepTimer({
     now: deps.now,
     onExpire() {
+      supersede();
       audio?.pause();
       deps.announce("player.timerEnded");
       void sessions.end();
@@ -148,9 +149,21 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
     advancing = false;
   }
 
+  /**
+   * Stops pending work on every path that stops listening: a start still waiting for its source
+   * returns without playing (a session opened for it closes itself), and a catalogue page still
+   * loading never starts the next recording.
+   */
+  function supersede() {
+    epoch++;
+    stopBrowsing();
+    patch({ loading: false });
+  }
+
   async function start(track: Track, queue: readonly Track[], beforeScore?: number) {
     focus.pauseOther();
     if (!isPlayable(track)) {
+      supersede();
       audio?.pause();
       patch({ external: { track } });
       return;
@@ -289,7 +302,10 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
 
   const transport: TransportControls = {
     play: resume,
-    pause: () => audio?.pause(),
+    pause() {
+      supersede();
+      audio?.pause();
+    },
     previous: () => advance(-1),
     next: () => advance(1),
     seekTo,
@@ -358,15 +374,12 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
     setPrivacy(next: Privacy) {
       const { reset, accountChanged } = sessions.update(next);
       if (!reset) return;
-      epoch++;
-      stopBrowsing();
+      supersede();
       continuation = null;
       sessions.forget();
       prompts.set({ before: null, after: null, score: null });
       const current = state.getSnapshot().current;
-      patch(
-        accountChanged ? { loading: false, queue: current ? [current] : [] } : { loading: false },
-      );
+      if (accountChanged) patch({ queue: current ? [current] : [] });
     },
 
     /** The slider: moves the media and shows the new position at once. */
@@ -376,7 +389,7 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
     },
     /** Finish: stops listening and ends the session. */
     finish() {
-      stopBrowsing();
+      supersede();
       audio?.pause();
       void sessions.end();
     },
@@ -387,12 +400,11 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
 
     /** Called by the binaural session before it starts: stop and forget pending work. */
     pauseForOtherAudio() {
-      epoch++;
-      stopBrowsing();
+      supersede();
       audio?.pause();
       timer.clear();
       prompts.set((current) => ({ ...current, before: null, after: null }));
-      patch({ external: null, loading: false });
+      patch({ external: null });
       void sessions.end(false);
     },
     registerOtherAudio: focus.register,

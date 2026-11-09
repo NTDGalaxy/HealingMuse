@@ -499,6 +499,83 @@ describe("playback engine", () => {
   });
 });
 
+describe("pending work after listening stops", () => {
+  it("Finish while a recording loads keeps it from starting or recording a session", async () => {
+    const gate = deferred<string>();
+    const { engine, audio, calls } = setup({
+      grant: () => gate.promise,
+      userId: () => "u",
+      privacy: { owner: "u", consent: true },
+    });
+    engine.play(a, [a, b]);
+    expect(engine.state.getSnapshot().loading).toBe(true);
+    engine.finish();
+    expect(engine.state.getSnapshot().loading).toBe(false);
+    gate.resolve("grant:a");
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(audio.getAttribute("src")).toBeNull();
+    expect(calls.opened).toEqual([]);
+  });
+
+  it("opening an external recording keeps a loading recording from starting behind it", async () => {
+    const gate = deferred<string>();
+    const { engine, audio } = setup({ grant: () => gate.promise });
+    engine.play(a);
+    engine.play(video);
+    gate.resolve("grant:a");
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(engine.state.getSnapshot()).toMatchObject({
+      loading: false,
+      external: { track: video },
+    });
+  });
+
+  it("a Media Session pause while a recording loads keeps it from starting", async () => {
+    const gate = deferred<string>();
+    const { engine, audio } = setup({ grant: () => gate.promise });
+    engine.play(a);
+    engine.transport.pause();
+    gate.resolve("grant:a");
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(engine.state.getSnapshot().loading).toBe(false);
+  });
+
+  it("an expired sleep timer keeps a loading recording or catalogue page from starting", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    let now = 0;
+    const gate = deferred<string>();
+    const page = deferred<CatalogPage>();
+    const { engine, audio } = setup({
+      now: () => now,
+      grant: (id) => (id === "c" ? gate.promise : Promise.resolve(`grant:${id}`)),
+      catalogPage: () => page.promise,
+    });
+    engine.play(b, [a, b], { limit: 12, cursor: "x" });
+    await flush();
+    engine.setTimer(1);
+    engine.advance(1);
+    now = 60000;
+    vi.advanceTimersByTime(1000);
+    expect(engine.timer.getSnapshot()).toBeNull();
+    page.resolve({ items: [c], total: 3, nextCursor: null });
+    gate.resolve("grant:c");
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(engine.state.getSnapshot().current).toBe(b);
+
+    engine.play(c, [c]);
+    engine.setTimer(1);
+    now = 2 * 60000;
+    vi.advanceTimersByTime(1000);
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(audio.getAttribute("src")).toBeNull();
+  });
+});
+
 describe("browsing resets during a pending catalogue page", () => {
   function pagedSetup() {
     let page = deferred<CatalogPage>();
