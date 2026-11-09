@@ -415,7 +415,7 @@ E2E_BASE_URL=http://127.0.0.1:3127 npm run visual:check      # after each change
 The `visual` Playwright project takes screenshots of every route in both themes at 390, 820 and 1440 px, plus dialogs, a paused player, keyboard focus, Calm, reduced transparency and the signed-in fixture screens, and allows no differing pixel.
 [scripts/visual/snapshot.mjs](scripts/visual/snapshot.mjs) records the normalized DOM and every computed style (including generated pseudo-elements and custom properties on `:root` and `body`) for the same states plus extra widths that reach every media-query range, and prints exact differences.
 Both read their states from [scripts/visual/states.mjs](scripts/visual/states.mjs) and store results in the gitignored `artifacts/visual/`.
-The `visual` project launches Chromium with `--disable-gpu`, so every tile is rasterized and composited the same way; on the default GPU path a rare tile rasterized another way changed the anti-aliasing of rounded clips.
+The `visual` project launches Chromium with `--disable-gpu` and `--disable-partial-raster`, so every tile is rasterized and composited the same way, whole; otherwise a rare tile rasterized another way, or only partly, changed the anti-aliasing of rounded corners.
 A baseline and its check must therefore come from the same configuration.
 `npm run test:e2e` runs only the `chromium` project.
 

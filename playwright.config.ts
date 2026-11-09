@@ -23,11 +23,16 @@ export default defineConfig({
       name: "visual",
       testMatch: /\.visual\.ts$/,
       fullyParallel: true,
-      // Software raster and compositing only. On the default GPU path (SwiftShader) Chromium
-      // occasionally rasterizes some tiles of a long page another way, which changes the
-      // anti-aliasing of rounded clips (about 2 in 900 runs differed by 130-180 corner pixels);
-      // with one raster path, 684 of 684 stress runs were identical.
-      use: { ...devices["Desktop Chrome"], launchOptions: { args: ["--disable-gpu"] } },
+      // One deterministic raster path. On the default GPU path (SwiftShader) Chromium
+      // occasionally rasterizes some tiles of a long page another way, and partial raster
+      // re-rasterizes only the invalidated part of a tile; both change the anti-aliasing of rounded
+      // corners by a few levels. Measured under load: GPU path 2 of 912 runs differed, software
+      // path with partial raster 2 of 72 (dialog states), software path without partial raster
+      // 216 of 216 and two full matrices identical.
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: { args: ["--disable-gpu", "--disable-partial-raster"] },
+      },
       snapshotPathTemplate: "artifacts/visual/screenshots/{arg}{ext}",
       expect: {
         // No pixel may differ. The per-pixel threshold only absorbs the +-1 channel raster noise
