@@ -10,7 +10,7 @@ import { CheckboxField, SelectField, TextField } from "../../src/components/ui/f
 import { InlineAlert } from "../../src/components/ui/inline-alert";
 import { PageHeader } from "../../src/components/ui/page-header";
 import { Pagination } from "../../src/components/ui/pagination";
-import { moveItem, ReorderableList } from "../../src/components/ui/reorderable-list";
+import { focusAfter, moveItem, ReorderableList } from "../../src/components/ui/reorderable-list";
 import { SearchField } from "../../src/components/ui/search-field";
 
 // The primitives replaced hand-written markup that the stylesheets, the end-to-end contracts and
@@ -151,6 +151,16 @@ describe("ReorderableList", () => {
     expect(moveItem(["a", "b", "c"], 2, -1)).toEqual(["a", "c", "b"]);
     expect(moveItem(["a", "b"], 0, -1)).toEqual(["a", "b"]);
     expect(moveItem(["a", "b"], 1, 1)).toEqual(["a", "b"]);
+  });
+  it("keeps focus on the moved item, or its other move control once it reaches an end", () => {
+    expect(focusAfter("down", "a", 0, ["b", "a", "c"])).toEqual({ id: "a", action: "down" });
+    expect(focusAfter("up", "b", 1, ["b", "a", "c"])).toEqual({ id: "b", action: "down" });
+    expect(focusAfter("down", "a", 1, ["b", "c", "a"])).toEqual({ id: "a", action: "up" });
+  });
+  it("hands focus to the next item after a removal, else to the one before", () => {
+    expect(focusAfter("remove", "b", 1, ["a", "c"])).toEqual({ id: "c", action: "remove" });
+    expect(focusAfter("remove", "c", 2, ["a", "b"])).toEqual({ id: "b", action: "remove" });
+    expect(focusAfter("remove", "a", 0, [])).toBeNull();
   });
   it("labels every control with its item and disables moves past the ends", () => {
     const list = html(

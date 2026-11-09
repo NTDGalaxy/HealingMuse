@@ -54,4 +54,6 @@ export const composed = {
   listenToPlaylist: (locale: Locale, title: string) =>
     `${t(locale, "library.listenPlaylist")}: ${title}`,
   removeDownload: (locale: Locale, title: string) => `${t(locale, "common.remove")}: ${title}`,
+  /** The remove control of one item in a reorderable list (a playlist or a collection). */
+  removeFromList: (locale: Locale, title: string) => `${t(locale, "common.remove")}: ${title}`,
 };

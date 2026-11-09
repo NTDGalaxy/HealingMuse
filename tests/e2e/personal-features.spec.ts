@@ -1074,3 +1074,42 @@ test("a confirmation takes focus, returns it on Escape and confirms from the key
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("heading", { name: ui.t("mood.empty"), exact: true })).toBeVisible();
 });
+test("keyboard focus stays in the playlist editor when an item reaches an end or is removed", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const [first, second, third] = [harness.recording, harness.secondRecording, harness.video];
+  const data = personalData({
+    playlists: [
+      { id, title: "Keyboard order", revision: 0, trackIds: [first.id, second.id, third.id] },
+    ],
+  });
+  const saved: string[][] = [];
+  await page.route("**/api/me", (route) => route.fulfill({ json: data }));
+  await page.route(`**/api/playlists/${id}`, (route) => {
+    saved.push(route.request().postDataJSON().trackIds);
+    return route.fulfill({ json: { ok: true } });
+  });
+  await ui.open();
+  await ui.button("library.editPlaylist").click();
+  await ui.button("library.moveUp", { title: second.title.en }).focus();
+  await page.keyboard.press("Enter");
+  // At the top its Move up control is disabled, so focus continues on its Move down control.
+  const moveSecondDown = ui.button("library.moveDown", { title: second.title.en });
+  await expect(moveSecondDown).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(moveSecondDown).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(ui.button("library.moveUp", { title: second.title.en })).toBeFocused();
+  // Removing an item hands focus to the item that takes its place.
+  await page
+    .getByRole("button", { name: composed.removeFromList("en", third.title.en), exact: true })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: composed.removeFromList("en", second.title.en), exact: true }),
+  ).toBeFocused();
+  await page.getByRole("textbox", { name: ui.t("library.playlistTitle") }).press("Enter");
+  await expect(ui.dialog).toHaveCount(0);
+  expect(saved).toEqual([[first.id, second.id]]);
+});
