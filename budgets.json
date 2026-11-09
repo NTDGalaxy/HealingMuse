@@ -18,7 +18,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 9216,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "explore": {
       "startupJsGzip": 254976,
@@ -26,7 +26,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 11264,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "binaural": {
       "startupJsGzip": 259072,
@@ -34,7 +34,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 9216,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "library": {
       "startupJsGzip": 259072,
@@ -42,7 +42,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 11264,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "downloads": {
       "startupJsGzip": 259072,
@@ -50,7 +50,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 8192,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "mood": {
       "startupJsGzip": 259072,
@@ -58,7 +58,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 7168,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "settings": {
       "startupJsGzip": 259072,
@@ -66,7 +66,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 7168,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "admin": {
       "startupJsGzip": 296960,
@@ -74,7 +74,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 11264,
-      "ratchetModules": ["supabase-js", "youtube-embed", "zod"]
+      "ratchetModules": ["supabase-js", "zod"]
     },
     "resetPassword": {
       "startupJsGzip": 256000,
@@ -82,7 +82,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 8192,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "privacy": {
       "startupJsGzip": 259072,
@@ -90,7 +90,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 12288,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "terms": {
       "startupJsGzip": 259072,
@@ -98,7 +98,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 7168,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     },
     "credits": {
       "startupJsGzip": 250880,
@@ -106,7 +106,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 8192,
-      "ratchetModules": ["supabase-js", "youtube-embed"]
+      "ratchetModules": ["supabase-js"]
     }
   }
 }
