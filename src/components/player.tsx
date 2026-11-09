@@ -42,6 +42,7 @@ import { Dialog } from "./dialog";
 import { NatureArt } from "./art";
 import { YouTubeEmbed } from "./youtube";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
+import { beginPlaybackStart } from "@/lib/perf/audio-first";
 
 const Context = createContext<{
   current: Track | null;
@@ -210,6 +211,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const version = ++epoch.current;
       const element = audio.current;
       if (!element) return;
+      // Decoration (the garden scene, GSAP reveals) waits until this start plays or fails.
+      const settle = beginPlaybackStart();
       // End the previous session concurrently: endSession takes and clears the session id
       // synchronously, so saving it never races the new session and never delays the grant.
       void endSession();
@@ -245,6 +248,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         } catch {
           setError(t("player.cannotAutoplay"));
         }
+        settle();
         const user = stores.session.getSnapshot().user;
         if (
           version === epoch.current &&
@@ -276,6 +280,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           monitor("playback_failed");
         }
       } finally {
+        settle();
         if (version === epoch.current) setLoading(false);
       }
     },
