@@ -565,30 +565,30 @@ test("recording saves cannot publish outside release review and support retireme
     await page.getByRole("textbox", { name: ui.t(key), exact: true }).fill(value);
   // Publishing happens only through release review: an unpublished recording cannot be
   // published from the editor, even with every review box checked.
-  const status = page.getByLabel(ui.t("admin.status"), { exact: true });
-  await expect(status.locator("option")).toHaveText([ui.t("admin.draft"), ui.t("admin.retired")]);
+  const studio = new Admin(page);
+  await expect(studio.statusOptions).toHaveText([ui.t("admin.draft"), ui.t("admin.retired")]);
   for (const key of ["admin.rights", "admin.human", "admin.listening"] as const)
     await page.getByRole("checkbox", { name: ui.t(key), exact: true }).check();
   await ui.button("admin.save").click();
   await expect(ui.dialog).toHaveCount(0);
-  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.draft"));
+  await expect(studio.recordingStatus).toHaveText(ui.t("admin.draft"));
   expect(tracks).toMatchObject([{ status: "draft" }]);
   // Once release review has published it, metadata edits keep the published status available.
   (tracks[0] as { status: string }).status = "published";
   await page.reload();
   await ui.show("admin");
-  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.published"));
+  await expect(studio.recordingStatus).toHaveText(ui.t("admin.published"));
   await page
     .getByRole("button", { name: composed.editRecording("en", title), exact: true })
     .click();
-  await expect(status).toHaveValue("published");
-  await expect(status.locator("option")).toHaveText([
+  await expect(studio.statusSelect).toHaveValue("published");
+  await expect(studio.statusOptions).toHaveText([
     ui.t("admin.draft"),
     ui.t("admin.published"),
     ui.t("admin.retired"),
   ]);
   await ui.button("admin.reject").click();
-  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.retired"));
+  await expect(studio.recordingStatus).toHaveText(ui.t("admin.retired"));
 });
 for (const locale of ["vi", "en"] as const)
   for (const theme of ["day", "night"] as const)

@@ -25,6 +25,14 @@ export class Admin {
       .getByLabel(this.t("admin.artwork"), { exact: true })
       .locator(admin.option(value));
   }
+  /** The recording editor's status select. */
+  get statusSelect() {
+    return this.page.getByLabel(this.t("admin.status"), { exact: true });
+  }
+  /** The statuses the recording editor offers, in order. */
+  get statusOptions() {
+    return this.statusSelect.getByRole("option");
+  }
   get recordingStatus() {
     return this.page.locator(admin.recordingStatus);
   }
