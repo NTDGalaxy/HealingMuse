@@ -8,7 +8,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from "react";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -22,20 +21,15 @@ import {
   type BinauralConfig,
 } from "@/lib/binaural/config";
 import type { BinauralEngine, BinauralSnapshot } from "@/lib/binaural/engine";
+import { createSnapshotRelay, type SnapshotRelay } from "@/lib/binaural/snapshot";
+import { setMediaActions } from "@/lib/playback/media-session";
+import { beginPlaybackStart } from "@/lib/perf/audio-first";
+import { useStore } from "@/lib/state/create-store";
 import type { PlaybackGrant } from "@/lib/types";
 import { usePlayer } from "./player";
 import { useAppActions, useDownloadedRecords } from "./app-state";
 
-const idleSnapshot: BinauralSnapshot = {
-  status: "idle",
-  config: defaultConfig,
-  elapsedSeconds: 0,
-  remainingSeconds: defaultConfig.durationSeconds,
-  backgroundError: false,
-};
-const emptySubscribe = () => () => {};
-const initialSnapshot = () => idleSnapshot;
-function useController() {
+function useController(relay: SnapshotRelay) {
   const { announce } = useAppActions();
   const downloaded = useDownloadedRecords();
   const player = usePlayer();
@@ -71,11 +65,9 @@ function useController() {
   const backgroundUnavailable = delivery?.request === backgroundRequest && delivery.unavailable;
   const backgroundExpiry = useRef(Infinity);
   const [storageUnavailable, setStorageUnavailable] = useState(false);
-  const state = useSyncExternalStore(
-    engine?.subscribe ?? emptySubscribe,
-    engine?.getSnapshot ?? initialSnapshot,
-    initialSnapshot,
-  );
+  // Only the slices the controller acts on: progress ticks never render the provider.
+  const status = useStore(relay, (snapshot) => snapshot.status);
+  const backgroundError = useStore(relay, (snapshot) => snapshot.backgroundError);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -92,6 +84,7 @@ function useController() {
           const instance = new BinauralEngine();
           engineRef.current = instance;
           setEngine(instance);
+          relay.attach(instance);
           try {
             const saved = parsePreferences(localStorage.getItem(preferenceKey));
             if (saved) {
@@ -109,7 +102,7 @@ function useController() {
           if (mounted.current) setEngineUnavailable(true);
         });
     return initializing.current;
-  }, []);
+  }, [relay]);
   useEffect(() => {
     engine?.configure(config);
   }, [engine, config]);
@@ -168,36 +161,46 @@ function useController() {
     if (!onPage) engine?.pause();
     setControlsHidden(onPage && !playing);
     return () => setControlsHidden(false);
-  }, [onPage, engine, state.status, playing, setControlsHidden]);
+  }, [onPage, engine, status, playing, setControlsHidden]);
   useEffect(() => registerOtherAudio(() => engine?.pause()), [engine, registerOtherAudio]);
   useEffect(() => {
     const pause = () => engine?.pause("interrupted");
     window.addEventListener("pagehide", pause);
     return () => window.removeEventListener("pagehide", pause);
   }, [engine]);
+  // The controls keep one identity for the provider's lifetime and read the latest state here.
+  const latest = useRef({ engine, backgroundLoading, backgroundId, backgroundUnavailable });
+  useLayoutEffect(() => {
+    latest.current = { engine, backgroundLoading, backgroundId, backgroundUnavailable };
+  });
   const start = useCallback(() => {
+    const { engine, backgroundLoading, backgroundId, backgroundUnavailable } = latest.current;
     if (!engine || backgroundLoading) return;
     if (backgroundId && !backgroundUnavailable && backgroundExpiry.current <= Date.now() + 5000) {
       setRefresh((value) => value + 1);
       return;
     }
     pauseForOtherAudio();
-    void engine.start();
-  }, [engine, backgroundLoading, backgroundId, backgroundUnavailable, pauseForOtherAudio]);
-  const previousStatus = useRef(state.status);
+    // Decoration (the moonflower scene) waits until the tones start or fail to start.
+    const settle = beginPlaybackStart();
+    void engine.start().finally(settle);
+  }, [pauseForOtherAudio]);
+  const pause = useCallback(() => engineRef.current?.pause(), []);
+  const stop = useCallback(() => engineRef.current?.stop(), []);
+  const previousStatus = useRef(status);
   useEffect(() => {
-    if (previousStatus.current === state.status) return;
-    previousStatus.current = state.status;
-    if (state.status === "completed") announce(t("completed"));
-    else if (state.status === "interrupted") announce(t("interrupted"));
-  }, [state.status, announce, t]);
+    if (previousStatus.current === status) return;
+    previousStatus.current = status;
+    if (status === "completed") announce(t("completed"));
+    else if (status === "interrupted") announce(t("interrupted"));
+  }, [status, announce, t]);
   useEffect(() => {
     if (
       !onPage ||
       !controlsHidden ||
       !engine ||
       playing ||
-      !["playing", "paused", "interrupted"].includes(state.status) ||
+      !["playing", "paused", "interrupted"].includes(status) ||
       !("mediaSession" in navigator)
     )
       return;
@@ -206,31 +209,18 @@ function useController() {
       artist: "HealingMuse",
       album: t("title"),
     });
-    navigator.mediaSession.playbackState = state.status === "playing" ? "playing" : "paused";
-    const handlers: [MediaSessionAction, MediaSessionActionHandler][] = [
-      ["play", start],
-      ["pause", () => engine.pause()],
-      ["stop", () => engine.stop()],
-    ];
-    for (const [name, handler] of handlers) {
-      try {
-        navigator.mediaSession.setActionHandler(name, handler);
-      } catch {
-        /* Optional browser control. */
-      }
-    }
+    navigator.mediaSession.playbackState = status === "playing" ? "playing" : "paused";
+    const removeActions = setMediaActions(navigator.mediaSession, {
+      play: start,
+      pause: () => engine.pause(),
+      stop: () => engine.stop(),
+    });
     return () => {
       navigator.mediaSession.playbackState = "none";
       navigator.mediaSession.metadata = null;
-      for (const [name] of handlers) {
-        try {
-          navigator.mediaSession.setActionHandler(name, null);
-        } catch {
-          /* Optional browser control. */
-        }
-      }
+      removeActions();
     };
-  }, [onPage, controlsHidden, engine, state.status, playing, config.mode, locale, start, t]);
+  }, [onPage, controlsHidden, engine, status, playing, config.mode, locale, start, t]);
   const update = useCallback(
     (patch: Partial<BinauralConfig>) =>
       setConfig((previous) => validateConfig({ ...previous, ...patch })),
@@ -260,7 +250,6 @@ function useController() {
   }, []);
   return useMemo(
     () => ({
-      state,
       config,
       favorites,
       remember,
@@ -269,20 +258,19 @@ function useController() {
       backgroundId,
       chooseBackground,
       backgroundLoading,
-      backgroundUnavailable: backgroundUnavailable || state.backgroundError,
+      backgroundUnavailable: backgroundUnavailable || backgroundError,
       retryBackground,
       storageUnavailable,
       initialize,
       engineUnavailable,
       ready: !!engine,
       start,
-      pause: () => engine?.pause(),
-      stop: () => engine?.stop(),
+      pause,
+      stop,
       toggleFavorite,
       reset,
     }),
     [
-      state,
       config,
       favorites,
       remember,
@@ -291,24 +279,44 @@ function useController() {
       chooseBackground,
       backgroundLoading,
       backgroundUnavailable,
+      backgroundError,
       retryBackground,
       storageUnavailable,
       initialize,
       engineUnavailable,
       engine,
       start,
+      pause,
+      stop,
       toggleFavorite,
       reset,
     ],
   );
 }
 const Context = createContext<ReturnType<typeof useController> | null>(null);
+// The relay keeps one identity, so snapshot subscribers never render for settings changes.
+const SnapshotContext = createContext<SnapshotRelay | null>(null);
 export function BinauralProvider({ children }: { children: React.ReactNode }) {
-  const value = useController();
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  const [relay] = useState(createSnapshotRelay);
+  const value = useController(relay);
+  return (
+    <SnapshotContext.Provider value={relay}>
+      <Context.Provider value={value}>{children}</Context.Provider>
+    </SnapshotContext.Provider>
+  );
 }
+/** Session settings and controls; the controls keep their identity. */
 export function useBinaural() {
   const value = useContext(Context);
   if (!value) throw new Error("Binaural session provider missing");
   return value;
+}
+/**
+ * One slice of the engine snapshot. A selector must return a primitive or a reference from the
+ * snapshot, so the 500 ms progress ticks only render components whose slice changed.
+ */
+export function useBinauralSnapshot<S>(selector: (snapshot: BinauralSnapshot) => S): S {
+  const relay = useContext(SnapshotContext);
+  if (!relay) throw new Error("Binaural session provider missing");
+  return useStore(relay, selector);
 }
