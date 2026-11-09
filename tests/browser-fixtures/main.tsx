@@ -12,16 +12,7 @@ import { PasswordResetView } from "@/components/password-reset";
 import { AppearanceProvider } from "@/components/appearance";
 import { TrackCard, ExploreView } from "@/components/catalog";
 import type { Track, CatalogPage, CatalogQuery } from "@/lib/types";
-import "@/app/globals.css";
-import "@/app/sanctuary.css";
-import "@/app/botanical.css";
-import "@/app/interaction.css";
-import "@fontsource/be-vietnam-pro/vietnamese-400.css";
-import "@fontsource/be-vietnam-pro/vietnamese-500.css";
-import "@fontsource/be-vietnam-pro/vietnamese-600.css";
-import "@fontsource/be-vietnam-pro/latin-400.css";
-import "@fontsource/be-vietnam-pro/latin-500.css";
-import "@fontsource/be-vietnam-pro/latin-600.css";
+import "@/styles";
 
 const track: Track = {
   id: "00000000-0000-4000-8000-000000000001",

@@ -1,18 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { getLocale, getMessages } from "next-intl/server";
 import { Application } from "@/components/application";
-import "./globals.css";
-import "./sanctuary.css";
-import "./binaural.css";
-import "./botanical.css";
-import "./interaction.css";
+import "@/styles";
 import { appearanceBootstrap } from "@/components/appearance";
-import "@fontsource/be-vietnam-pro/vietnamese-400.css";
-import "@fontsource/be-vietnam-pro/vietnamese-500.css";
-import "@fontsource/be-vietnam-pro/vietnamese-600.css";
-import "@fontsource/be-vietnam-pro/latin-400.css";
-import "@fontsource/be-vietnam-pro/latin-500.css";
-import "@fontsource/be-vietnam-pro/latin-600.css";
 export const metadata: Metadata = {
   title: { default: "HealingMuse - A little room to breathe", template: "%s | HealingMuse" },
   description: "Human-curated instrumental music for recreation and emotional support.",
