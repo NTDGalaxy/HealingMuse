@@ -393,6 +393,20 @@ Those tests verify generated audio signals, without claiming brainwave synchroni
 Graphics tests cover renderer failure, context loss, unsupported workers, slow rendering, preference changes and cleanup.
 Motion checks cover reused results, repeated dialog focus restoration and reduced-motion/Calm paths.
 
+### Visual equivalence oracle
+
+Refactors that must not change what users see are checked locally, never in CI, against an optimized preview:
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:3127 npm run visual:baseline   # on the unchanged code
+E2E_BASE_URL=http://127.0.0.1:3127 npm run visual:check      # after each change
+```
+
+The `visual` Playwright project takes screenshots of every route in both themes at 390, 820 and 1440 px, plus dialogs, a paused player, keyboard focus, Calm, reduced transparency and the signed-in fixture screens, and allows no differing pixel.
+[scripts/visual/snapshot.mjs](scripts/visual/snapshot.mjs) records the normalized DOM and every computed style (including generated pseudo-elements and custom properties on `:root` and `body`) for the same states plus extra widths that reach every media-query range, and prints exact differences.
+Both read their states from [scripts/visual/states.mjs](scripts/visual/states.mjs) and store results in the gitignored `artifacts/visual/`.
+`npm run test:e2e` runs only the `chromium` project.
+
 ### Budgets and asset generation
 
 ```bash

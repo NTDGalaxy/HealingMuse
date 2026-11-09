@@ -1,4 +1,3 @@
-import { resolve } from "node:path";
 import type { Page } from "@playwright/test";
 import type { ViteDevServer } from "vite";
 import { harness } from "../contracts";
@@ -25,34 +24,10 @@ export class FixtureHarness {
 
   /** Real application components with stubbed Supabase, `next/link` and `next/navigation`. */
   static async components(): Promise<FixtureHarness> {
-    const { createServer } = await import("vite");
-    const { default: react } = await import("@vitejs/plugin-react");
-    const server = await createServer({
-      configFile: false,
+    const { startFixtureServer } = await import("../../../browser-fixtures/server.mjs");
+    const { server } = await startFixtureServer({
       cacheDir: "node_modules/.vite/personal-features",
-      optimizeDeps: { entries: [harness.page] },
-      plugins: [react()],
-      server: {
-        host: "127.0.0.1",
-        port: 0,
-        // These fixtures are immutable during a run; avoid scanning local media and build output.
-        watch: null,
-        warmup: { clientFiles: ["tests/browser-fixtures/main.tsx"] },
-      },
-      resolve: {
-        alias: [
-          { find: "@/lib/supabase/client", replacement: resolve("tests/browser-fixtures/auth.ts") },
-          { find: "next/link", replacement: resolve("tests/browser-fixtures/link.tsx") },
-          { find: "next/navigation", replacement: resolve("tests/browser-fixtures/navigation.ts") },
-          { find: "@", replacement: resolve("src") },
-        ],
-      },
-      define: {
-        "process.env.NEXT_PUBLIC_SUPABASE_URL": JSON.stringify("http://synthetic.invalid"),
-        "process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": JSON.stringify("synthetic-key"),
-      },
     });
-    await server.listen();
     return new FixtureHarness(server);
   }
 

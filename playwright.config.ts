@@ -11,7 +11,35 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: /\.visual\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Local visual-equivalence oracle (npm run visual:baseline / visual:check), never in CI.
+      // Every state is an independent fresh context, so the matrix can run fully parallel.
+      name: "visual",
+      testMatch: /\.visual\.ts$/,
+      fullyParallel: true,
+      use: { ...devices["Desktop Chrome"] },
+      snapshotPathTemplate: "artifacts/visual/screenshots/{arg}{ext}",
+      expect: {
+        // No pixel may differ. The per-pixel threshold only absorbs the +-1 channel raster noise
+        // measured in blurred (backdrop-filter) regions between identical runs; 0.01 still flags
+        // any colour change above about 2/255 per channel. Computed styles are compared exactly by
+        // scripts/visual/snapshot.mjs.
+        toHaveScreenshot: {
+          maxDiffPixels: 0,
+          threshold: 0.01,
+          animations: "disabled",
+          caret: "hide",
+          scale: "css",
+        },
+      },
+    },
+  ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {

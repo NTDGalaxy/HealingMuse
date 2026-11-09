@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "audio:import": "node scripts/import-audio.mjs",
@@ -67,7 +67,9 @@
     "release:register:subset": "node scripts/prepare-release.mjs --subset --register",
     "garden:posters": "node scripts/render-gardens.mjs",
     "garden:budget": "node scripts/check-budgets.mjs",
-    "budgets": "node scripts/check-budgets.mjs"
+    "budgets": "node scripts/check-budgets.mjs",
+    "visual:baseline": "playwright test --project=visual --workers=4 --update-snapshots=all && node scripts/visual/snapshot.mjs",
+    "visual:check": "playwright test --project=visual --workers=4 && node scripts/visual/snapshot.mjs --compare"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",
