@@ -4,7 +4,9 @@ import {
   countDownloads,
   currentTime,
   expectPlaying,
+  expectPrimaryReady,
   expectSameListeningSession,
+  holdRequests,
   markListeningSession,
 } from "./support/test";
 import { recordings as prepared, uniqueSearchTerm } from "./support/contracts";
@@ -52,4 +54,25 @@ test("Home search opens results on the same listening session", async ({ page })
   await expect(page).toHaveURL(new RegExp(`/en/explore\\?q=${uniqueSearchTerm}$`));
   await expect(new Recordings(page).visibleCards).toHaveCount(1);
   await expectSameListeningSession(page, "home-search");
+});
+
+test("Explore Next keeps keyboard focus while the next page loads", async ({ page }) => {
+  const explore = new Explore(page);
+  await page.goto("/en/explore");
+  await expectPrimaryReady(page);
+  // Hold the next page so the navigation stays pending, as it does on a slow connection.
+  const held = await holdRequests(page, "**/en/explore?cursor=*");
+  await explore.nextPage.focus();
+  await page.keyboard.press("Enter");
+  await held.reached;
+  await expect(explore.nextPage).toBeDisabled();
+  await expect(explore.nextPage).toBeFocused();
+  // A second press while the page loads opens nothing more.
+  await page.keyboard.press("Enter");
+  held.release();
+  await expect(page).toHaveURL(/cursor=/);
+  await expect(explore.nextPage).toBeEnabled();
+  // The new query string remounts the Explore view (the App Router keys the page segment by its
+  // search parameters), so focus restarts at the top as on a page load; keeping the controls
+  // mounted across pages is redesign work.
 });

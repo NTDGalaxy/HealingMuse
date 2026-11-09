@@ -461,7 +461,9 @@ export function ExploreView({
             next={
               !!initialPage.nextCursor && {
                 label: t("catalog.next"),
-                disabled: pending,
+                // Unavailable while the page it opened loads, but focusable, so a keyboard
+                // listener's focus stays on it instead of falling to the page.
+                waiting: pending,
                 onClick: () => navigate({ cursor: initialPage.nextCursor! }),
               }
             }

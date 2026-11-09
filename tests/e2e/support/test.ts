@@ -414,22 +414,29 @@ export async function seedDownload(page: Page, track: Track, audioUrl: string) {
   );
 }
 
-/** Waits until the Shell has preloaded the on-demand dialog code (it does so while idle). */
-export async function expectOnDemandReady(page: Page) {
+/** Waits until the page has recorded the performance mark `name`. */
+async function expectMark(page: Page, name: string, description: string) {
   await test.step(
-    "on-demand dialog code is preloaded",
+    description,
     async () => {
       await expect
         .poll(() =>
-          page.evaluate(
-            (name) => performance.getEntriesByName(name, "mark").length > 0,
-            marks.onDemandReady,
-          ),
+          page.evaluate((name) => performance.getEntriesByName(name, "mark").length > 0, name),
         )
         .toBe(true);
     },
     { box: true },
   );
+}
+
+/** Waits until the route's primary control has hydrated, so keyboard input reaches React. */
+export async function expectPrimaryReady(page: Page) {
+  await expectMark(page, marks.primaryReady, "primary control is hydrated");
+}
+
+/** Waits until the Shell has preloaded the on-demand dialog code (it does so while idle). */
+export async function expectOnDemandReady(page: Page) {
+  await expectMark(page, marks.onDemandReady, "on-demand dialog code is preloaded");
 }
 
 /**

@@ -1,3 +1,4 @@
+import { readinessMarks } from "../../../src/lib/perf/readiness";
 import type { Locale } from "./i18n";
 
 // Every class name, id, data attribute, storage key and computed-style expectation the
@@ -58,8 +59,10 @@ export const status = '[role="status"]';
 
 /** Performance marks the application records (src/lib/perf/readiness.ts). */
 export const marks = {
+  /** The route's primary control has hydrated, so keyboard and pointer input reach React. */
+  primaryReady: readinessMarks.primary,
   /** The Shell has preloaded the code of its on-demand dialogs. */
-  onDemandReady: "hm:on-demand-ready",
+  onDemandReady: readinessMarks.onDemand,
 } as const;
 
 /** The personal-data endpoint the account store reads. */
