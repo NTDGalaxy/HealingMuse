@@ -7,15 +7,13 @@ if (!Object.hasOwn(gardens, id)) throw new Error("Unknown garden fixture");
 const canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
 canvas.style.width = "100vw";
 canvas.style.height = "100vh";
-const renderer = createGarden(
-  canvas,
-  innerWidth,
-  innerHeight,
-  theme,
-  id,
-  (event) => {
+const renderer = createGarden(canvas, {
+  viewport: { width: innerWidth, height: innerHeight },
+  scene: { garden: id, theme },
+  onEvent: (event) => {
     document.documentElement.dataset.state = event.type;
   },
-  true,
-);
+  poster: true,
+});
+document.documentElement.dataset.state = "ready";
 window.addEventListener("pagehide", () => renderer.dispose(), { once: true });

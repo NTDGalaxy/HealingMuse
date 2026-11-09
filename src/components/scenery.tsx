@@ -1,8 +1,14 @@
 "use client";
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { gardenForPath, type GardenCommand, type GardenEvent } from "@/lib/garden/config";
-import type { createGarden } from "@/lib/garden/scene";
+import { gardenForPath } from "@/lib/garden/config";
+import {
+  gardenProtocol,
+  readWorkerMessage,
+  type HostCommand,
+  type RendererEvent,
+} from "@/lib/garden/protocol";
+import type { Garden } from "@/lib/garden/scene";
 import { usePreference, usePreferencesStore } from "./appearance";
 const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
 export function Scenery({ pathname }: { pathname: string }) {
@@ -15,12 +21,12 @@ export function Scenery({ pathname }: { pathname: string }) {
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null),
     worker = useRef<Worker | null>(null);
-  const renderer = useRef<ReturnType<typeof createGarden> | null>(null);
+  const renderer = useRef<Garden | null>(null);
   const latest = useRef({ garden, theme });
   useEffect(() => {
     latest.current = { garden, theme };
-    worker.current?.postMessage({ type: "scene", garden, theme } satisfies GardenCommand);
-    renderer.current?.change(garden, theme);
+    worker.current?.postMessage({ type: "scene", scene: latest.current } satisfies HostCommand);
+    renderer.current?.change(latest.current);
   }, [garden, theme]);
   useEffect(() => {
     const element = host.current;
@@ -50,7 +56,7 @@ export function Scenery({ pathname }: { pathname: string }) {
       element.append(activeCanvas);
       return activeCanvas;
     };
-    const event = (message: GardenEvent) => {
+    const event = (message: RendererEvent) => {
       if (stopped) return;
       if (message.type === "ready") {
         clearTimeout(timeout);
@@ -59,9 +65,9 @@ export function Scenery({ pathname }: { pathname: string }) {
         worker.current?.postMessage({
           type: "visible",
           value: document.visibilityState === "visible",
-        } satisfies GardenCommand);
-      } else if (message.type === "still" || message.type === "failed") poster();
-      else if (message.type === "quality") element.dataset.quality = String(message.tier);
+        } satisfies HostCommand);
+      } else if (message.type === "quality") element.dataset.quality = String(message.tier);
+      else poster();
     };
     const startMain = () => {
       if (stopped) return;
@@ -72,16 +78,13 @@ export function Scenery({ pathname }: { pathname: string }) {
         .then(({ createGarden }) => {
           if (stopped || target !== activeCanvas) return;
           try {
-            renderer.current = createGarden(
-              target,
-              innerWidth,
-              innerHeight,
-              latest.current.theme,
-              latest.current.garden,
-              event,
-              false,
-              true,
-            );
+            renderer.current = createGarden(target, {
+              viewport: { width: innerWidth, height: innerHeight },
+              scene: latest.current,
+              onEvent: event,
+              lowPower: true,
+            });
+            event({ type: "ready" });
             renderer.current.visible(document.visibilityState === "visible");
           } catch {
             poster();
@@ -112,10 +115,12 @@ export function Scenery({ pathname }: { pathname: string }) {
           });
           worker.current = instance;
           element.dataset.renderer = "worker";
-          instance.onmessage = (message: MessageEvent<GardenEvent>) => {
+          instance.onmessage = (message: MessageEvent<unknown>) => {
             if (stopped || worker.current !== instance) return;
-            if (message.data.type === "failed" && element.dataset.state === "starting") startMain();
-            else event(message.data);
+            const data = readWorkerMessage(message.data);
+            const failure = data.type === "failed" || data.type === "lost";
+            if (failure && element.dataset.state === "starting") startMain();
+            else event(data);
           };
           instance.onerror = () => {
             if (stopped || worker.current !== instance) return;
@@ -125,11 +130,11 @@ export function Scenery({ pathname }: { pathname: string }) {
           instance.postMessage(
             {
               type: "init",
+              protocol: gardenProtocol,
               canvas: offscreen,
-              width: innerWidth,
-              height: innerHeight,
-              ...latest.current,
-            } satisfies GardenCommand,
+              viewport: { width: innerWidth, height: innerHeight },
+              scene: latest.current,
+            } satisfies HostCommand,
             [offscreen],
           );
           timeout = setTimeout(poster, 8000);
@@ -139,16 +144,13 @@ export function Scenery({ pathname }: { pathname: string }) {
       } else startMain();
     };
     const resize = () => {
-      worker.current?.postMessage({
-        type: "resize",
-        width: innerWidth,
-        height: innerHeight,
-      } satisfies GardenCommand);
-      renderer.current?.resize(innerWidth, innerHeight);
+      const viewport = { width: innerWidth, height: innerHeight };
+      worker.current?.postMessage({ type: "resize", viewport } satisfies HostCommand);
+      renderer.current?.resize(viewport);
     };
     const visibility = () => {
       const value = document.visibilityState === "visible";
-      worker.current?.postMessage({ type: "visible", value } satisfies GardenCommand);
+      worker.current?.postMessage({ type: "visible", value } satisfies HostCommand);
       renderer.current?.visible(value);
     };
     configure();

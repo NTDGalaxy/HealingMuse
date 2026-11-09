@@ -1,5 +1,4 @@
 import { fallbackScene, routeForPath, type SceneId } from "../routes";
-import type { GardenTheme } from "../preferences";
 
 export type { Appearance, GardenPreference, GardenTheme } from "../preferences";
 type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
@@ -20,27 +19,16 @@ export const gardens = {
 export type GardenId = keyof typeof gardens;
 export const gardenForPath = (pathname: string): GardenId =>
   routeForPath(pathname)?.scene ?? fallbackScene;
-export type GardenQuality = { tier: number; fps: number; pixelRatio: number };
+/** Detail tiers: 2 is full detail; quality only ever steps down during a visit. */
+export type QualityTier = 0 | 1 | 2;
+export type GardenQuality = { tier: QualityTier; fps: number; pixelRatio: number };
 export function initialQuality(mobile: boolean): GardenQuality {
   return { tier: 2, fps: mobile ? 30 : 60, pixelRatio: mobile ? 1 : 1.5 };
 }
 // Downgrade only, with a six-second observation window. Never oscillate during a visit.
 export function lowerQuality(current: GardenQuality): GardenQuality | null {
   if (current.tier === 0) return null;
-  return { tier: current.tier - 1, fps: 24, pixelRatio: current.tier === 2 ? 0.8 : 0.6 };
+  return current.tier === 2
+    ? { tier: 1, fps: 24, pixelRatio: 0.8 }
+    : { tier: 0, fps: 24, pixelRatio: 0.6 };
 }
-export type GardenCommand =
-  | {
-      type: "init";
-      canvas: OffscreenCanvas;
-      width: number;
-      height: number;
-      theme: GardenTheme;
-      garden: GardenId;
-    }
-  | { type: "resize"; width: number; height: number }
-  | { type: "scene"; garden: GardenId; theme: GardenTheme }
-  | { type: "visible"; value: boolean }
-  | { type: "dispose" };
-export type GardenEvent =
-  { type: "ready" | "failed" | "still" } | { type: "quality"; tier: number };
