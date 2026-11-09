@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, Pencil, Headphones, ArrowUpRight } from "lucide-react";
-import { useApp, useOnline } from "./app-state";
-import { AccountGate } from "./personal";
-import { PageHeading } from "./catalog";
-import { Dialog } from "./dialog";
-import { CollectionEditor } from "./collections";
+import { useApp, useOnline } from "@/components/app-state";
+import { AccountGate } from "@/features/account/account-gate";
+import { PageHeading } from "@/components/catalog";
+import { Dialog } from "@/components/dialog";
+import { CollectionEditor } from "./collection-editor";
 import { ReleaseReview } from "./release-review";
 import { api, mutation } from "@/lib/browser/api";
 import { taxonomy } from "@/lib/catalog-taxonomy";

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, mutation, ApiError } from "@/lib/browser/api";
-import { useOnline } from "./app-state";
+import { useOnline } from "@/components/app-state";
 
 type Release = {
   id: string;

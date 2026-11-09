@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
 import { monitor } from "@/lib/browser/monitor";
-import { useApp, useOnline } from "./app-state";
-import { PageHeading } from "./catalog";
+import { useApp, useOnline } from "@/components/app-state";
+import { PageHeading } from "@/components/catalog";
 import { PasswordInput } from "./password-input";
 import { primaryControl } from "@/lib/perf/readiness";
 

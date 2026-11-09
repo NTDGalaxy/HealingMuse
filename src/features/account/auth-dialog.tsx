@@ -3,9 +3,9 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
-import { Dialog } from "./dialog";
+import { Dialog } from "@/components/dialog";
 import { PasswordInput } from "./password-input";
-import { useAppActions, useAuthOpen } from "./app-state";
+import { useAppActions, useAuthOpen } from "@/components/app-state";
 import { monitor } from "@/lib/browser/monitor";
 
 type Method = "password" | "code" | "recovery";

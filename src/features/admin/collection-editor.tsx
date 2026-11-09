@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ArrowDown, ArrowUp, Plus, Pencil, Trash2 } from "lucide-react";
 import type { CatalogPage, CuratedCollection, Locale, Track } from "@/lib/types";
 import { api, mutation } from "@/lib/browser/api";
-import { Dialog } from "./dialog";
+import { Dialog } from "@/components/dialog";
 interface Row extends Omit<CuratedCollection, "trackIds"> {
   curated_collection_items: { track_id: string; position: number }[];
 }

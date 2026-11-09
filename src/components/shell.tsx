@@ -16,7 +16,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useAppActions, useCalm, useIsAdmin, useOnline, useUserId } from "./app-state";
-import { AuthDialog } from "./auth-dialog";
+import { AuthDialog } from "@/features/account/auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
 import { Fragment, useLayoutEffect, useState } from "react";
