@@ -187,6 +187,34 @@ export class Binaural {
     );
   }
 
+  /**
+   * Holds every AudioContext resume until the returned function runs, so a binaural start stays
+   * pending (status "starting"). The function releases them and returns the page-clock time.
+   */
+  async holdToneStart(): Promise<() => Promise<number>> {
+    await this.page.addInitScript(() => {
+      const resume = AudioContext.prototype.resume;
+      let release!: () => void;
+      const released = new Promise<void>((resolve) => (release = resolve));
+      Object.defineProperty(window, "binauralTestReleaseResume", {
+        value: () => {
+          const at = performance.now();
+          release();
+          return at;
+        },
+      });
+      AudioContext.prototype.resume = function (this: AudioContext) {
+        return released.then(() => resume.call(this));
+      };
+    });
+    return () =>
+      this.page.evaluate(() =>
+        (
+          window as unknown as { binauralTestReleaseResume: () => number }
+        ).binauralTestReleaseResume(),
+      );
+  }
+
   /** Records media elements routed into the mixer graph. */
   async instrumentBackgroundMedia() {
     await this.page.addInitScript(() => {

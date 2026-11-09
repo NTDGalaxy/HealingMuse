@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { decorationBounds } from "../../../src/lib/perf/audio-first";
 import { card, garden, player, shell } from "./contracts";
 
 // In-page probes for the garden motion. Selectors are passed in as arguments so the probes
@@ -110,11 +111,28 @@ export async function watchFirstSound(page: Page) {
   );
 }
 
-/** Whether the garden scene started at or after the sound recorded by `watchFirstSound`. */
-export function sceneStartedAfterFirstSound(page: Page) {
-  return page.evaluate((mark) => {
-    const start = performance.getEntriesByName(mark, "mark")[0]?.startTime;
-    const sound = (window as Probes).firstSound;
-    return start !== undefined && sound !== undefined && start >= sound;
-  }, garden.sceneStartMark);
+/** The page's clock, the one performance marks use. */
+export function pageTime(page: Page) {
+  return page.evaluate(() => performance.now());
+}
+
+/** When the first media element started playing, as recorded by `watchFirstSound`. */
+export function firstSoundTime(page: Page) {
+  return page.evaluate(() => (window as Probes).firstSound ?? null);
+}
+
+/**
+ * Whether the last garden scene start came after `sound`, or only once decorationMayStart's whole
+ * audio wait had passed since `allowed` (when the scene was allowed while a start was pending).
+ * Both are page-clock times. A slow machine only moves the scene start later, so the outcome
+ * never depends on machine speed; starting before the sound and before that wait is the bug.
+ */
+export function sceneWaitedForSound(page: Page, times: { allowed: number; sound: number }) {
+  return page.evaluate(
+    ({ mark, allowed, sound, wait }) => {
+      const start = performance.getEntriesByName(mark, "mark").at(-1)?.startTime;
+      return start !== undefined && (start >= sound || start - allowed >= wait);
+    },
+    { mark: garden.sceneStartMark, ...times, wait: decorationBounds.audioWithin },
+  );
 }

@@ -15,6 +15,9 @@ export const decorationMarks = {
   motion: "hm:motion-start",
 } as const;
 
+/** decorationMayStart's default bounds, in milliseconds. */
+export const decorationBounds = { readyWithin: 2000, audioWithin: 6000 } as const;
+
 let starting = 0;
 const settledListeners = new Set<() => void>();
 
@@ -54,8 +57,8 @@ export type DecorationWait = {
  */
 export function decorationMayStart({
   signal,
-  readyWithin = 2000,
-  audioWithin = 6000,
+  readyWithin = decorationBounds.readyWithin,
+  audioWithin = decorationBounds.audioWithin,
 }: DecorationWait = {}): Promise<boolean> {
   return new Promise((resolve) => {
     if (signal?.aborted) return resolve(false);

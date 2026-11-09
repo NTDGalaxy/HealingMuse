@@ -4,10 +4,17 @@ import {
   expectAccessible,
   expectNoHorizontalOverflow,
   expectPlaying,
+  holdRequests,
 } from "./support/test";
-import { dialog as dialogs, shell as chrome, localAudioRoute, size } from "./support/contracts";
-import { sceneStartedAfterFirstSound, watchFirstSound } from "./support/motion";
-import { Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
+import {
+  dialog as dialogs,
+  shell as chrome,
+  garden,
+  localAudioRoute,
+  size,
+} from "./support/contracts";
+import { firstSoundTime, pageTime, sceneWaitedForSound, watchFirstSound } from "./support/motion";
+import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
@@ -243,36 +250,58 @@ test.describe("WebGL lifecycle", () => {
   });
 });
 
+// Audio-first ordering, asserted without depending on machine speed: the start stays pending
+// until the test releases it, and the check accepts either order the contract allows (after the
+// sound, or after decorationMayStart's whole wait). The timing itself is unit tested in
+// tests/unit/garden-audio-first.test.ts.
 test.describe("audio-first decoration", () => {
-  test("a scene allowed while a recording starts waits for its first sound", async ({
+  /** Switches Still to Automatic and waits until the scenery has taken the change. */
+  async function allowScene(shell: Shell) {
+    await shell.gardenButton.click();
+    await shell.gardenDetailSelect.selectOption("auto");
+    await shell.page.keyboard.press("Escape");
+    await expect(shell.gardenHost).not.toHaveAttribute(garden.state, "still");
+  }
+
+  test("a scene allowed while a recording starts begins after its first sound", async ({
     page,
     appearance,
   }) => {
     const shell = new Shell(page);
     await appearance({ theme: "day", garden: "still" });
     await watchFirstSound(page);
-    let release!: () => void;
-    const held = new Promise<void>((resolve) => (release = resolve));
-    let reached!: () => void;
-    const requested = new Promise<void>((resolve) => (reached = resolve));
-    await page.route(localAudioRoute, async (route) => {
-      reached();
-      await held;
-      await route.continue().catch(() => {});
-    });
+    const recording = await holdRequests(page, localAudioRoute);
     await page.goto("/en");
     await shell.expectGardenState("still");
     await new Recordings(page).featuredPlay.click();
-    await requested;
-    await shell.gardenButton.click();
-    await shell.gardenDetailSelect.selectOption("auto");
-    await page.keyboard.press("Escape");
-    // The recording is still starting, so the scene waits instead of competing with it.
-    await shell.expectGardenState("waiting");
-    await expect(shell.gardenCanvas).toHaveCount(0);
-    release();
+    await recording.reached;
+    const allowed = await pageTime(page);
+    await allowScene(shell);
+    recording.release();
     await expectPlaying(page);
     await shell.expectGardenState("ready");
-    expect(await sceneStartedAfterFirstSound(page)).toBe(true);
+    const sound = await firstSoundTime(page);
+    expect(sound).not.toBeNull();
+    expect(await sceneWaitedForSound(page, { allowed, sound: sound! })).toBe(true);
+  });
+
+  test("a scene allowed while binaural tones start begins after they start", async ({
+    page,
+    appearance,
+  }) => {
+    const shell = new Shell(page);
+    const binaural = new Binaural(page);
+    await appearance({ theme: "day", garden: "still" });
+    const releaseTones = await binaural.holdToneStart();
+    await binaural.open();
+    await shell.expectGardenState("still");
+    await binaural.button("start").click();
+    await binaural.expectState("starting");
+    const allowed = await pageTime(page);
+    await allowScene(shell);
+    const sound = await releaseTones();
+    await binaural.expectState("playing");
+    await shell.expectGardenState("ready");
+    expect(await sceneWaitedForSound(page, { allowed, sound })).toBe(true);
   });
 });
