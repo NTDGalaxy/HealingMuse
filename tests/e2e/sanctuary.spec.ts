@@ -1,5 +1,5 @@
 import { test, expect, storeCalm } from "./support/test";
-import { shell as chrome, style } from "./support/contracts";
+import { style } from "./support/contracts";
 import { Explore, Player, Recordings, Shell } from "./support/pages";
 
 test("phone discovery shows playable choices and expands native listening filters by keyboard", async ({
@@ -39,13 +39,8 @@ test("reduced motion, stored Calm mode and reduced transparency remove decorativ
   await storeCalm(page);
   await page.reload();
   await shell.expectCalm();
-  await page.evaluate(() => scrollTo(0, 500));
-  expect(
-    await shell.scenery.evaluate(
-      (element, property) => element.style.getPropertyValue(property),
-      chrome.sceneryShift,
-    ),
-  ).toBe("");
+  // Calm also keeps scroll parallax off: botanical.spec.ts proves the GSAP layer that drives it is
+  // never downloaded under Calm or reduced motion.
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setEmulatedMedia", {
     features: [{ ...style.reducedTransparency }],

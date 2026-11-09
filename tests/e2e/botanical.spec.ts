@@ -4,8 +4,10 @@ import {
   expectAccessible,
   expectNoHorizontalOverflow,
   expectPlaying,
+  expectPrimaryReady,
   holdChunk,
   holdRequests,
+  watchChunk,
 } from "./support/test";
 import {
   dialog as dialogs,
@@ -132,6 +134,30 @@ test("stored Still, Calm and reduced motion hydrate the server markup without a 
   await expectPlaying(page);
   expect(errors).toEqual([]);
 });
+
+// Calm and reduced motion keep the GSAP layer's code off the network, not only its effects.
+for (const quiet of ["Calm", "reduced motion"] as const) {
+  test(`${quiet} never downloads the GSAP layer until motion is allowed`, async ({
+    page,
+    appearance,
+  }) => {
+    const shell = new Shell(page);
+    const motion = await watchChunk(page, graphicsMarkers.motion.marker);
+    if (quiet === "Calm") await appearance({ calm: true });
+    else await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/en");
+    // Where motion is allowed, the layer's code is requested as soon as the primary control is
+    // ready, so once the page's requests have finished it would have been counted.
+    await expectPrimaryReady(page);
+    await page.waitForLoadState("networkidle");
+    expect(motion.requests()).toBe(0);
+    // The same page downloads it once motion is allowed, so the count above measured something.
+    if (quiet === "Calm") await shell.setCalm(false);
+    else await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expectMotionLoaded(page);
+    expect(motion.requests()).toBe(1);
+  });
+}
 
 test("global appearance persists and More restores keyboard focus", async ({ page }) => {
   const shell = new Shell(page);

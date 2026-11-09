@@ -230,6 +230,21 @@ export async function holdChunk(page: Page, marker: string): Promise<HeldRequest
   return { reached, release };
 }
 
+/**
+ * Counts the script chunks whose source contains `marker` (see src/lib/garden/budget-markers.ts)
+ * that the page requests from now on; every chunk passes untouched.
+ */
+export async function watchChunk(page: Page, marker: string): Promise<{ requests(): number }> {
+  let requests = 0;
+  await page.route(chunkRoute, async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    if (body.includes(marker)) requests++;
+    await route.fulfill({ response, body }).catch(() => {});
+  });
+  return { requests: () => requests };
+}
+
 /** How many responses for `path` the page has received so far (resource timing entries). */
 export function responsesReceived(page: Page, path: string): Promise<number> {
   return page.evaluate(
