@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
-import { accountDeletionConfirmation, settings, shell } from "../contracts";
-import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
+import { accountDeletionConfirmation, settings } from "../contracts";
+import { pattern, t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 
 /** Settings panels, the appearance controls they host and account actions. */
 export class Settings {
@@ -13,18 +13,18 @@ export class Settings {
     return t(this.locale, key, values);
   }
 
-  get panels() {
-    return this.page.locator(shell.panel);
+  /** The appearance panel, the first panel of the route. */
+  get appearance() {
+    return this.page.locator(settings.appearance);
   }
-  /** The Calm mode row inside the appearance controls. */
-  get appearanceRow() {
-    return this.page.locator(settings.appearanceRow);
+  /** The name and help text beside the Calm mode switch. */
+  get calmText() {
+    return this.appearance.locator(settings.settingText);
   }
-  get appearanceRowLabel() {
-    return this.appearanceRow.locator(settings.rowLabel).first();
-  }
-  get appearanceRowControl() {
-    return this.appearanceRow.locator(settings.rowControl);
+  get calmSwitch() {
+    return this.appearance.getByRole("checkbox", {
+      name: pattern(this.locale, "appearance.calm"),
+    });
   }
   get account() {
     return this.page.locator(settings.account);
@@ -35,8 +35,12 @@ export class Settings {
   get install() {
     return this.page.locator(settings.install);
   }
+  /** The account panel's destructive action. */
   get accountDanger() {
-    return this.page.locator(settings.accountDanger);
+    return this.account.getByRole("button", {
+      name: this.t("settings.deleteAccount"),
+      exact: true,
+    });
   }
   get actionGroups() {
     return this.page.locator(settings.actions);

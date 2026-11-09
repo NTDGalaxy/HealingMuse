@@ -35,7 +35,7 @@ export function SettingsView() {
     <>
       <PageHeader title={t("settings.title")} subtitle={t("settings.subtitle")} />
       <div className="settings-stack">
-        <section className="panel settings-appearance">
+        <section className="panel settings-appearance" data-part="settings-appearance">
           <h2>{t("settings.appearance")}</h2>
           <AppearanceControls primary />
           <div className="setting-row">
@@ -54,12 +54,15 @@ export function SettingsView() {
             </div>
           </div>
         </section>
-        <section className={`panel settings-account${user ? "" : " settings-account-guest"}`}>
+        <section
+          className={`panel settings-account${user ? "" : " settings-account-guest"}`}
+          data-part="settings-account"
+        >
           <h2>{t("settings.account")}</h2>
           {user ? (
             <>
               <p className="settings-identity">{user.email}</p>
-              <div className="settings-actions">
+              <div className="settings-actions" data-part="settings-actions">
                 <Link className="text-link" href={`/${locale}/reset-password`}>
                   {t("auth.managePassword")}
                 </Link>
@@ -79,14 +82,14 @@ export function SettingsView() {
           ) : (
             <>
               <p>{t("settings.guestText")}</p>
-              <div className="settings-actions">
+              <div className="settings-actions" data-part="settings-actions">
                 <Button onClick={actions.openAuth}>{t("nav.signIn")}</Button>
               </div>
             </>
           )}
         </section>
         {user && (
-          <section className="panel settings-privacy">
+          <section className="panel settings-privacy" data-part="settings-privacy">
             <h2>{t("settings.privacy")}</h2>
             <p>{t("mood.consentText")}</p>
             {pending ? (
@@ -95,7 +98,7 @@ export function SettingsView() {
             ) : (
               <>
                 <p className="muted">{t(consent ? "settings.enabled" : "settings.disabled")}</p>
-                <div className="settings-actions">
+                <div className="settings-actions" data-part="settings-actions">
                   <Button
                     variant="secondary"
                     disabled={!online}

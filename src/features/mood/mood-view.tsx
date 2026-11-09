@@ -56,6 +56,7 @@ export function MoodView() {
               <Button
                 variant="secondary"
                 danger
+                data-part="delete-mood-history"
                 disabled={!online || !pairs.length}
                 onClick={() => setConfirm(true)}
               >

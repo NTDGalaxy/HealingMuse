@@ -55,8 +55,9 @@ export class Shell {
   get emptyState() {
     return this.page.locator(shell.emptyState);
   }
+  /** Body copy and setting help that must stay at a readable size. */
   get readableText() {
-    return this.page.locator(shell.readableText);
+    return this.mainCopy.or(this.page.locator(shell.settingHelp));
   }
   get focused() {
     return this.page.locator(shell.focused);

@@ -138,7 +138,9 @@ export default function AdminConsole() {
                 </button>
               )}
             </div>
-            <span className="status-pill">{t(`admin.${track.status}`)}</span>
+            <span className="status-pill" data-part="recording-status">
+              {t(`admin.${track.status}`)}
+            </span>
             <button
               className="icon-button"
               disabled={!online}

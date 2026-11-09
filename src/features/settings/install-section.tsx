@@ -21,7 +21,7 @@ export function InstallSection() {
     return () => window.removeEventListener("beforeinstallprompt", listener);
   }, []);
   return (
-    <section className="panel settings-install">
+    <section className="panel settings-install" data-part="settings-install">
       <h2>{t("settings.install")}</h2>
       <p>{t("settings.installText")}</p>
       {install ? (

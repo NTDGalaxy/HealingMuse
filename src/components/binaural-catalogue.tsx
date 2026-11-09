@@ -129,7 +129,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
     >
       <h2 id="binaural-catalogue-heading">{t("binaural.backgroundTitle")}</h2>
       {session.backgroundId && (
-        <p className="binaural-catalogue-selection">
+        <p className="binaural-catalogue-selection" data-part="background-selection">
           {selected?.title[locale] ?? t("binaural.backgroundUnavailable")}
         </p>
       )}
@@ -205,7 +205,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
         </Empty>
       )}
       {visible.total > 0 && (
-        <p className="small muted binaural-range">
+        <p className="small muted binaural-range" data-part="page-range">
           {t("binaural.pageRange", {
             start: offset + 1,
             end: offset + visible.items.length,

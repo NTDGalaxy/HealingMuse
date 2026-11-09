@@ -92,6 +92,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
       </fieldset>
       <section
         className="binaural-player reading-surface"
+        data-part="binaural-player"
         aria-labelledby="binaural-player-heading"
         data-state={status}
       >
@@ -100,9 +101,9 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
             <h2 id="binaural-player-heading">{t(`modes.${config.mode}.purpose`)}</h2>
           </div>
           <div className="binaural-visualizer" aria-hidden="true">
-            <i />
-            <i />
-            <i />
+            <i data-part="binaural-visualizer-bar" />
+            <i data-part="binaural-visualizer-bar" />
+            <i data-part="binaural-visualizer-bar" />
             <Waves size={32} />
           </div>
         </div>
@@ -162,7 +163,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
             </label>
           )}
         </div>
-        <div className="binaural-buttons">
+        <div className="binaural-buttons" data-part="binaural-session-controls">
           <button
             type="button"
             className="button"
@@ -277,9 +278,9 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           {volume("toneVolume", t("toneVolume"))}
           {volume("backgroundVolume", t("backgroundVolume"))}
         </div>
-        <details className="binaural-advanced">
+        <details className="binaural-advanced" data-part="binaural-advanced">
           <summary>{t("advanced")}</summary>
-          <dl className="binaural-frequencies">
+          <dl className="binaural-frequencies" data-part="binaural-frequencies">
             <div>
               <dt>{t("leftEar")}</dt>
               <dd>

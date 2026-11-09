@@ -17,7 +17,7 @@ export function MoodScores({
       {[CloudRain, Cloud, CloudSun, SunMedium, Sun].map((Icon, index) => {
         const score = index + 1;
         return (
-          <label key={score} className={score === value ? "selected" : ""}>
+          <label key={score} className={score === value ? "selected" : ""} data-part="mood-score">
             <input
               type="radio"
               name="mood-score"

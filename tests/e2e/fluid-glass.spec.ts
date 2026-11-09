@@ -135,7 +135,7 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
     await appearance({ theme, garden: "still" });
     await page.goto("/en/settings");
     await shell.expectTheme(theme);
-    const panel = new Settings(page).panels.first();
+    const panel = new Settings(page).appearance;
     expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.translucent,
     );
@@ -162,8 +162,8 @@ test("phone Calm and secondary recording labels remain attached to their control
   const settings = new Settings(page, "vi");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/vi/settings");
-  const text = (await settings.appearanceRowLabel.boundingBox())!;
-  const checkbox = (await settings.appearanceRowControl.boundingBox())!;
+  const text = (await settings.calmText.boundingBox())!;
+  const checkbox = (await settings.calmSwitch.boundingBox())!;
   expect(checkbox.y).toBeLessThan(text.y + text.height);
   expect(checkbox.x).toBeGreaterThan(text.x + text.width);
   await page.goto("/vi");

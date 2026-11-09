@@ -14,9 +14,6 @@ const part = (name: string) => `[data-part="${name}"]`;
 
 /** The main landmark, for CSS contexts (axe scopes, in-page probes) that cannot take a role. */
 const main = "main";
-const binauralBackground = ".binaural-background";
-const trackCard = part("track-card");
-const cardPlay = part("track-play");
 
 /** The document element and the preferences it reflects before and after hydration. */
 export const documentRoot = {
@@ -44,9 +41,8 @@ export const shell = {
   sceneryShift: "--scenic-shift",
   pageHeading: part("page-heading"),
   emptyState: part("empty-state"),
-  panel: ".panel",
-  /** Body copy and setting labels that must stay at a readable size. */
-  readableText: "main p, .setting-row > span > span",
+  /** The help line under a setting's name (body copy is found by role). */
+  settingHelp: part("setting-help"),
   focused: ":focus",
   children: ":scope > *",
 } as const;
@@ -98,8 +94,8 @@ export const chunkMarkers = {
 } as const;
 
 export const card = {
-  root: trackCard,
-  play: cardPlay,
+  root: part("track-card"),
+  play: part("track-play"),
   playLabel: part("track-play-label"),
   title: part("track-title"),
   /** The text column: title, artist and the actions row. */
@@ -132,66 +128,50 @@ export const playbackGrantPath = "/api/grants/";
 export const explore = {
   /** The four facet selects inside the filter disclosure. */
   facets: part("catalog-facets"),
-  pager: "fieldset",
   /** Any link into one catalogue category. */
   categoryLink: (category: string) => `[href*="category=${category}"]`,
 } as const;
 
 export const binaural = {
-  player: ".binaural-player",
+  player: part("binaural-player"),
   state: "data-state",
-  buttons: ".binaural-buttons button",
-  frequencies: ".binaural-frequencies",
-  preset: "#binaural-preset",
-  duration: "#binaural-duration",
-  customDuration: "#binaural-custom-duration",
-  volume: (channel: "master" | "tone" | "background") => `#binaural-${channel}Volume`,
-  visualizerBar: ".binaural-visualizer i",
-  advanced: ".binaural-advanced",
-  mode: ".binaural-mode",
-  selectedModeInput: ".binaural-mode.selected input",
-  background: binauralBackground,
-  backgroundCard: `${binauralBackground} ${trackCard}`,
-  backgroundPlay: `${binauralBackground} ${cardPlay}`,
-  range: ".binaural-range",
-  selection: ".binaural-catalogue-selection",
+  /** Start, pause or resume, and stop. */
+  sessionControls: part("binaural-session-controls"),
+  frequencies: part("binaural-frequencies"),
+  visualizerBar: part("binaural-visualizer-bar"),
+  /** The fine-tuning disclosure. */
+  advanced: part("binaural-advanced"),
+  /** Which recordings of the mixer catalogue the current page shows. */
+  range: part("page-range"),
+  /** The title of the chosen background recording. */
+  selection: part("background-selection"),
 } as const;
 
 export const settings = {
-  appearanceRow: ".appearance-controls .setting-row",
-  rowLabel: "span",
-  rowControl: "input",
-  account: ".settings-account",
-  privacy: ".settings-privacy",
-  install: ".settings-install",
-  accountDanger: ".settings-account .danger",
-  actions: ".settings-actions",
+  appearance: part("settings-appearance"),
+  account: part("settings-account"),
+  privacy: part("settings-privacy"),
+  install: part("settings-install"),
+  /** A row of two settings actions. */
+  actions: part("settings-actions"),
+  /** The name and help beside a setting's switch. */
+  settingText: part("setting-text"),
 } as const;
 
 export const mood = {
-  trends: ".mood-trends",
-  scoreLabel: ".mood-scores label",
-  scoreInput: (score: number) => `.mood-scores input[value="${score}"]`,
-  selectedScoreInput: (score: number) => `.mood-scores label.selected input[value="${score}"]`,
+  /** One choice of the five-step mood scale, with its symbol and text. */
+  score: part("mood-score"),
+  /** The control that deletes every check-in. */
+  deleteHistory: part("delete-mood-history"),
 } as const;
 
 export const admin = {
-  colorOption: (value: string) => `#admin-color option[value="${value}"]`,
-  artworkOption: (value: string) => `#admin-artwork option[value="${value}"]`,
-  statusPill: ".status-pill",
-  releaseStatus: '.release-review [role="status"]',
+  /** The publication status of a recording in the content studio list. */
+  recordingStatus: part("recording-status"),
+  /** The option of a select that has this value. */
+  option: (value: string) => `[value="${value}"]`,
   /** Provider names are product names rendered without translation. */
   storageProvider: { b2: "Backblaze B2" },
-} as const;
-
-export const button = {
-  secondaryDanger: ".button.secondary.danger",
-} as const;
-
-/** Error and help ids linked to form fields through aria-describedby. */
-export const describedBy = {
-  newPassword: "password-help password-error",
-  signInCode: "code-help auth-error",
 } as const;
 
 /** The literal account deletion requires, compared by the server and the form. */

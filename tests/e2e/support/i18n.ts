@@ -57,3 +57,8 @@ export const composed = {
   /** The remove control of one item in a reorderable list (a playlist or a collection). */
   removeFromList: (locale: Locale, title: string) => `${t(locale, "common.remove")}: ${title}`,
 };
+
+/** An accessible description built from several described-by elements, in their order. */
+export function described(...texts: string[]): string {
+  return texts.join(" ");
+}

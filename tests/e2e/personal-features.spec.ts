@@ -14,8 +14,6 @@ import type { PersonalData, Playlist, Track } from "@/lib/types";
 import { paginateTracks } from "../../src/lib/catalog-query";
 import {
   admin,
-  button,
-  describedBy,
   dialog as dialogs,
   harness,
   layout,
@@ -23,9 +21,18 @@ import {
   shell as chrome,
   size,
 } from "./support/contracts";
-import { composed, t, type Locale } from "./support/i18n";
+import { composed, described, t, type Locale } from "./support/i18n";
 import { preparedAudio, preparedCatalogue } from "./support/catalogue";
-import { Explore, FixtureHarness, HarnessScreens, Player, Settings, Shell } from "./support/pages";
+import {
+  Admin,
+  Explore,
+  FixtureHarness,
+  HarnessScreens,
+  Mood,
+  Player,
+  Settings,
+  Shell,
+} from "./support/pages";
 
 let fixtures: FixtureHarness | undefined;
 test.afterAll(async () => {
@@ -239,7 +246,9 @@ test("server password-policy failures are announced on the new password field", 
   await ui.button("auth.savePassword").click();
   await expect(page.getByRole("alert")).toContainText(ui.t("auth.passwordUpdateError"));
   await expect(newPassword).toHaveAttribute("aria-invalid", "true");
-  await expect(newPassword).toHaveAttribute("aria-describedby", describedBy.newPassword);
+  await expect(newPassword).toHaveAccessibleDescription(
+    described(ui.t("auth.passwordHelp"), ui.t("auth.passwordUpdateError")),
+  );
   await expectAccessible(page);
   expect(await ui.authCalls()).toEqual(["updateUser"]);
 });
@@ -306,7 +315,7 @@ test("named release review checks delivery, records confirmations and reports a 
   expect(submissions[0]).not.toHaveProperty("reviewerId");
   changed = false;
   await publish.click();
-  await expect(page.locator(admin.releaseStatus)).toContainText(
+  await expect(new Admin(page).releaseStatus).toContainText(
     ui.t("admin.release.published", { name: reviewer }),
   );
   await expectAccessible(page);
@@ -416,7 +425,7 @@ test("synthetic accounts manage a library, paired check-ins, erasure, and sign-o
   expect(data.checkins.map((item) => item.phase)).toEqual(["before", "after"]);
   await ui.show("mood");
   await deleteHistory.hover();
-  await expectAccessible(page, button.secondaryDanger, { only: ["color-contrast"] });
+  await expectAccessible(page, mood.deleteHistory, { only: ["color-contrast"] });
   await deleteHistory.click();
   await ui.dialog.getByRole("button", { name: ui.t("mood.deleteAll"), exact: true }).click();
   await expect(page.getByRole("heading", { name: ui.t("mood.empty"), exact: true })).toBeVisible();
@@ -476,7 +485,9 @@ test("synthetic authentication, consent, personal history, and administration fo
   await verify.click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(code).toHaveAttribute("aria-invalid", "true");
-  await expect(code).toHaveAttribute("aria-describedby", describedBy.signInCode);
+  await expect(code).toHaveAccessibleDescription(
+    described(ui.t("auth.codeNote"), ui.t("auth.invalidCode")),
+  );
   await code.fill("123456");
   await verify.click();
   await expect(ui.dialog).toHaveCount(0);
@@ -496,7 +507,7 @@ test("synthetic authentication, consent, personal history, and administration fo
     "max",
     "14400",
   );
-  await expect(page.locator(admin.colorOption("sage"))).toHaveText(ui.t("admin.colorOptions.sage"));
+  await expect(new Admin(page).colorOption("sage")).toHaveText(ui.t("admin.colorOptions.sage"));
   await expectAccessible(page);
 });
 test("a selected private check-in remains readable in Night appearance", async ({
@@ -513,8 +524,11 @@ test("a selected private check-in remains readable in Night appearance", async (
   await expect(ui.button("library.newPlaylist")).toBeVisible();
   await ui.show("recording");
   await ui.recordings.listen(harness.recording.title.en).click();
-  await page.locator(mood.scoreInput(3)).check();
-  await expect(page.locator(mood.selectedScoreInput(3))).toBeChecked();
+  const score = new Mood(page).score(3);
+  await score.check();
+  await expect(score).toBeChecked();
+  // Save follows the chosen score in the same render that marks the choice as selected.
+  await expect(ui.button("mood.saveListen")).toBeEnabled();
   await expectAccessible(page, dialogs.role);
 });
 test("recording saves cannot publish outside release review and support retirement", async ({
@@ -557,13 +571,13 @@ test("recording saves cannot publish outside release review and support retireme
     await page.getByRole("checkbox", { name: ui.t(key), exact: true }).check();
   await ui.button("admin.save").click();
   await expect(ui.dialog).toHaveCount(0);
-  await expect(page.locator(admin.statusPill)).toHaveText(ui.t("admin.draft"));
+  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.draft"));
   expect(tracks).toMatchObject([{ status: "draft" }]);
   // Once release review has published it, metadata edits keep the published status available.
   (tracks[0] as { status: string }).status = "published";
   await page.reload();
   await ui.show("admin");
-  await expect(page.locator(admin.statusPill)).toHaveText(ui.t("admin.published"));
+  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.published"));
   await page
     .getByRole("button", { name: composed.editRecording("en", title), exact: true })
     .click();
@@ -574,7 +588,7 @@ test("recording saves cannot publish outside release review and support retireme
     ui.t("admin.retired"),
   ]);
   await ui.button("admin.reject").click();
-  await expect(page.locator(admin.statusPill)).toHaveText(ui.t("admin.retired"));
+  await expect(new Admin(page).recordingStatus).toHaveText(ui.t("admin.retired"));
 });
 for (const locale of ["vi", "en"] as const)
   for (const theme of ["day", "night"] as const)
@@ -596,7 +610,7 @@ for (const locale of ["vi", "en"] as const)
       await ui.open({ locale });
       await new Shell(page, locale).expectTheme(theme);
       await ui.show("mood");
-      await expect(page.locator(mood.trends)).toBeVisible();
+      await expect(new Mood(page, locale).trends).toBeVisible();
       for (const width of [390, 820, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         for (const view of ["library", "mood", "settings", "admin"] as const) {
@@ -648,7 +662,7 @@ for (const locale of ["vi", "en"] as const)
         expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
           true,
         );
-        for (const label of await dialog.locator(mood.scoreLabel).all()) {
+        for (const label of await new Mood(page, locale).scoreChoices.all()) {
           expect(
             await label.evaluate((element) =>
               Number.parseFloat(getComputedStyle(element).fontSize),
@@ -669,10 +683,9 @@ test("Vietnamese content forms use translated options across phone, tablet, and 
   await ui.open({ locale: "vi" });
   await ui.show("admin");
   await ui.button("admin.new").click();
-  await expect(page.locator(admin.colorOption("sage"))).toHaveText(ui.t("admin.colorOptions.sage"));
-  await expect(page.locator(admin.artworkOption("forest"))).toHaveText(
-    ui.t("admin.artworkOptions.forest"),
-  );
+  const studio = new Admin(page, "vi");
+  await expect(studio.colorOption("sage")).toHaveText(ui.t("admin.colorOptions.sage"));
+  await expect(studio.artworkOption("forest")).toHaveText(ui.t("admin.artworkOptions.forest"));
   for (const width of [390, 820, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expectAccessible(page);

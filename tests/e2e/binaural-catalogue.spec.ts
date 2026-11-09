@@ -59,7 +59,7 @@ test("all 348 recordings are reachable with bounded pages, a final page and prev
   await expect(section.resultsNote).toHaveText(section.results(348));
   const seen: string[] = [];
   for (let index = 0; index < 15; index++) {
-    await expect(section.pager).not.toBeDisabled();
+    await expect(binaural.backgroundChoices).not.toBeDisabled();
     const titles = await section.recordings.titles.allTextContents();
     expect(titles.length).toBe(index === 14 ? 12 : 24);
     seen.push(...titles);

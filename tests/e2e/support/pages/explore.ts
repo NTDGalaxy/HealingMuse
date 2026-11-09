@@ -84,9 +84,6 @@ export class Explore {
       .getByRole("status")
       .filter({ hasText: wholePattern(this.locale, "common.loading") });
   }
-  get pager() {
-    return this.scope.locator(explore.pager);
-  }
   get nextPage() {
     return this.scope.getByRole("button", { name: this.t("catalog.next"), exact: true });
   }

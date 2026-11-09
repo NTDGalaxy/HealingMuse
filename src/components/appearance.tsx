@@ -81,9 +81,11 @@ export function AppearanceControls({ primary = false }: { primary?: boolean }) {
         </select>
       </label>
       <label className="setting-row">
-        <span>
+        <span data-part="setting-text">
           <strong>{t("calm")}</strong>
-          <span className="muted">{t("calmHelp")}</span>
+          <span className="muted" data-part="setting-help">
+            {t("calmHelp")}
+          </span>
         </span>
         <input
           type="checkbox"

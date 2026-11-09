@@ -50,7 +50,7 @@ export class Binaural {
     await expect(this.buttons.first()).toBeEnabled();
     await expect(this.background).toHaveCount(1);
     await this.background.scrollIntoViewIfNeeded();
-    await expect(this.page.locator(binaural.backgroundCard)).toHaveCount(24);
+    await expect(this.catalogue.recordings.cards).toHaveCount(24);
   }
 
   get player() {
@@ -59,8 +59,9 @@ export class Binaural {
   async expectState(state: string, options?: { timeout?: number }) {
     await expect(this.player).toHaveAttribute(binaural.state, state, options);
   }
+  /** The session controls: start, pause or resume, and stop. */
   get buttons() {
-    return this.page.locator(binaural.buttons);
+    return this.page.locator(binaural.sessionControls).getByRole("button");
   }
   button(key: SessionButton) {
     return this.page.getByRole("button", { name: this.t(`binaural.${key}`), exact: true });
@@ -74,26 +75,46 @@ export class Binaural {
       name: pattern(this.locale, `binaural.modes.${mode}.title`),
     });
   }
-  get modeChoices() {
-    return this.page.locator(binaural.mode);
+  private modes(options: { includeHidden?: boolean } = {}) {
+    return this.page.getByRole("group", {
+      name: this.t("binaural.chooseMode"),
+      exact: true,
+      ...options,
+    });
   }
+  /** The listening mode radios, in mode order. */
+  get modeChoices() {
+    return this.modes().getByRole("radio");
+  }
+  /**
+   * The chosen mode's radio. Its decoration is also inspected under an open modal dialog, which
+   * hides the page from assistive technology, so hidden elements are included.
+   */
   get selectedModeInput() {
-    return this.page.locator(binaural.selectedModeInput);
+    return this.modes({ includeHidden: true }).getByRole("radio", {
+      checked: true,
+      includeHidden: true,
+    });
   }
   get frequencies() {
     return this.page.locator(binaural.frequencies);
   }
+  /** Selects and fields named by a label that also contains their current value. */
   get preset() {
-    return this.page.locator(binaural.preset);
+    return this.page.getByRole("combobox", { name: pattern(this.locale, "binaural.preset") });
   }
   get duration() {
-    return this.page.locator(binaural.duration);
+    return this.page.getByRole("combobox", { name: pattern(this.locale, "binaural.duration") });
   }
   get customDuration() {
-    return this.page.locator(binaural.customDuration);
+    return this.page.getByRole("spinbutton", {
+      name: pattern(this.locale, "binaural.customMinutes"),
+    });
   }
   volume(channel: "master" | "tone" | "background") {
-    return this.page.locator(binaural.volume(channel));
+    return this.page.getByRole("slider", {
+      name: pattern(this.locale, `binaural.${channel}Volume`),
+    });
   }
   get visualizerBar() {
     return this.page.locator(binaural.visualizerBar).first();
@@ -113,10 +134,20 @@ export class Binaural {
 
   /** The optional background music section. */
   get background() {
-    return this.page.locator(binaural.background);
+    return this.page.getByRole("region", {
+      name: this.t("binaural.backgroundTitle"),
+      exact: true,
+    });
   }
   get backgroundPlay() {
-    return this.page.locator(binaural.backgroundPlay).first();
+    return this.catalogue.recordings.plays.first();
+  }
+  /** The recordings offered as background music, a group disabled while a page loads. */
+  get backgroundChoices() {
+    return this.background.getByRole("group", {
+      name: this.t("binaural.chooseMusic"),
+      exact: true,
+    });
   }
   /** The mixer catalogue, which reuses Explore's search, facets and paging. */
   get catalogue() {
