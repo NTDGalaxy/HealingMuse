@@ -214,7 +214,6 @@
     padding: 14px;
     gap: 20px;
     align-items: center;
-    box-shadow: 0 12px 32px #382b4412;
   }
   .featured-recording .track-art {
     height: 152px;
@@ -230,15 +229,11 @@
   .featured-recording .track-category {
     display: none;
   }
-  .featured-recording .track-bottom {
-    margin-top: 8px;
-  }
   .home-discovery {
     max-width: 780px;
     margin-block: 30px 44px;
   }
   .search-box {
-    background: var(--glass);
     border-color: var(--line);
     border-radius: 16px;
   }
@@ -252,11 +247,8 @@
   }
   .discovery-categories {
     margin-bottom: 0;
-    gap: 10px;
   }
   .discovery-categories a {
-    color: var(--text);
-    background: var(--glass);
     border-color: var(--line);
     min-height: 44px;
   }
@@ -280,9 +272,6 @@
   }
   .track-art .nature-art {
     transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .track-card:is(:hover, :focus-within) .track-art .nature-art {
-    transform: scale(1.035);
   }
   .track-description {
     padding: 16px 8px 4px;
@@ -374,12 +363,10 @@
     background: var(--tint);
   }
   .filter-chip {
-    background: var(--surface);
     border-color: var(--line);
     color: var(--text);
   }
   .filter-chip[aria-pressed="true"] {
-    background: var(--jade-tint);
     color: var(--green);
     border-color: var(--green);
   }
@@ -396,12 +383,6 @@
   }
   .legal-page p {
     color: var(--muted);
-  }
-  .dialog-overlay {
-    background: #19152288;
-  }
-  .dialog-content {
-    box-shadow: 0 24px 80px #19152245;
   }
   .dialog-content :is(input:not([type="checkbox"]), select, textarea),
   .panel :is(input:not([type="checkbox"]), select, textarea),
@@ -715,14 +696,12 @@
       display: none;
     }
     .mobile-brand {
-      font-size: 16px;
       gap: 6px;
     }
     .mobile-brand svg {
       width: 20px;
     }
     .language-switch a {
-      min-width: 32px;
       padding-inline: 6px;
       font-size: 11px;
     }
@@ -754,12 +733,6 @@
     }
   }
   @media (max-width: 360px) {
-    .topbar {
-      padding-inline: 12px;
-    }
-    .mobile-brand {
-      font-size: 14px;
-    }
     .appearance-button {
       width: 44px;
     }
@@ -769,16 +742,6 @@
     .featured-recording .track-card {
       grid-template-columns: 94px minmax(0, 1fr);
       gap: 10px;
-    }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    .sidebar,
-    .topbar,
-    .player-bar,
-    .mobile-nav,
-    .search-box {
-      background: var(--surface);
-      backdrop-filter: none;
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -822,7 +785,6 @@
   .discovery-categories a {
     padding: 8px 14px;
     border-radius: 999px;
-    background: var(--jade-tint);
     color: var(--green);
     font-size: 13px;
   }

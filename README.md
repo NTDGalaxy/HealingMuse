@@ -407,6 +407,13 @@ The `visual` Playwright project takes screenshots of every route in both themes 
 Both read their states from [scripts/visual/states.mjs](scripts/visual/states.mjs) and store results in the gitignored `artifacts/visual/`.
 `npm run test:e2e` runs only the `chromium` project.
 
+### Stylesheets
+
+[src/styles/index.ts](src/styles/index.ts) is the single style entry, imported by the root layout and the Vite component fixture.
+It loads Tailwind first (which declares the cascade layer order), then [src/styles/tokens.css](src/styles/tokens.css), the only place custom properties are set on the root element, then the bespoke stylesheets in `src/app/`, whose rules all live in `@layer components`.
+`npm run css:analyze` reports duplicated selectors, shadowed declarations, never-referenced classes and tokens declared outside `tokens.css`; `npm run css:analyze -- --fix` removes shadowed declarations while keeping `!important` ones and fallbacks for browsers below the Next.js support floor.
+Check any stylesheet change with the visual equivalence oracle.
+
 ### Budgets and asset generation
 
 ```bash
