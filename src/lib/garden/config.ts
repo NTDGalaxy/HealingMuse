@@ -1,8 +1,7 @@
 import { fallbackScene, routeForPath, type SceneId } from "../routes";
+import type { GardenTheme } from "../preferences";
 
-export type GardenTheme = "day" | "night";
-export type Appearance = "system" | GardenTheme;
-export type GardenPreference = "auto" | "still";
+export type { Appearance, GardenPreference, GardenTheme } from "../preferences";
 type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
 export const gardens = {
   lotus: { plant: "lotus", form: "court", seed: 1 },

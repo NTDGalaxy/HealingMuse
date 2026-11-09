@@ -5,7 +5,12 @@ import { describe, expect, it } from "vitest";
 
 // Ops scripts import these TypeScript modules with Node's native type stripping, without a
 // bundler. They must stay erasable syntax with relative imports only (no "@/" aliases).
-const modules = ["src/lib/routes.ts", "src/lib/validation.ts", "src/lib/storage/b2.ts"];
+const modules = [
+  "src/lib/routes.ts",
+  "src/lib/preferences.ts",
+  "src/lib/validation.ts",
+  "src/lib/storage/b2.ts",
+];
 
 describe("modules loaded natively by Node scripts", () => {
   for (const file of modules)

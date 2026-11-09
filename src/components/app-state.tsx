@@ -21,6 +21,7 @@ import {
 } from "@/lib/browser/downloads";
 import type { CuratedCollection, DownloadedTrack, PersonalData, Track } from "@/lib/types";
 import { monitor } from "@/lib/browser/monitor";
+import { usePreference, usePreferencesStore } from "./appearance";
 
 const subscribeOnline = (listener: () => void) => {
   window.addEventListener("online", listener);
@@ -109,7 +110,8 @@ export function AppProvider({
   const [downloadError, setDownloadError] = useState("");
   const [downloaded, setDownloaded] = useState<DownloadedTrack[]>([]);
   const [progress, setProgress] = useState<{ id: string; percent: number } | null>(null);
-  const [calm, setCalmState] = useState(false);
+  const preferences = usePreferencesStore();
+  const calm = usePreference((value) => value.calm);
   const abort = useRef<AbortController | null>(null);
   const requestVersion = useRef(0);
   const userId = useRef<string | null>(null);
@@ -120,8 +122,7 @@ export function AppProvider({
       const data = await api<PersonalData>("/api/me");
       if (version === requestVersion.current && data.profile.id === userId.current) {
         setPersonal(data);
-        setCalmState(data.profile.calm_mode);
-        document.documentElement.dataset.calm = String(data.profile.calm_mode);
+        preferences.adoptCalm(data.profile.calm_mode);
         return data;
       }
     } catch (e) {
@@ -129,7 +130,7 @@ export function AppProvider({
         setError(t(`errors.${e instanceof ApiError ? e.code : "unavailable"}`));
     }
     return null;
-  }, [t]);
+  }, [t, preferences]);
   useEffect(() => {
     const client = browserClient();
     if (!client) return;
@@ -181,15 +182,6 @@ export function AppProvider({
     void listDownloads()
       .then(setDownloaded)
       .catch(() => setDownloadError(t("downloads.unsupported")));
-    void Promise.resolve().then(() => {
-      try {
-        const storedCalm = localStorage.getItem("healingmuse-calm") === "true";
-        setCalmState(storedCalm);
-        document.documentElement.dataset.calm = String(storedCalm);
-      } catch {
-        /* The setting remains available for this visit. */
-      }
-    });
     return () => abort.current?.abort();
   }, [t]);
   useEffect(() => {
@@ -261,16 +253,19 @@ export function AppProvider({
       setDownloadError(t("downloads.unsupported"));
     }
   };
-  const setCalm = async (value: boolean) => {
-    setCalmState(value);
-    document.documentElement.dataset.calm = String(value);
-    try {
-      localStorage.setItem("healingmuse-calm", String(value));
-    } catch {
-      /* Session-only preference. */
-    }
-    if (user) await perform("/api/me", { calmMode: value }, "PATCH");
-  };
+  // Calm lives in the preferences store; a signed-in change is also saved to the profile.
+  const account = useRef({ user, perform });
+  useEffect(() => {
+    account.current = { user, perform };
+  });
+  useEffect(
+    () =>
+      preferences.setCalmSync(async (value) => {
+        if (account.current.user)
+          await account.current.perform("/api/me", { calmMode: value }, "PATCH");
+      }),
+    [preferences],
+  );
   const signOut = async () => {
     const client = browserClient();
     if (client) {
@@ -314,7 +309,7 @@ export function AppProvider({
         cancelDownload: () => abort.current?.abort(),
         downloadError,
         calm,
-        setCalm,
+        setCalm: preferences.setCalm,
       }}
     >
       {children}

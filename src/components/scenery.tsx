@@ -3,10 +3,15 @@ import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { gardenForPath, type GardenCommand, type GardenEvent } from "@/lib/garden/config";
 import type { createGarden } from "@/lib/garden/scene";
-import { useAppearance } from "./appearance";
+import { usePreference, usePreferencesStore } from "./appearance";
 const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
-export function Scenery({ pathname, calm }: { pathname: string; calm: boolean }) {
-  const { theme, garden: preference } = useAppearance();
+export function Scenery({ pathname }: { pathname: string }) {
+  const preferences = usePreferencesStore();
+  const theme = usePreference((value) => value.theme);
+  const calm = usePreference((value) => value.calm);
+  const still = usePreference((value) => value.garden === "still");
+  const reducedMotion = usePreference((value) => value.reducedMotion);
+  const saveData = usePreference((value) => value.saveData);
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null),
     worker = useRef<Worker | null>(null);
@@ -20,10 +25,6 @@ export function Scenery({ pathname, calm }: { pathname: string; calm: boolean })
   useEffect(() => {
     const element = host.current;
     if (!element) return;
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-    const connection = (
-      navigator as Navigator & { connection?: EventTarget & { saveData?: boolean } }
-    ).connection;
     let stopped = false,
       activeCanvas: HTMLCanvasElement | null = null,
       timeout: ReturnType<typeof setTimeout> | undefined;
@@ -94,20 +95,10 @@ export function Scenery({ pathname, calm }: { pathname: string; calm: boolean })
       clear();
       delete element.dataset.readyMs;
       delete element.dataset.quality;
-      let storedCalm = false;
-      try {
-        storedCalm = localStorage.getItem("healingmuse-calm") === "true";
-      } catch {
-        /* Session preferences still work. */
-      }
-      if (
-        calm ||
-        storedCalm ||
-        reduced.matches ||
-        preference === "still" ||
-        document.documentElement.dataset.garden === "still" ||
-        connection?.saveData
-      ) {
+      // Read the live snapshot: right after hydration the rendered values are still the
+      // server defaults, and a stored Calm or Still must never start the 3D scene.
+      const current = preferences.getSnapshot();
+      if (current.calm || current.reducedMotion || current.garden === "still" || current.saveData) {
         poster();
         return;
       }
@@ -161,19 +152,16 @@ export function Scenery({ pathname, calm }: { pathname: string; calm: boolean })
       renderer.current?.visible(value);
     };
     configure();
-    reduced.addEventListener("change", configure);
-    connection?.addEventListener("change", configure);
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", visibility);
     return () => {
       stopped = true;
       clear();
-      reduced.removeEventListener("change", configure);
-      connection?.removeEventListener("change", configure);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [calm, preference]);
+    // Each preference is a dependency so a change restarts or stills the scene.
+  }, [preferences, calm, still, reducedMotion, saveData]);
   return (
     <>
       <div
@@ -204,7 +192,7 @@ export function Scenery({ pathname, calm }: { pathname: string; calm: boolean })
         ))}
         <div className="garden-canvas" ref={host} data-state="starting" />
       </div>
-      <GardenMotion pathname={pathname} calm={calm} still={preference === "still"} />
+      <GardenMotion pathname={pathname} calm={calm} still={still} />
     </>
   );
 }

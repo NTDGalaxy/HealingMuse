@@ -88,7 +88,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
     <div className={`app-shell ${app.calm ? "calm-mode" : ""}`}>
-      <Scenery pathname={pathname} calm={app.calm} />
+      <Scenery pathname={pathname} />
       <a className="skip-link" href="#main-content">
         {t("nav.skip")}
       </a>

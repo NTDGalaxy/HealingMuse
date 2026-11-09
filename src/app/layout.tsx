@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { getLocale, getMessages } from "next-intl/server";
 import { Application } from "@/components/application";
 import "@/styles";
-import { appearanceBootstrap } from "@/components/appearance";
+import { appearanceBootstrap } from "@/lib/preferences";
 export const metadata: Metadata = {
   title: { default: "HealingMuse - A little room to breathe", template: "%s | HealingMuse" },
   description: "Human-curated instrumental music for recreation and emotional support.",
