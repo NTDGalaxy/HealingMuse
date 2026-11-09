@@ -180,6 +180,10 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
     element.pause();
     element.removeAttribute("src");
     element.load();
+    // The element has let go of a saved recording's object URL: release it now, so a start that
+    // fails never leaves it behind (resuming refreshes a stream only when there is none).
+    if (blobUrl) deps.objectUrl.revoke(blobUrl);
+    blobUrl = null;
     position.set(0);
     patch({ error: "", loading: true, duration: track.duration, current: track, queue });
     deps.announce("player.loadingStatus", track);
@@ -190,7 +194,6 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
         if (saved) deps.objectUrl.revoke(source);
         return;
       }
-      if (blobUrl) deps.objectUrl.revoke(blobUrl);
       blobUrl = saved ? source : null;
       element.src = source;
       element.load();
@@ -277,17 +280,23 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
       element.pause();
       return;
     }
+    // A newer start, Finish or the binaural session supersedes this resume, including a source
+    // that is still on its way.
+    const version = epoch;
+    const current = () => version === epoch && audio === element;
     const online = deps.online();
     try {
       if ((!element.getAttribute("src") || element.error) && online && !blobUrl) {
         const at = element.currentTime;
-        element.src = await deps.grant(track.id);
+        const source = await deps.grant(track.id);
+        if (!current()) return;
+        element.src = source;
         element.currentTime = at;
       }
       await element.play();
-      patch({ error: "" });
+      if (current()) patch({ error: "" });
     } catch {
-      patch({ error: online ? "player.playbackError" : "player.refreshFailed" });
+      if (current()) patch({ error: online ? "player.playbackError" : "player.refreshFailed" });
     }
   }
 

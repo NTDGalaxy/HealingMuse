@@ -57,7 +57,9 @@ test("offline Downloads queues only the recordings it shows and never streams", 
 });
 
 const A = prepared.first.id;
+const B = prepared.second.id;
 const first = prepared.first.title.en;
+const second = prepared.second.title.en;
 
 test("Finish while a recording is still loading keeps it from starting later", async ({ page }) => {
   const player = new Player(page);
@@ -73,4 +75,59 @@ test("Finish while a recording is still loading keeps it from starting later", a
   await expectPaused(page);
   expect(await audioSource(page)).toBeNull();
   await expect(player.playButton).toBeEnabled();
+});
+
+test("a late source from an earlier Retry never replaces the recording chosen since", async ({
+  page,
+}) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
+  await page.goto("/en");
+  // The first recording fails to load, so the player offers Retry.
+  await page.route(`**/api/local-audio/${A}`, (route) => route.abort("failed"));
+  await recordings.listen(first).click();
+  await expect(player.errorAlert).toBeVisible();
+  await page.unroute(`**/api/local-audio/${A}`);
+  // Retry asks for a fresh source; the listener picks another recording before it arrives.
+  const retry = await holdRequests(page, `**${playbackGrantPath}${A}`, { pass: 0 });
+  await player.retry.click();
+  await retry.reached;
+  await recordings.listen(second).click();
+  await expectPlaying(page);
+  await expect(player.currentTitle).toHaveText(second);
+  const before = await responsesReceived(page, `${playbackGrantPath}${A}`);
+  retry.release();
+  await expectResponseHandled(page, `${playbackGrantPath}${A}`, before);
+  expect(await audioSource(page)).toContain(B);
+  await expect(player.currentTitle).toHaveText(second);
+  await expectPlaying(page);
+});
+
+test("Retry after a saved recording recovers a streamed recording that failed", async ({
+  page,
+}) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
+  await page.goto("/en");
+  await recordings.download(first).click();
+  await expect.poll(() => countDownloads(page)).toBe(1);
+  await recordings.listen(first).click();
+  await expectPlaying(page);
+  let attempts = 0;
+  await page.route(`**${playbackGrantPath}${B}`, async (route) => {
+    attempts++;
+    if (attempts === 1)
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "unavailable" } }),
+      });
+    else await route.continue();
+  });
+  await recordings.listen(second).click();
+  await expect(player.error).toContainText(player.t("player.playbackError"));
+  await player.retry.click();
+  await expect.poll(() => audioSource(page)).toContain(B);
+  await expectPlaying(page);
+  expect(attempts).toBe(2);
 });

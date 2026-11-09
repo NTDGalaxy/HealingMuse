@@ -499,6 +499,75 @@ describe("playback engine", () => {
   });
 });
 
+describe("resuming", () => {
+  it("ignores a late resume source after the listener chose another recording", async () => {
+    const late = deferred<string>();
+    let resumes = 0;
+    const saved = new Blob(["b"]);
+    const { engine, audio } = setup({
+      downloaded: (id) => (id === "b" ? saved : undefined),
+      grant: (id) => (id === "a" && resumes++ > 0 ? late.promise : Promise.resolve(`grant:${id}`)),
+    });
+    engine.play(a, [a, b]);
+    await flush();
+    audio.currentTime = 42;
+    audio.pause();
+    audio.error = { code: 2 };
+    const retry = engine.toggle();
+    engine.play(b, [a, b]);
+    await flush();
+    expect(audio.src).toBe("blob:1");
+    late.resolve("grant:a:late");
+    await retry;
+    await flush();
+    expect(audio.src).toBe("blob:1");
+    expect(engine.state.getSnapshot()).toMatchObject({ current: b, playing: true, error: "" });
+  });
+
+  it("ignores a late resume source after the binaural session took over", async () => {
+    const late = deferred<string>();
+    let grants = 0;
+    const { engine, audio } = setup({
+      grant: (id) => (grants++ > 0 ? late.promise : Promise.resolve(`grant:${id}`)),
+    });
+    engine.play(a);
+    await flush();
+    audio.pause();
+    audio.removeAttribute("src");
+    const resume = engine.toggle();
+    engine.pauseForOtherAudio();
+    late.resolve("grant:a:late");
+    await resume;
+    await flush();
+    expect(audio.paused).toBe(true);
+    expect(audio.getAttribute("src")).toBeNull();
+  });
+
+  it("Retry requests a fresh source for a streamed recording that failed after a saved one", async () => {
+    const saved = new Blob(["a"]);
+    let failures = 1;
+    const { engine, audio, calls } = setup({
+      downloaded: (id) => (id === "a" ? saved : undefined),
+      async grant(id) {
+        calls.grants.push(id);
+        if (id === "b" && failures-- > 0) throw new Error("unavailable");
+        return `grant:${id}`;
+      },
+    });
+    engine.play(a, [a, b]);
+    await flush();
+    engine.play(b, [a, b]);
+    await flush();
+    expect(engine.state.getSnapshot().error).toBe("player.playbackError");
+    // The saved recording's object URL is released as soon as the element lets go of it.
+    expect(calls.revoked).toEqual(["blob:1"]);
+    await engine.toggle();
+    expect(calls.grants).toEqual(["b", "b"]);
+    expect(audio.src).toBe("grant:b");
+    expect(engine.state.getSnapshot()).toMatchObject({ current: b, playing: true, error: "" });
+  });
+});
+
 describe("pending work after listening stops", () => {
   it("Finish while a recording loads keeps it from starting or recording a session", async () => {
     const gate = deferred<string>();
