@@ -2,55 +2,56 @@
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Download } from "lucide-react";
-import { useApp } from "@/components/app-state";
-import { Dialog } from "@/components/dialog";
-import { Empty, PageHeading, TrackCard } from "@/components/catalog";
+import { useAppActions, useDownloadedRecords } from "@/components/app-state";
+import { TrackCard } from "@/components/catalog";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import type { Locale } from "@/lib/types";
 import { formatBytes } from "@/lib/audio";
 
 export function DownloadsView() {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  const { remove } = useAppActions();
+  const downloaded = useDownloadedRecords();
   const [confirm, setConfirm] = useState(false);
   const [storageNote, setStorageNote] = useState("");
-  const total = app.downloaded.reduce((sum, item) => sum + item.bytes, 0);
+  const total = downloaded.reduce((sum, item) => sum + item.bytes, 0);
   // The queue is exactly the saved recordings shown here, so playback never streams offline.
-  const queue = useMemo(() => app.downloaded.map((item) => item.track), [app.downloaded]);
+  const queue = useMemo(() => downloaded.map((item) => item.track), [downloaded]);
   return (
     <>
-      <PageHeading title={t("downloads.title")} subtitle={t("downloads.subtitle")} />
+      <PageHeader title={t("downloads.title")} subtitle={t("downloads.subtitle")} />
       <div className="storage-panel">
         <Download size={24} aria-hidden="true" />
         <div>
           <strong>{t("downloads.used", { size: formatBytes(total) })}</strong>
           <p>{t("downloads.note")}</p>
         </div>
-        {!!app.downloaded.length && (
-          <button className="button secondary" onClick={() => setConfirm(true)}>
+        {!!downloaded.length && (
+          <Button variant="secondary" onClick={() => setConfirm(true)}>
             {t("downloads.removeAll")}
-          </button>
+          </Button>
         )}
       </div>
-      {app.downloaded.length ? (
+      {downloaded.length ? (
         <div className="track-grid">
-          {app.downloaded.map((item, index) => (
+          {downloaded.map((item, index) => (
             <div key={item.id}>
               <TrackCard track={item.track} queue={queue} primary={index === 0} />
-              <button
-                className="text-button remove-download"
-                onClick={() => void app.remove(item.id)}
-              >
+              <button className="text-button remove-download" onClick={() => void remove(item.id)}>
                 {t("common.remove")}: {item.track.title[locale]}
               </button>
             </div>
           ))}
         </div>
       ) : (
-        <Empty title={t("downloads.empty")} text={t("downloads.emptyText")} />
+        <EmptyState title={t("downloads.empty")} text={t("downloads.emptyText")} />
       )}
-      <button
-        className="button secondary"
+      <Button
+        variant="secondary"
         onClick={async () => {
           try {
             setStorageNote(
@@ -66,24 +67,19 @@ export function DownloadsView() {
         }}
       >
         {t("downloads.persistent")}
-      </button>
+      </Button>
       {storageNote && <p role="status">{storageNote}</p>}
-      <Dialog
+      <ConfirmDialog
         open={confirm}
         onOpenChange={setConfirm}
         title={t("downloads.removeTitle")}
         description={t("downloads.removeText")}
-      >
-        <button
-          className="button danger"
-          onClick={async () => {
-            await app.remove();
-            setConfirm(false);
-          }}
-        >
-          {t("downloads.removeAll")}
-        </button>
-      </Dialog>
+        confirmLabel={t("downloads.removeAll")}
+        onConfirm={async () => {
+          await remove();
+          setConfirm(false);
+        }}
+      />
     </>
   );
 }

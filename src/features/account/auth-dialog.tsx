@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
 import { Dialog } from "@/components/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckboxField, TextField } from "@/components/ui/field";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { PasswordInput } from "./password-input";
 import { useAppActions, useAuthOpen } from "@/components/app-state";
 import { monitor } from "@/lib/browser/monitor";
@@ -160,15 +163,15 @@ export function AuthDialog() {
           <p role="status" id="auth-recovery-status" tabIndex={-1}>
             {t("auth.recoverySent")}
           </p>
-          <button className="button secondary" onClick={() => chooseMethod()}>
+          <Button variant="secondary" onClick={() => chooseMethod()}>
             {t("auth.backToPassword")}
-          </button>
+          </Button>
         </div>
       ) : (
         <form key={`${method}-${sent}`} onSubmit={submit} className="form-stack" aria-busy={busy}>
-          <label htmlFor="auth-email">{t("auth.email")}</label>
-          <input
+          <TextField
             id="auth-email"
+            label={t("auth.email")}
             name="email"
             type="email"
             autoComplete={method === "password" ? "username" : "email"}
@@ -229,33 +232,28 @@ export function AuthDialog() {
               <p className="muted small">{t("auth.codeSetup")}</p>
             ))}
           {method !== "recovery" && (
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(event) => setAgreed(event.target.checked)}
-                required
-                disabled={busy}
-              />
-              {/* Client navigation keeps the persistent player; the dialog closes to show the page. */}
-              <span>
-                {t("auth.agree")}{" "}
-                <Link href={"/" + locale + "/privacy"} onClick={dismiss}>
-                  {t("nav.privacy")}
-                </Link>{" "}
-                /{" "}
-                <Link href={"/" + locale + "/terms"} onClick={dismiss}>
-                  {t("nav.terms")}
-                </Link>
-              </span>
-            </label>
+            <CheckboxField
+              checked={agreed}
+              onChange={(event) => setAgreed(event.target.checked)}
+              required
+              disabled={busy}
+              label={
+                // Client navigation keeps the persistent player; the dialog closes to show the page.
+                <span>
+                  {t("auth.agree")}{" "}
+                  <Link href={"/" + locale + "/privacy"} onClick={dismiss}>
+                    {t("nav.privacy")}
+                  </Link>{" "}
+                  /{" "}
+                  <Link href={"/" + locale + "/terms"} onClick={dismiss}>
+                    {t("nav.terms")}
+                  </Link>
+                </span>
+              }
+            />
           )}
-          {error && (
-            <p id="auth-error" className="error" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="button" disabled={busy}>
+          {error && <InlineAlert id="auth-error">{error}</InlineAlert>}
+          <Button disabled={busy}>
             {busy
               ? t("common.loading")
               : t(
@@ -265,7 +263,7 @@ export function AuthDialog() {
                       ? "auth.verify"
                       : "auth.sendCode",
                 )}
-          </button>
+          </Button>
           {method === "password" ? (
             <div className="auth-options">
               <button
@@ -288,14 +286,14 @@ export function AuthDialog() {
           ) : (
             <>
               {method === "code" && sent && (
-                <button
+                <Button
                   type="button"
-                  className="button secondary"
+                  variant="secondary"
                   onClick={() => chooseMethod("code")}
                   disabled={busy}
                 >
                   {t("auth.changeEmail")}
-                </button>
+                </Button>
               )}
               <button
                 type="button"

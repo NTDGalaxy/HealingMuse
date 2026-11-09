@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowDown, ArrowUp, Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import type { CatalogPage, CuratedCollection, Locale, Track } from "@/lib/types";
 import { api, mutation } from "@/lib/browser/api";
 import { Dialog } from "@/components/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckboxField, SelectField, TextField } from "@/components/ui/field";
+import { InlineAlert } from "@/components/ui/inline-alert";
+import { ReorderableList } from "@/components/ui/reorderable-list";
 interface Row extends Omit<CuratedCollection, "trackIds"> {
   curated_collection_items: { track_id: string; position: number }[];
 }
@@ -59,8 +63,8 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
     <section className="collection-editor">
       <div className="section-heading">
         <h2>{t("admin.collections")}</h2>
-        <button
-          className="button secondary"
+        <Button
+          variant="secondary"
           onClick={() =>
             setEdit({
               id: null,
@@ -74,7 +78,7 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
         >
           <Plus size={18} />
           {t("admin.newCollection")}
-        </button>
+        </Button>
       </div>
       <div className="admin-list">
         {collections.map((collection) => (
@@ -131,11 +135,9 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
         >
           {(["vi", "en"] as const).map((language) => (
             <div className="form-stack" key={language}>
-              <label htmlFor={`collection-${language}`}>
-                {t(language === "vi" ? "admin.titleVi" : "admin.titleEn")}
-              </label>
-              <input
+              <TextField
                 id={`collection-${language}`}
+                label={t(language === "vi" ? "admin.titleVi" : "admin.titleEn")}
                 required
                 maxLength={160}
                 value={edit?.title[language] ?? ""}
@@ -146,9 +148,9 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
               />
             </div>
           ))}
-          <label htmlFor="collection-goal">{t("admin.goals")}</label>
-          <select
+          <SelectField
             id="collection-goal"
+            label={t("admin.goals")}
             value={edit?.goal}
             onChange={(event) =>
               edit && setEdit({ ...edit, goal: event.target.value as CuratedCollection["goal"] })
@@ -159,54 +161,15 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
                 {t(`goals.${goal}`)}
               </option>
             ))}
-          </select>
-          <ol className="edit-list">
-            {edit?.trackIds.map((id, index) => {
-              const title = choices.find((track) => track.id === id)?.title[locale] ?? id;
-              const move = (offset: number) => {
-                if (!edit) return;
-                const ids = [...edit.trackIds];
-                [ids[index], ids[index + offset]] = [ids[index + offset], ids[index]];
-                setEdit({ ...edit, trackIds: ids });
-              };
-              return (
-                <li key={id}>
-                  <span>{title}</span>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    disabled={!index}
-                    aria-label={t("library.moveUp", { title })}
-                    onClick={() => move(-1)}
-                  >
-                    <ArrowUp size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    disabled={index === edit.trackIds.length - 1}
-                    aria-label={t("library.moveDown", { title })}
-                    onClick={() => move(1)}
-                  >
-                    <ArrowDown size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button"
-                    aria-label={`${t("common.remove")}: ${title}`}
-                    onClick={() =>
-                      setEdit({
-                        ...edit,
-                        trackIds: edit.trackIds.filter((trackId) => trackId !== id),
-                      })
-                    }
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
+          </SelectField>
+          <ReorderableList
+            iconSize={18}
+            items={(edit?.trackIds ?? []).map((id) => ({
+              id,
+              label: choices.find((track) => track.id === id)?.title[locale] ?? id,
+            }))}
+            onChange={(trackIds) => edit && setEdit({ ...edit, trackIds })}
+          />
           <label htmlFor="collection-search">{t("catalog.search")}</label>
           <div className="search-box">
             <input
@@ -216,8 +179,8 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
-            <button
-              className="button secondary"
+            <Button
+              variant="secondary"
               type="button"
               onClick={async () => {
                 try {
@@ -231,11 +194,11 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
               }}
             >
               {t("catalog.search")}
-            </button>
+            </Button>
           </div>
-          <label htmlFor="collection-add">{t("catalog.playlistAdd")}</label>
-          <select
+          <SelectField
             id="collection-add"
+            label={t("catalog.playlistAdd")}
             value=""
             onChange={(event) => {
               if (edit && event.target.value)
@@ -250,23 +213,14 @@ export function CollectionEditor({ tracks }: { tracks: Track[] }) {
                   {track.title[locale]} ({t(`admin.${track.status}`)})
                 </option>
               ))}
-          </select>
-          <label className="check-label">
-            <input
-              type="checkbox"
-              checked={edit?.published ?? false}
-              onChange={(event) => edit && setEdit({ ...edit, published: event.target.checked })}
-            />
-            {t("admin.published")}
-          </label>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="button" disabled={busy}>
-            {t("common.save")}
-          </button>
+          </SelectField>
+          <CheckboxField
+            checked={edit?.published ?? false}
+            onChange={(event) => edit && setEdit({ ...edit, published: event.target.checked })}
+            label={t("admin.published")}
+          />
+          {error && <InlineAlert>{error}</InlineAlert>}
+          <Button disabled={busy}>{t("common.save")}</Button>
         </form>
       </Dialog>
     </section>

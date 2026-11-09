@@ -997,3 +997,80 @@ test("sign-in consent links open on the client without stopping playback", async
   await expect(ui.dialog).toHaveCount(0);
   await expectSameListeningSession(page, "consent");
 });
+test("a playlist can be reordered and saved from the keyboard", async ({ page }) => {
+  const ui = screens(page);
+  const [first, second, third] = [harness.recording, harness.secondRecording, harness.video];
+  const data = personalData({
+    playlists: [
+      { id, title: "Keyboard order", revision: 0, trackIds: [first.id, second.id, third.id] },
+    ],
+  });
+  const saved: string[][] = [];
+  await page.route("**/api/me", (route) => route.fulfill({ json: data }));
+  await page.route(`**/api/playlists/${id}`, (route) => {
+    const input = route.request().postDataJSON();
+    saved.push(input.trackIds);
+    data.playlists = [
+      { id, title: input.title, revision: input.revision + 1, trackIds: input.trackIds },
+    ];
+    return route.fulfill({ json: { ok: true } });
+  });
+  await ui.open();
+  await ui.button("library.editPlaylist").click();
+  const moveFirstDown = ui.button("library.moveDown", { title: first.title.en });
+  await moveFirstDown.focus();
+  await page.keyboard.press("Enter");
+  // The control that moved keeps focus, so the next key press continues from it.
+  await expect(moveFirstDown).toBeFocused();
+  const moveThirdUp = ui.button("library.moveUp", { title: third.title.en });
+  await moveThirdUp.focus();
+  await page.keyboard.press("Space");
+  await expect(moveThirdUp).toBeFocused();
+  await page.getByRole("textbox", { name: ui.t("library.playlistTitle") }).press("Enter");
+  await expect(ui.dialog).toHaveCount(0);
+  expect(saved).toEqual([[second.id, third.id, first.id]]);
+});
+test("a confirmation takes focus, returns it on Escape and confirms from the keyboard", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const data = personalData({ consent: new Date().toISOString() });
+  data.checkins = [
+    {
+      id: "40000000-0000-4000-8000-000000000001",
+      session_id: "30000000-0000-4000-8000-000000000001",
+      phase: "before",
+      score: 3,
+      created_at: new Date().toISOString(),
+    },
+  ];
+  await page.route("**/api/me", (route) => route.fulfill({ json: data }));
+  await page.route("**/api/sessions", (route) => {
+    data.checkins = [];
+    return route.fulfill({ json: { ok: true } });
+  });
+  await ui.open();
+  await ui.show("mood");
+  const trigger = ui.button("mood.deleteAll");
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = ui.dialog;
+  await expect(dialog).toBeVisible();
+  await expect
+    .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
+    .toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press("Enter");
+  const confirm = dialog.getByRole("button", { name: ui.t("mood.deleteAll"), exact: true });
+  // Focus starts on the dialog's close control, so a stray Enter never deletes anything.
+  await expect(
+    dialog.getByRole("button", { name: ui.t("common.close"), exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(confirm).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: ui.t("mood.empty"), exact: true })).toBeVisible();
+});

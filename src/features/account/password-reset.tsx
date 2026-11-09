@@ -5,7 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
 import { monitor } from "@/lib/browser/monitor";
 import { useApp, useOnline } from "@/components/app-state";
-import { PageHeading } from "@/components/catalog";
+import { Button, buttonClass } from "@/components/ui/button";
+import { InlineAlert } from "@/components/ui/inline-alert";
+import { PageHeader } from "@/components/ui/page-header";
 import { PasswordInput } from "./password-input";
 import { primaryControl } from "@/lib/perf/readiness";
 
@@ -32,23 +34,23 @@ function PasswordResetContent() {
   }, [saved]);
   return (
     <>
-      <PageHeading title={t("auth.resetTitle")} subtitle={t("auth.resetDescription")} />
+      <PageHeader title={t("auth.resetTitle")} subtitle={t("auth.resetDescription")} />
       <section className="panel password-reset-panel" aria-busy={busy || app.authLoading}>
         {app.authLoading ? (
           <p role="status">{t("common.loading")}</p>
         ) : !app.user ? (
           <>
             <p>{t("auth.recoveryRequired")}</p>
-            <button className="button" onClick={app.openAuth} {...primaryControl()}>
+            <Button onClick={app.openAuth} {...primaryControl()}>
               {t("nav.signIn")}
-            </button>
+            </Button>
           </>
         ) : saved ? (
           <>
             <p role="status" tabIndex={-1} ref={success}>
               {t("auth.passwordSaved")}
             </p>
-            <Link className="button" href={`/${locale}/settings`}>
+            <Link className={buttonClass()} href={`/${locale}/settings`}>
               {t("nav.account")}
             </Link>
           </>
@@ -131,15 +133,11 @@ function PasswordResetContent() {
               invalid={mismatch}
               describedBy={error ? "password-help password-error" : "password-help"}
             />
-            {error && (
-              <p className="error" id="password-error" role="alert">
-                {error}
-              </p>
-            )}
+            {error && <InlineAlert id="password-error">{error}</InlineAlert>}
             {!online && <p role="status">{t("errors.offline")}</p>}
-            <button className="button" disabled={busy || !online}>
+            <Button disabled={busy || !online}>
               {busy ? t("common.loading") : t("auth.savePassword")}
-            </button>
+            </Button>
           </form>
         )}
       </section>

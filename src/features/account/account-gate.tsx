@@ -1,9 +1,12 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { useAppActions, useAuthLoading, usePersonalError, useUserId } from "@/components/app-state";
-import { Empty } from "@/components/catalog";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { primaryControl } from "@/lib/perf/readiness";
 
+/** Shows its children to a signed-in account and a sign-in invitation to a guest. */
 export function AccountGate({
   children,
   context,
@@ -19,7 +22,7 @@ export function AccountGate({
   if (authLoading) return <p role="status">{t("common.loading")}</p>;
   if (!signedIn)
     return (
-      <Empty
+      <EmptyState
         title={t(
           context === "mood"
             ? "auth.requiredMood"
@@ -35,19 +38,15 @@ export function AccountGate({
               : "auth.requiredText",
         )}
       >
-        <button className="button" onClick={openAuth} {...primaryControl()}>
+        <Button onClick={openAuth} {...primaryControl()}>
           {t("nav.signIn")}
-        </button>
-      </Empty>
+        </Button>
+      </EmptyState>
     );
   return (
     <>
       {children}
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
+      {error && <InlineAlert>{error}</InlineAlert>}
     </>
   );
 }

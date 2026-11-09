@@ -3,17 +3,7 @@ import { memo, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  Play,
-  Heart,
-  Download,
-  MoreHorizontal,
-  ArrowUpRight,
-  Search,
-  Leaf,
-  Check,
-  Plus,
-} from "lucide-react";
+import { Play, Heart, Download, MoreHorizontal, ArrowUpRight, Check, Plus } from "lucide-react";
 import {
   useAppActions,
   useDownloadState,
@@ -29,33 +19,15 @@ import { clock } from "@/lib/audio";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Locale, Track } from "@/lib/types";
 import { CatalogControls } from "./catalog-controls";
 import { primaryControl } from "@/lib/perf/readiness";
+import { Button } from "./ui/button";
+import { EmptyState } from "./ui/empty-state";
+import { ErrorState } from "./ui/error-state";
+import { PageHeader } from "./ui/page-header";
+import { Pagination } from "./ui/pagination";
+import { SearchField } from "./ui/search-field";
 
-export function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="page-heading">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </div>
-  );
-}
-export function Empty({
-  title,
-  text,
-  children,
-}: {
-  title: string;
-  text?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="empty-state">
-      <Leaf size={36} aria-hidden="true" />
-      <h2>{title}</h2>
-      {text && <p>{text}</p>}
-      {children}
-    </div>
-  );
-}
+/** The shared empty state under its earlier name, still imported by binaural-catalogue.tsx. */
+export { EmptyState as Empty };
 // Memoised: a card re-renders only for its own favourite, download and sign-in state, never for
 // download progress, notices or other recordings.
 export const TrackCard = memo(function TrackCard({
@@ -256,12 +228,14 @@ export function CatalogUnavailable() {
   const t = useTranslations();
   const router = useRouter();
   return (
-    <div className="info-panel" role="alert">
-      <p>{t("catalog.unavailable")}</p>
-      <button className="button secondary" onClick={() => router.refresh()}>
-        {t("common.retry")}
-      </button>
-    </div>
+    <ErrorState
+      message={t("catalog.unavailable")}
+      action={
+        <Button variant="secondary" onClick={() => router.refresh()}>
+          {t("common.retry")}
+        </Button>
+      }
+    />
   );
 }
 export function HomeIntro() {
@@ -288,8 +262,13 @@ function HomeDiscovery() {
   const router = useRouter();
   return (
     <div className="home-discovery">
-      <form
-        className="search-box discovery-search"
+      <SearchField
+        id="home-search"
+        className="discovery-search"
+        iconSize={22}
+        label={t("catalog.search")}
+        placeholder={t("catalog.searchPlaceholder")}
+        submitType="submit"
         action={`/${locale}/explore`}
         // The action stays for submissions before hydration. After it, search navigates on the
         // client: a document load would unmount the app and stop the persistent audio.
@@ -300,22 +279,7 @@ function HomeDiscovery() {
             if (typeof value === "string") query.append(name, value);
           router.push(`/${locale}/explore?${query}`);
         }}
-      >
-        <Search size={22} aria-hidden="true" />
-        <label className="sr-only" htmlFor="home-search">
-          {t("catalog.search")}
-        </label>
-        <input
-          id="home-search"
-          name="q"
-          type="search"
-          maxLength={120}
-          placeholder={t("catalog.searchPlaceholder")}
-        />
-        <button className="button" type="submit">
-          {t("catalog.search")}
-        </button>
-      </form>
+      />
       <nav className="discovery-categories" aria-label={t("catalog.genre")}>
         {["piano", "guitar", "strings"].map((value) => (
           <Link key={value} href={`/${locale}/explore?instrument=${value}`}>
@@ -377,7 +341,7 @@ export function HomeView({
               />
             ))}
           </div>
-          {!tracks.length && <Empty title={t("common.emptyCatalog")} />}
+          {!tracks.length && <EmptyState title={t("common.emptyCatalog")} />}
         </section>
       )}
       <HomeDiscovery />
@@ -459,7 +423,7 @@ export function ExploreView({
   };
   return (
     <>
-      <PageHeading title={t("catalog.title")} subtitle={t("catalog.subtitle")} />
+      <PageHeader title={t("catalog.title")} subtitle={t("catalog.subtitle")} />
       <CatalogControls query={query} navigate={navigate} />
       {unavailable ? (
         <CatalogUnavailable />
@@ -482,31 +446,26 @@ export function ExploreView({
             ))}
           </div>
           {!tracks.length && (
-            <Empty title={t("catalog.noResults")} text={t("catalog.noResultsText")}>
-              <button
-                className="button secondary"
+            <EmptyState title={t("catalog.noResults")} text={t("catalog.noResultsText")}>
+              <Button
+                variant="secondary"
                 onClick={() => transition(() => router.push(`/${locale}/explore`))}
               >
                 {t("catalog.clear")}
-              </button>
-            </Empty>
+              </Button>
+            </EmptyState>
           )}
-          <nav className="catalog-pagination" aria-label={t("catalog.pages")}>
-            {query.cursor && (
-              <button className="button secondary" onClick={() => router.back()}>
-                {t("common.back")}
-              </button>
-            )}
-            {initialPage.nextCursor && (
-              <button
-                className="button"
-                disabled={pending}
-                onClick={() => navigate({ cursor: initialPage.nextCursor! })}
-              >
-                {t("catalog.next")}
-              </button>
-            )}
-          </nav>
+          <Pagination
+            label={t("catalog.pages")}
+            back={!!query.cursor && { label: t("common.back"), onClick: () => router.back() }}
+            next={
+              !!initialPage.nextCursor && {
+                label: t("catalog.next"),
+                disabled: pending,
+                onClick: () => navigate({ cursor: initialPage.nextCursor! }),
+              }
+            }
+          />
         </div>
       )}
     </>

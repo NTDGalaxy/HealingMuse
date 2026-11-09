@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { api, mutation, ApiError } from "@/lib/browser/api";
 import { useOnline } from "@/components/app-state";
+import { Button } from "@/components/ui/button";
+import { CheckboxField, TextField } from "@/components/ui/field";
 
 type Release = {
   id: string;
@@ -119,30 +121,27 @@ export function ReleaseReview() {
                   aria-describedby={!ready || !online ? `release-state-${release.id}` : undefined}
                 >
                   <legend>{t("attestation")}</legend>
-                  <label htmlFor={`reviewer-${release.id}`}>{t("name")}</label>
-                  <input
+                  <TextField
                     id={`reviewer-${release.id}`}
+                    label={t("name")}
                     name="reviewerName"
                     maxLength={120}
                     required
                     autoComplete="name"
                   />
-                  <label className="check-row">
-                    <input type="checkbox" name="listening" required />
-                    {t("listening")}
-                  </label>
-                  <label className="check-row">
-                    <input type="checkbox" name="rights" required />
-                    {t("rights")}
-                  </label>
-                  <label className="check-row">
-                    <input type="checkbox" name="provenance" required />
-                    {t("provenance")}
-                  </label>
+                  {(["listening", "rights", "provenance"] as const).map((confirmation) => (
+                    <CheckboxField
+                      key={confirmation}
+                      row
+                      name={confirmation}
+                      required
+                      label={t(confirmation)}
+                    />
+                  ))}
                   <p className="muted">{t("identity")}</p>
-                  <button className="button">
+                  <Button>
                     {busy ? t("publishing") : t("publish", { count: release.expectedCount })}
-                  </button>
+                  </Button>
                 </fieldset>
               </form>
             )}
@@ -152,9 +151,9 @@ export function ReleaseReview() {
       {error && (
         <div>
           <p role="alert">{error}</p>
-          <button
+          <Button
             type="button"
-            className="button secondary"
+            variant="secondary"
             disabled={busy || !online}
             onClick={() => {
               setError("");
@@ -162,7 +161,7 @@ export function ReleaseReview() {
             }}
           >
             {t("refresh")}
-          </button>
+          </Button>
         </div>
       )}
     </section>

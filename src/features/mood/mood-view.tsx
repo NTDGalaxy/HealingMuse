@@ -2,56 +2,65 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ShieldCheck } from "lucide-react";
-import { useApp, useOnline } from "@/components/app-state";
-import { Dialog } from "@/components/dialog";
-import { Empty, PageHeading } from "@/components/catalog";
-import { recentMoodDays } from "@/lib/wellbeing";
+import { useAppActions, useOnline, usePersonalData } from "@/components/app-state";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import type { MoodCheckin } from "@/lib/types";
 import { AccountGate } from "@/features/account/account-gate";
+import { MoodTrends } from "./mood-trends";
 
-export function MoodView() {
-  const t = useTranslations();
-  const app = useApp();
-  const locale = useLocale();
-  const online = useOnline();
-  const [confirm, setConfirm] = useState(false);
-  const pairs = Object.values(
-    (app.personal?.checkins ?? []).reduce<
-      Record<string, { id: string; date: string; before?: number; after?: number }>
-    >((all, entry) => {
+type Pair = { id: string; date: string; before?: number; after?: number };
+
+/** Before and after check-ins grouped by listening session, oldest session first. */
+function pairCheckins(checkins: readonly MoodCheckin[]): Pair[] {
+  return Object.values(
+    checkins.reduce<Record<string, Pair>>((all, entry) => {
       all[entry.session_id] ??= { id: entry.session_id, date: entry.created_at };
       all[entry.session_id][entry.phase] = entry.score;
       return all;
     }, {}),
   );
+}
+
+export function MoodView() {
+  const t = useTranslations();
+  const { perform } = useAppActions();
+  const personal = usePersonalData();
+  const locale = useLocale();
+  const online = useOnline();
+  const [confirm, setConfirm] = useState(false);
+  const pairs = pairCheckins(personal?.checkins ?? []);
   return (
     <>
-      <PageHeading title={t("mood.title")} subtitle={t("mood.subtitle")} />
+      <PageHeader title={t("mood.title")} subtitle={t("mood.subtitle")} />
       <AccountGate context="mood">
-        {!app.personal?.profile.mood_consent_at ? (
+        {!personal?.profile.mood_consent_at ? (
           <div className="panel consent-panel">
             <ShieldCheck size={32} aria-hidden="true" />
             <h2>{t("mood.consentTitle")}</h2>
             <p>{t("mood.consentText")}</p>
-            <button
-              className="button"
+            <Button
               disabled={!online}
-              onClick={() => void app.perform("/api/me", { moodConsent: true }, "PATCH")}
+              onClick={() => void perform("/api/me", { moodConsent: true }, "PATCH")}
             >
               {t("mood.enable")}
-            </button>
+            </Button>
           </div>
         ) : (
           <>
-            <MoodTrends />
+            <MoodTrends checkins={personal.checkins} />
             <div className="section-heading">
               <h2>{t("mood.recent")}</h2>
-              <button
-                className="button secondary danger"
+              <Button
+                variant="secondary"
+                danger
                 disabled={!online || !pairs.length}
                 onClick={() => setConfirm(true)}
               >
                 {t("mood.deleteAll")}
-              </button>
+              </Button>
             </div>
             {pairs.length ? (
               <div className="panel table-wrap">
@@ -81,71 +90,23 @@ export function MoodView() {
                 </table>
               </div>
             ) : (
-              <Empty title={t("mood.empty")} text={t("mood.emptyText")} />
+              <EmptyState title={t("mood.empty")} text={t("mood.emptyText")} />
             )}
           </>
         )}
         <p className="privacy-note">{t("mood.retention")}</p>
         {!online && <p className="info-panel">{t("mood.offline")}</p>}
       </AccountGate>
-      <Dialog
+      <ConfirmDialog
         open={confirm}
         onOpenChange={setConfirm}
         title={t("mood.deleteTitle")}
         description={t("mood.deleteText")}
-      >
-        <button
-          className="button danger"
-          onClick={async () => {
-            if (await app.perform("/api/sessions", {}, "DELETE")) setConfirm(false);
-          }}
-        >
-          {t("mood.deleteAll")}
-        </button>
-      </Dialog>
+        confirmLabel={t("mood.deleteAll")}
+        onConfirm={async () => {
+          if (await perform("/api/sessions", {}, "DELETE")) setConfirm(false);
+        }}
+      />
     </>
-  );
-}
-function MoodTrends() {
-  const app = useApp();
-  const t = useTranslations("mood");
-  const locale = useLocale();
-  const days = recentMoodDays(app.personal?.checkins ?? [], new Date());
-  const number = new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 1,
-  });
-  const format = (value: number | null) =>
-    value === null ? t("noAfter") : `${number.format(value)} / 5`;
-  return (
-    <section className="mood-trends panel table-wrap" aria-labelledby="mood-trend-heading">
-      <h2 id="mood-trend-heading">{t("trendTitle")}</h2>
-      <p>{t("trendNote")}</p>
-      <table>
-        <caption className="sr-only">{t("trendTitle")}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t("date")}</th>
-            <th scope="col">{t("beforeLabel")}</th>
-            <th scope="col">{t("afterLabel")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((day) => (
-            <tr key={day.date}>
-              <th scope="row">
-                {new Intl.DateTimeFormat(locale, {
-                  month: "short",
-                  day: "numeric",
-                  timeZone: "Asia/Ho_Chi_Minh",
-                }).format(new Date(`${day.date}T00:00:00+07:00`))}
-              </th>
-              <td>{format(day.before)}</td>
-              <td>{format(day.after)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
   );
 }
