@@ -28,7 +28,9 @@ export const trackSource = z.discriminatedUnion("kind", [
     })
     .strict(),
 ]);
-export const trackInput = z
+export const trackArtwork = ["forest", "rain", "sea", "piano", "river", "night"] as const;
+export const trackColors = ["sage", "sand", "blue", "lavender", "rose"] as const;
+const trackFields = z
   .object({
     id: uuid.optional(),
     title: localizedText,
@@ -55,8 +57,8 @@ export const trackInput = z
     duration: z.number().int().positive().max(14400),
     source: trackSource,
     downloadAllowed: z.boolean(),
-    artwork: z.enum(["forest", "rain", "sea", "piano", "river", "night"]),
-    color: z.enum(["sage", "sand", "blue", "lavender", "rose"]),
+    artwork: z.enum(trackArtwork),
+    color: z.enum(trackColors),
     attribution: z.string().trim().min(1).max(1000),
     license: z.string().trim().min(1).max(80),
     licenseUrl: safeUrl,
@@ -72,21 +74,31 @@ export const trackInput = z
       .optional(),
     changes: z.string().max(600).optional(),
   })
-  .strict()
-  .superRefine((t, ctx) => {
-    if (t.source.kind !== "hosted" && t.downloadAllowed)
-      ctx.addIssue({
-        code: "custom",
-        path: ["downloadAllowed"],
-        message: "External media cannot be downloaded",
-      });
-    if (t.status === "published" && (!t.rightsVerified || !t.humanCreated))
-      ctx.addIssue({
-        code: "custom",
-        path: ["status"],
-        message: "Publishing requires rights and provenance review",
-      });
-  });
+  .strict();
+function trackRules(
+  t: Pick<
+    z.output<typeof trackFields>,
+    "source" | "downloadAllowed" | "status" | "rightsVerified" | "humanCreated"
+  >,
+  ctx: z.RefinementCtx,
+) {
+  if (t.source.kind !== "hosted" && t.downloadAllowed)
+    ctx.addIssue({
+      code: "custom",
+      path: ["downloadAllowed"],
+      message: "External media cannot be downloaded",
+    });
+  if (t.status === "published" && (!t.rightsVerified || !t.humanCreated))
+    ctx.addIssue({
+      code: "custom",
+      path: ["status"],
+      message: "Publishing requires rights and provenance review",
+    });
+}
+/** Admin and import input: a new recording may omit its id. */
+export const trackInput = trackFields.superRefine(trackRules);
+/** A stored recording; the Track type is derived from this schema (src/lib/types.ts). */
+export const trackRecord = trackFields.extend({ id: uuid }).superRefine(trackRules);
 export const playlistCreate = z.object({ title: z.string().trim().min(1).max(80) }).strict();
 export const playlistEdit = z
   .object({

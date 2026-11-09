@@ -1,13 +1,13 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
-import { stat } from "node:fs/promises";
 import { supabaseUrl, supabaseKey, isConfigured } from "@/lib/supabase/config";
 import { serverFetch } from "./transport";
-import { decodeCursor, encodeCursor, paginateTracks } from "@/lib/catalog-query";
-import { trackInput } from "@/lib/validation";
+import { assertDb, HttpError } from "./http";
+import { catalogQueryInput, decodeCursor, encodeCursor, paginateTracks } from "@/lib/catalog-query";
+import { trackRecord } from "@/lib/validation";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Track } from "@/lib/types";
 
 export function localCatalogEnabled() {
@@ -16,75 +16,110 @@ export function localCatalogEnabled() {
     (process.env.NODE_ENV !== "production" || process.env.LOCAL_CATALOG_ENABLED === "true")
   );
 }
+
+/** Every Track field and its column. `satisfies` makes a missing or unknown field a type error. */
+export const trackColumns = {
+  id: "id",
+  title: "title",
+  description: "description",
+  artist: "artist",
+  category: "category",
+  goals: "goals",
+  genres: "genres",
+  instruments: "instruments",
+  traditions: "traditions",
+  listeningReviewed: "listening_reviewed",
+  duration: "duration",
+  source: "source",
+  downloadAllowed: "download_allowed",
+  artwork: "artwork",
+  color: "color",
+  attribution: "attribution",
+  license: "license",
+  licenseUrl: "license_url",
+  provenanceUrl: "provenance_url",
+  status: "status",
+  rightsVerified: "rights_verified",
+  humanCreated: "human_created",
+  position: "position",
+  bytes: "bytes",
+  sha256: "sha256",
+  changes: "changes",
+} as const satisfies { [K in keyof Track]-?: string };
+type Field = keyof typeof trackColumns;
+/** Optional fields that count as absent when their stored value is empty (0, "" or null). */
+const absentWhenEmpty = new Set<Field>(["bytes", "sha256", "changes"]);
+/** Values written for fields a Track may leave undefined. */
+const storedDefaults: Partial<Record<Field, unknown>> = {
+  genres: [],
+  instruments: [],
+  traditions: [],
+  listeningReviewed: false,
+  bytes: null,
+  sha256: null,
+  changes: "",
+};
+
 export function fromRow(row: Record<string, unknown>): Track {
-  return trackInput.parse({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    artist: row.artist,
-    category: row.category,
-    goals: row.goals,
-    genres: row.genres ?? [],
-    instruments: row.instruments ?? [],
-    traditions: row.traditions ?? [],
-    listeningReviewed: row.listening_reviewed ?? false,
-    duration: row.duration,
-    source: row.source,
-    downloadAllowed: row.download_allowed,
-    artwork: row.artwork,
-    color: row.color,
-    attribution: row.attribution,
-    license: row.license,
-    licenseUrl: row.license_url,
-    provenanceUrl: row.provenance_url,
-    status: row.status,
-    rightsVerified: row.rights_verified,
-    humanCreated: row.human_created,
-    position: row.position,
-    ...(row.bytes ? { bytes: row.bytes } : {}),
-    ...(row.sha256 ? { sha256: row.sha256 } : {}),
-    ...(row.changes ? { changes: row.changes } : {}),
-  }) as Track;
+  const input: Record<string, unknown> = {};
+  for (const [field, column] of Object.entries(trackColumns) as [Field, string][]) {
+    const value = row[column];
+    if (value === null || value === undefined) continue;
+    if (absentWhenEmpty.has(field) && !value) continue;
+    input[field] = value;
+  }
+  return trackRecord.parse(input);
 }
 export function toRow(track: Track) {
+  return Object.fromEntries(
+    (Object.entries(trackColumns) as [Field, string][]).map(([field, column]) => [
+      column,
+      track[field] ?? storedDefaults[field],
+    ]),
+  );
+}
+
+let client: SupabaseClient | null | undefined;
+/** Publishable-key client for public catalogue reads; publication RLS applies. */
+function publicClient() {
+  if (client === undefined)
+    client = isConfigured
+      ? createClient(supabaseUrl!, supabaseKey!, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: { fetch: serverFetch },
+          db: { retry: false, timeout: 5000 },
+        })
+      : null;
+  return client;
+}
+
+/** One catalog_page call for the public cache and the admin review queue. */
+export async function catalogPage(
+  db: SupabaseClient,
+  query: CatalogQuery,
+  admin: boolean,
+): Promise<CatalogPage> {
+  let cursor;
+  try {
+    cursor = decodeCursor(query.cursor);
+  } catch {
+    throw new HttpError(400, "invalid");
+  }
+  const { data, error } = await db.rpc("catalog_page", {
+    p_query: { ...query, after_position: cursor?.position, after_id: cursor?.id },
+    p_admin: admin,
+  });
+  assertDb(error);
+  if (!data) throw new HttpError(503, "unavailable", "db");
+  const result = data as { items: Record<string, unknown>[]; total: number; hasMore: boolean };
+  const items = result.items.map(fromRow);
   return {
-    id: track.id,
-    title: track.title,
-    description: track.description,
-    artist: track.artist,
-    category: track.category,
-    goals: track.goals,
-    genres: track.genres ?? [],
-    instruments: track.instruments ?? [],
-    traditions: track.traditions ?? [],
-    listening_reviewed: track.listeningReviewed ?? false,
-    duration: track.duration,
-    source: track.source,
-    download_allowed: track.downloadAllowed,
-    artwork: track.artwork,
-    color: track.color,
-    attribution: track.attribution,
-    license: track.license,
-    license_url: track.licenseUrl,
-    provenance_url: track.provenanceUrl,
-    status: track.status,
-    rights_verified: track.rightsVerified,
-    human_created: track.humanCreated,
-    position: track.position,
-    bytes: track.bytes ?? null,
-    sha256: track.sha256 ?? null,
-    changes: track.changes ?? "",
+    items,
+    total: result.total,
+    nextCursor: result.hasMore && items.length ? encodeCursor(items[items.length - 1]) : null,
   };
 }
-function publicClient() {
-  return isConfigured
-    ? createClient(supabaseUrl!, supabaseKey!, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: { fetch: serverFetch },
-        db: { retry: false, timeout: 5000 },
-      })
-    : null;
-}
+
 let localSnapshot: { modified: number; tracks: Track[] } | null = null;
 async function localTracks(): Promise<Track[]> {
   if (!localCatalogEnabled()) return [];
@@ -92,66 +127,63 @@ async function localTracks(): Promise<Track[]> {
   const file = await stat(path).catch(() => null);
   if (!file) return [];
   if (localSnapshot?.modified === file.mtimeMs) return localSnapshot.tracks;
-  const input = JSON.parse(await readFile(path, "utf8"));
+  const input: unknown[] = JSON.parse(await readFile(path, "utf8"));
   const tracks = input
-    .map((track: Track) => trackInput.parse(track) as Track)
-    .filter((track: Track) => track.status !== "retired");
+    .map((track) => trackRecord.parse(track))
+    .filter((track) => track.status !== "retired");
   localSnapshot = { modified: file.mtimeMs, tracks };
   return tracks;
 }
+
 const cachedPage = unstable_cache(
   async (serialized: string): Promise<CatalogPage> => {
-    const query = JSON.parse(serialized) as CatalogQuery;
     const db = publicClient();
     if (!db) return { items: [], total: 0, nextCursor: null };
-    const cursor = decodeCursor(query.cursor);
-    const { data, error } = await db.rpc("catalog_page", {
-      p_query: { ...query, after_position: cursor?.position, after_id: cursor?.id },
-      p_admin: false,
-    });
-    if (error || !data) throw new Error("Catalog unavailable");
-    const result = data as { items: Record<string, unknown>[]; total: number; hasMore: boolean };
-    const items = result.items.map(fromRow);
-    return {
-      items,
-      total: result.total,
-      nextCursor: result.hasMore && items.length ? encodeCursor(items[items.length - 1]) : null,
-    };
+    return catalogPage(db, JSON.parse(serialized) as CatalogQuery, false);
   },
   ["published-catalog-v2", supabaseUrl || "local"],
   { tags: ["catalog"], revalidate: 60 },
 );
+/** Equivalent queries share one cache entry: defaults are applied before the key is built. */
+function cacheKey(query: CatalogQuery) {
+  const parsed = catalogQueryInput.safeParse(query);
+  return JSON.stringify(parsed.success ? parsed.data : query);
+}
 export async function getCatalogPage(query: CatalogQuery = {}): Promise<CatalogPage> {
   if (localCatalogEnabled()) return paginateTracks(await localTracks(), query);
-  return cachedPage(JSON.stringify(query));
+  return cachedPage(cacheKey(query));
 }
+
 export async function getTracksByIds(ids: string[], fresh = false): Promise<Track[]> {
   if (!ids.length || ids.length > 100) return [];
-  if (localCatalogEnabled()) {
-    const tracks = await localTracks();
-    return ids.flatMap((id) => tracks.find((track) => track.id === id) || []);
-  }
+  const inOrder = (tracks: Track[]) =>
+    ids.flatMap((id) => tracks.find((track) => track.id === id) || []);
+  if (localCatalogEnabled()) return inOrder(await localTracks());
   const db = publicClient();
   if (!db) return [];
+  // Sorted ids give one cache entry per set, whatever order callers ask in.
+  const sorted = [...ids].sort();
   const query = async () => {
     const { data, error } = await db
       .from("tracks")
       .select("*")
       .eq("status", "published")
-      .in("id", ids);
+      .in("id", sorted);
     if (error) throw new Error("Track lookup unavailable");
-    const tracks = (data || []).map(fromRow);
-    return ids.flatMap((id) => tracks.find((track) => track.id === id) || []);
+    return (data || []).map(fromRow);
   };
-  if (fresh) return query();
-  return unstable_cache(query, ["published-track-ids", supabaseUrl!, ...ids], {
-    tags: ["catalog"],
-    revalidate: 60,
-  })();
+  if (fresh) return inOrder(await query());
+  return inOrder(
+    await unstable_cache(query, ["published-track-ids", supabaseUrl!, ...sorted], {
+      tags: ["catalog"],
+      revalidate: 60,
+    })(),
+  );
 }
 export async function getTrack(id: string): Promise<Track | null> {
   return (await getTracksByIds([id], true))[0] || null;
 }
+
 const cachedCollections = unstable_cache(
   async (): Promise<CuratedCollection[]> => {
     const db = publicClient();

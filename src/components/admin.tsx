@@ -10,7 +10,7 @@ import { CollectionEditor } from "./collections";
 import { ReleaseReview } from "./release-review";
 import { api, mutation } from "@/lib/browser/api";
 import { taxonomy } from "@/lib/catalog-taxonomy";
-import { trackInput } from "@/lib/validation";
+import { trackColors, trackInput } from "@/lib/validation";
 import type { CatalogPage, Locale, Track, TrackSource } from "@/lib/types";
 const empty = (): Track => ({
   id: crypto.randomUUID(),
@@ -19,6 +19,10 @@ const empty = (): Track => ({
   artist: "",
   category: "instrumental",
   goals: ["relax"],
+  genres: [],
+  instruments: [],
+  traditions: [],
+  listeningReviewed: false,
   duration: 60,
   source: { kind: "hosted", path: "" },
   downloadAllowed: false,
@@ -322,9 +326,9 @@ export function AdminView() {
               <select
                 id="admin-color"
                 value={edit?.color}
-                onChange={(e) => update("color", e.target.value)}
+                onChange={(e) => update("color", e.target.value as Track["color"])}
               >
-                {["sage", "sand", "blue", "lavender", "rose"].map((value) => (
+                {trackColors.map((value) => (
                   <option key={value} value={value}>
                     {t(`admin.colorOptions.${value}`)}
                   </option>
