@@ -1,19 +1,7 @@
 /* Public shell only. Private HTML, APIs, credentials, grants, and audio never enter Cache Storage. */
+/* VERSION and SHELL come from renderServiceWorker() in src/offline/shell.mjs. */
 const VERSION = "__SHELL_VERSION__";
-const SHELL = [
-  "/offline/index.html",
-  "/offline/app.js",
-  "/offline/appearance.js",
-  "/gardens/cloister-day-480.avif",
-  "/gardens/cloister-night-480.avif",
-  "/offline/style.css",
-  "/offline/vi.json",
-  "/offline/en.json",
-  "/offline/be-vietnam-pro-latin.woff2",
-  "/offline/be-vietnam-pro-vietnamese.woff2",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-];
+const SHELL = __SHELL_FILES__;
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(SHELL)));
 });

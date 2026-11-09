@@ -412,6 +412,7 @@ A ceiling may only rise in a commit that states the metric, its old and new valu
 Catalogue-dependent bytes (artwork images and, with `--base=<url>`, HTML) are reported in `artifacts/budget-report.json` and never gated.
 Generated shell assets are rebuilt through `scripts/build-shell.mjs`, which also runs before normal builds.
 Edit source translations or service-worker code and regenerate their outputs instead of editing generated files directly.
+The offline shell is listed once, in [src/offline/shell.mjs](src/offline/shell.mjs): the build writes that list into `public/sw.js`, hashes every listed file (icons included) into the cache version, and the service-worker spec serves the same list.
 
 ### Mobile listening measurements
 

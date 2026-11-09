@@ -1,40 +1,29 @@
 import { test, expect, expectPlaying, registerServiceWorker, seedDownload } from "./support/test";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
 import { preparedAudio, preparedCatalogue } from "./support/catalogue";
 import { Recordings } from "./support/pages";
+import { cachedPaths, serviceWorkerSource, shellAssets, shellFiles } from "./support/shell";
 
 test("a waiting shell update preserves downloaded playback and offline startup", async ({
   page,
   context,
 }) => {
-  let version = 1;
-  const template = await readFile("src/offline/service-worker.js", "utf8");
+  const workers = [
+    await serviceWorkerSource("healingmuse-shell-test-1"),
+    await serviceWorkerSource("healingmuse-shell-test-2"),
+  ];
+  let worker = workers[0];
   const track = (await preparedCatalogue())[0];
   const bytes = await preparedAudio(track);
   const recordings = new Recordings(page);
-  const files = new Map<string, Buffer>([["/fixture.mp3", bytes]]);
-  for (const path of [
-    "/offline/index.html",
-    "/offline/app.js",
-    "/offline/appearance.js",
-    "/gardens/cloister-day-480.avif",
-    "/gardens/cloister-night-480.avif",
-    "/offline/style.css",
-    "/offline/en.json",
-    "/offline/vi.json",
-    "/offline/be-vietnam-pro-latin.woff2",
-    "/offline/be-vietnam-pro-vietnamese.woff2",
-    "/icons/icon-192.png",
-    "/icons/icon-512.png",
-  ])
-    files.set(path, await readFile(`public${path}`));
+  const files = await shellAssets();
+  files.set("/fixture.mp3", bytes);
   const server = createServer((request, response) => {
     const path = new URL(request.url!, "http://localhost").pathname;
     response.setHeader("Cache-Control", "no-store");
     if (path === "/sw.js") {
       response.setHeader("Content-Type", "application/javascript");
-      response.end(template.replace("__SHELL_VERSION__", `healingmuse-shell-test-${version}`));
+      response.end(worker);
     } else {
       const file = files.get(path.startsWith("/en") ? "/offline/index.html" : path);
       if (!file) {
@@ -74,7 +63,7 @@ test("a waiting shell update preserves downloaded playback and offline startup",
     await page.reload();
     await recordings.listen(track.title.en).click();
     await expectPlaying(page);
-    version = 2;
+    worker = workers[1];
     await page.evaluate(async () => {
       await (await navigator.serviceWorker.getRegistration())!.update();
     });
@@ -102,6 +91,8 @@ test("a waiting shell update preserves downloaded playback and offline startup",
     await expectPlaying(page);
     await page.getByText(recordings.t("catalog.credit"), { exact: true }).click();
     await expect(page.getByText(track.attribution, { exact: true })).toBeVisible();
+    // Cache Storage holds the public shell only: never the page, an API response or the audio.
+    expect(await cachedPaths(page)).toEqual([...shellFiles].sort());
   } finally {
     await context.setOffline(false);
     await new Promise<void>((done) => server.close(() => done()));
