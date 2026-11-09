@@ -74,7 +74,7 @@
       "fontBytes": 105472,
       "fontRequests": 6,
       "mobilePosterBytes": 11264,
-      "ratchetModules": ["supabase-js", "zod"]
+      "ratchetModules": ["supabase-js"]
     },
     "resetPassword": {
       "startupJsGzip": 256000,

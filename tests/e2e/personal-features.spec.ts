@@ -1143,3 +1143,27 @@ test("signed-in screens wait for personal data instead of offering consent again
   ).toBeVisible();
   await expect(ui.button("mood.enable")).toHaveCount(0);
 });
+test("the content studio downloads only once the account is known to be an administrator", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  let isAdmin = false;
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData({ isAdmin }) }));
+  await emptyStudio(page);
+  const restricted = page.getByText(ui.t("admin.restrictedText"), { exact: true });
+  await ui.open({ guest: true });
+  await ui.show("admin");
+  await expect(
+    page.getByRole("heading", { name: ui.t("auth.requiredAdmin"), exact: true }),
+  ).toBeVisible();
+  await ui.open();
+  await ui.show("admin");
+  await expect(restricted).toBeVisible();
+  expect(ui.moduleRequests(harness.modules.adminConsole)).toBe(0);
+  isAdmin = true;
+  await ui.open();
+  await ui.show("admin");
+  await expect(ui.button("admin.new")).toBeVisible();
+  await expect(restricted).toHaveCount(0);
+  expect(ui.moduleRequests(harness.modules.adminConsole)).toBe(1);
+});

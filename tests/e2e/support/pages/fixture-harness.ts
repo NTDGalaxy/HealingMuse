@@ -65,6 +65,7 @@ export class FixtureHarness {
 /** The component harness screen switcher and the application components it renders. */
 export class HarnessScreens {
   readonly recordings: Recordings;
+  private readonly requested: string[] = [];
 
   constructor(
     readonly page: Page,
@@ -72,6 +73,8 @@ export class HarnessScreens {
     readonly locale: Locale = "en",
   ) {
     this.recordings = new Recordings(page, locale);
+    // Recorded from construction, before the first navigation, so no early request is missed.
+    page.on("request", (request) => this.requested.push(new URL(request.url()).pathname));
   }
 
   t(key: MessageKey, values?: MessageValues) {
@@ -114,6 +117,10 @@ export class HarnessScreens {
   /** Delivers a Realtime broadcast to every subscribed synthetic channel. */
   async broadcast(event: string) {
     await this.page.evaluate((event) => window.__syntheticBroadcast(event), event);
+  }
+  /** How often this page has requested a source module (a path from `harness.modules`). */
+  moduleRequests(module: string) {
+    return this.requested.filter((path) => path === `/${module}`).length;
   }
   /** A button by message key, matched exactly. */
   button(key: MessageKey, values?: MessageValues) {

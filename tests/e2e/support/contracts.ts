@@ -270,6 +270,10 @@ export const harness = {
   navigation: "Fixture screens",
   signIn: "Sign in",
   switchLanguage: "Switch language",
+  /** Source modules the fixture's Vite server serves on demand, by request path. */
+  modules: {
+    adminConsole: "src/features/admin/admin-console.tsx",
+  },
   recording: {
     id: "00000000-0000-4000-8000-000000000001",
     title: { en: "Synthetic recording", vi: "Bản thu thử" },
