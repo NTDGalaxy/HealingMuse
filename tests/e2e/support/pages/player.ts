@@ -30,6 +30,10 @@ export class Player {
   get playButton() {
     return this.page.locator(player.playButton);
   }
+  /** The entries of the open queue dialog, in queue order. */
+  get queueItems() {
+    return this.page.locator(player.queueItem);
+  }
   get currentQueueItem() {
     return this.page.locator(player.currentQueueItem);
   }

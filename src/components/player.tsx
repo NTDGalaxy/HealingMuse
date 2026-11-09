@@ -293,10 +293,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       browseAbort.current?.abort();
       advancing.current = false;
       continuationRef.current = continuation || null;
-      // Read at the moment of the tap, so play keeps one identity while recordings, the
-      // account and personal data change.
-      const known = stores.tracks.getSnapshot().list;
-      const next = (selection ?? known).filter((item) => item.source.kind === "hosted");
+      // The queue is the list the listener sees. A recording shown without a list queues on
+      // its own, never every recording seen during the visit (Downloads used to step into
+      // streamed recordings while offline).
+      const next = (selection ?? [track]).filter((item) => item.source.kind === "hosted");
+      // Read at the moment of the tap, so play keeps one identity while the account and
+      // personal data change.
       if (
         track.source.kind === "hosted" &&
         stores.session.getSnapshot().user &&

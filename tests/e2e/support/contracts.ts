@@ -100,8 +100,12 @@ export const player = {
   errorAlert: '.player-error[role="alert"]',
   currentTitle: ".player-bar .player-track strong",
   playButton: ".player-buttons .play-button",
+  queueItem: ".queue-list button",
   currentQueueItem: '.queue-list button[aria-current="true"]',
 } as const;
+
+/** Streamed playback asks this endpoint for a short-lived URL; downloaded playback never does. */
+export const playbackGrantPath = "/api/grants/";
 
 export const explore = {
   filterChip: ".filter-chip",

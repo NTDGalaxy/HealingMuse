@@ -372,6 +372,8 @@ export function DownloadsView() {
   const [confirm, setConfirm] = useState(false);
   const [storageNote, setStorageNote] = useState("");
   const total = app.downloaded.reduce((sum, item) => sum + item.bytes, 0);
+  // The queue is exactly the saved recordings shown here, so playback never streams offline.
+  const queue = useMemo(() => app.downloaded.map((item) => item.track), [app.downloaded]);
   return (
     <>
       <PageHeading title={t("downloads.title")} subtitle={t("downloads.subtitle")} />
@@ -391,7 +393,7 @@ export function DownloadsView() {
         <div className="track-grid">
           {app.downloaded.map((item, index) => (
             <div key={item.id}>
-              <TrackCard track={item.track} primary={index === 0} />
+              <TrackCard track={item.track} queue={queue} primary={index === 0} />
               <button
                 className="text-button remove-download"
                 onClick={() => void app.remove(item.id)}

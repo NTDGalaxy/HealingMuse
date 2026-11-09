@@ -1,7 +1,7 @@
 import { test as base, expect, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Track } from "@/lib/types";
-import { motionTargets, personalDataPath, player, storage } from "./contracts";
+import { motionTargets, personalDataPath, playbackGrantPath, player, storage } from "./contracts";
 
 export { expect };
 
@@ -155,6 +155,19 @@ export function personalReads(page: Page): Promise<number> {
     await new Promise((resolve) => setTimeout(resolve, 0));
     return (window as Window & { __personalReads?: number }).__personalReads ?? 0;
   });
+}
+
+/**
+ * Collects the playback grant requests the page starts from now on, failed ones included.
+ * Streamed playback needs a grant; a downloaded recording plays from its stored copy.
+ */
+export function playbackGrantRequests(page: Page): string[] {
+  const requested: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith(playbackGrantPath))
+      requested.push(request.url());
+  });
+  return requested;
 }
 
 export async function expectPaused(page: Page) {
