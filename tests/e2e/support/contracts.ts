@@ -66,7 +66,13 @@ export const garden = {
   state: "data-state",
   quality: "data-quality",
   renderer: "data-renderer",
+  /** Performance marks of the audio-first start (src/lib/perf/audio-first.ts). */
+  sceneStartMark: "hm:scene-start",
+  motionStartMark: "hm:motion-start",
 } as const;
+
+/** Local recordings served by the preview, for holding a recording while it starts. */
+export const localAudioRoute = "**/api/local-audio/*";
 
 export const card = {
   root: trackCard,

@@ -6,6 +6,15 @@
 
 import { readinessMarks } from "./readiness";
 
+/**
+ * Performance marks recorded when decoration starts, so the local timed harness and the
+ * end-to-end suite can check that it followed the first sound.
+ */
+export const decorationMarks = {
+  scene: "hm:scene-start",
+  motion: "hm:motion-start",
+} as const;
+
 let starting = 0;
 const settledListeners = new Set<() => void>();
 

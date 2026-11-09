@@ -5,7 +5,8 @@ import {
   expectNoHorizontalOverflow,
   expectPlaying,
 } from "./support/test";
-import { dialog as dialogs, shell as chrome, size } from "./support/contracts";
+import { dialog as dialogs, shell as chrome, localAudioRoute, size } from "./support/contracts";
+import { sceneStartedAfterFirstSound, watchFirstSound } from "./support/motion";
 import { Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
@@ -218,5 +219,39 @@ test.describe("WebGL lifecycle", () => {
     await shell.expectGardenState("still");
     await expect(shell.gardenHostCanvas).toHaveCount(0);
     await expectPlaying(page);
+  });
+});
+
+test.describe("audio-first decoration", () => {
+  test("a scene allowed while a recording starts waits for its first sound", async ({
+    page,
+    appearance,
+  }) => {
+    const shell = new Shell(page);
+    await appearance({ theme: "day", garden: "still" });
+    await watchFirstSound(page);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let reached!: () => void;
+    const requested = new Promise<void>((resolve) => (reached = resolve));
+    await page.route(localAudioRoute, async (route) => {
+      reached();
+      await held;
+      await route.continue().catch(() => {});
+    });
+    await page.goto("/en");
+    await shell.expectGardenState("still");
+    await new Recordings(page).featuredPlay.click();
+    await requested;
+    await shell.gardenButton.click();
+    await shell.gardenDetailSelect.selectOption("auto");
+    await page.keyboard.press("Escape");
+    // The recording is still starting, so the scene waits instead of competing with it.
+    await shell.expectGardenState("waiting");
+    await expect(shell.gardenCanvas).toHaveCount(0);
+    release();
+    await expectPlaying(page);
+    await shell.expectGardenState("ready");
+    expect(await sceneStartedAfterFirstSound(page)).toBe(true);
   });
 });

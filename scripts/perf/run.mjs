@@ -6,7 +6,7 @@ import { chromium, devices } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { contracts, pathFor } from "./contracts.mjs";
-import { summarize } from "./stats.mjs";
+import { sceneOrder, summarize } from "./stats.mjs";
 
 /** @param {string} name @param {string} fallback */
 const argument = (name, fallback) =>
@@ -226,6 +226,7 @@ async function measure(cell, sample) {
   const metrics = await page.evaluate(() => ({
     .../** @type {any} */ (window).__hm,
     sceneReadyMs: Number(document.querySelector(".garden-canvas")?.getAttribute("data-ready-ms")),
+    sceneStartMs: performance.getEntriesByName("hm:scene-start", "mark")[0]?.startTime ?? null,
   }));
   await context.close();
   return {
@@ -237,10 +238,24 @@ async function measure(cell, sample) {
     cls: Number(metrics.cls.toFixed(4)),
     interactionMs: Math.round(metrics.interaction),
     sceneReadyMs: scene && metrics.sceneReadyMs ? Math.round(metrics.sceneReadyMs) : null,
+    sceneStartMs: metrics.sceneStartMs === null ? null : Math.round(metrics.sceneStartMs),
+    sceneOrder: cell.contract.audio
+      ? sceneOrder({
+          clickMs: metrics.click,
+          audioAtMs: heard ? metrics.audio : 0,
+          sceneStartMs: metrics.sceneStartMs,
+        })
+      : undefined,
     errors,
     bytes,
     requests,
   };
+}
+
+/** @param {Partial<Record<string, number>>} counts */
+function orderText(counts) {
+  const entries = Object.entries(counts);
+  return entries.length ? entries.map(([order, n]) => `${order} ${n}`).join(", ") : "-";
 }
 
 const startedAt = new Date().toISOString();
@@ -286,11 +301,17 @@ const report = {
   summaries,
 };
 await writeFile(`${outDir}/${label}.json`, JSON.stringify(report, null, 2) + "\n");
-console.log("\n| Cell | n | ready p95 | audio p95 | LCP p95 | CLS max | scene p95 | pass |");
-console.log("|---|---|---|---|---|---|---|---|");
+console.log(
+  "\n| Cell | n | ready p95 | audio p95 | LCP p95 | CLS max | scene p95 | scene start | pass |",
+);
+console.log("|---|---|---|---|---|---|---|---|---|");
 for (const s of summaries)
   console.log(
-    `| ${s.cell} | ${s.samples} | ${s.readinessP95Ms ?? "missing"} | ${s.audioP95Ms ?? "-"} | ${s.lcpP95Ms ?? "-"} | ${s.clsMax} | ${s.sceneReadyP95Ms ?? "-"} | ${s.passed ? "yes" : "NO"} |`,
+    `| ${s.cell} | ${s.samples} | ${s.readinessP95Ms ?? "missing"} | ${s.audioP95Ms ?? "-"} | ${s.lcpP95Ms ?? "-"} | ${s.clsMax} | ${s.sceneReadyP95Ms ?? "-"} | ${orderText(s.sceneOrder)} | ${s.passed ? "yes" : "NO"} |`,
   );
+const misordered = summaries.reduce((sum, s) => sum + (s.sceneOrder["before-audio"] ?? 0), 0);
+console.log(
+  `\nscene start vs first sound (reported, not gated): ${misordered ? `${misordered} sample(s) started the scene after the tap but before the first sound` : "no sample started the scene between the tap and the first sound"}`,
+);
 console.log(`\ngate ${report.gatePassed ? "PASSED" : "FAILED"}; calibration ${calibrationMs} ms`);
 if (samples >= MIN_SAMPLES && !report.gatePassed) process.exitCode = 1;

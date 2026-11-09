@@ -3,6 +3,7 @@ import { dialog as dialogs, shell as chrome, size, style } from "./support/contr
 import {
   cardArrived,
   cardMoved,
+  expectMotionStarted,
   resetCardArrivals,
   sameAudioStillPlaying,
   watchCardArrivals,
@@ -31,6 +32,8 @@ test("route and reused catalogue results arrive without moving listening targets
   ).toBe(style.headingArrival);
   await expect(shell.pageHeading).not.toHaveAttribute("style", /transform|opacity/);
   expect(await sameAudioStillPlaying(page)).toBe(true);
+  // The GSAP layer starts after the first sound; reveals are observed only once it runs.
+  await expectMotionStarted(page);
   await expectMotionSettled(page);
   await resetCardArrivals(page);
   const title = await recordings.titles.first().textContent();
@@ -70,6 +73,7 @@ test("later phone cards rise while the first listening target stays stationary",
   await page.setViewportSize({ width: 390, height: 844 });
   await watchCardMoves(page);
   await page.goto("/vi");
+  await expectMotionStarted(page);
   await expectMotionSettled(page);
   await new Recordings(page, "vi").moreCards.last().scrollIntoViewIfNeeded();
   await expect.poll(() => cardMoved(page, "later")).toBe(true);

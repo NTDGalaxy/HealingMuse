@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { gardenForPath } from "@/lib/garden/config";
 import {
@@ -9,13 +9,14 @@ import {
 } from "@/lib/garden/controller";
 import type { SceneSpec } from "@/lib/garden/protocol";
 import { mainThreadRenderer, workerRenderer } from "@/lib/garden/renderers";
+import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
 import { usePreference } from "./appearance";
 import { useMotionPolicy } from "./motion-policy";
 const GardenMotion = dynamic(() => import("./garden-motion"), { ssr: false });
 
 const hostStates: Record<GardenState["phase"], string> = {
-  idle: "starting",
-  waiting: "starting",
+  idle: "waiting",
+  waiting: "waiting",
   starting: "starting",
   ready: "ready",
   degraded: "ready",
@@ -36,8 +37,20 @@ function reflect(element: HTMLElement, state: GardenState, previous: GardenState
   else data.quality = String(tier);
 }
 
+/** Turns true once decoration may start (audio-first), then stays true for this mount. */
+function useDecorationAllowed() {
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => {
+    const wait = new AbortController();
+    void decorationMayStart({ signal: wait.signal }).then((value) => value && setAllowed(true));
+    return () => wait.abort();
+  }, []);
+  return allowed;
+}
+
 export function Scenery({ pathname }: { pathname: string }) {
   const policy = useMotionPolicy();
+  const decorated = useDecorationAllowed();
   const theme = usePreference((value) => value.theme);
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null);
@@ -52,8 +65,8 @@ export function Scenery({ pathname }: { pathname: string }) {
     if (!element) return;
     const instance = createGardenController({
       renderers: { worker: workerRenderer(element), main: mainThreadRenderer(element) },
-      decoration: async () => true,
-      mark: () => {},
+      decoration: (signal) => decorationMayStart({ signal }),
+      mark: () => performance.mark(decorationMarks.scene),
       scene: scene.current,
       viewport: { width: innerWidth, height: innerHeight },
       visible: document.visibilityState === "visible",
@@ -107,9 +120,10 @@ export function Scenery({ pathname }: { pathname: string }) {
             />
           </picture>
         ))}
-        <div className="garden-canvas" ref={host} data-state="starting" />
+        <div className="garden-canvas" ref={host} data-state="waiting" />
       </div>
-      <GardenMotion pathname={pathname} />
+      {/* decorated is false through hydration, so the live policy never picks hydrated markup. */}
+      {decorated && policy.reveals && <GardenMotion pathname={pathname} />}
     </>
   );
 }

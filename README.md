@@ -150,6 +150,8 @@ Mobile rendering starts at 30 fps with capped resolution.
 Sustained slow rendering reduces quality, then switches to a still without repeatedly oscillating between tiers.
 Hidden tabs suspend rendering, and renderer failures do not block the audio player.
 A pure state machine in [src/lib/garden/controller.ts](src/lib/garden/controller.ts) owns that lifecycle, and both renderers sit behind one port interface.
+The scene and the GSAP layer start only once the route's primary control is usable and any recording that is starting has played or failed, so decoration never competes with the first sound.
+A renderer that has not drawn its first frame eight seconds after the scene starts is replaced by the poster.
 
 Short page entrances introduce the heading and listening surfaces.
 New catalogue results use a capped stagger, including results that reuse existing recording cards.
@@ -450,6 +452,7 @@ Repeat with `--theme=night` and a distinct report label.
 The target is **p95 usable listening controls and click-to-audio at or below three seconds**, using at least 30 fresh samples per principal scenario.
 The agreed profile is 390 × 844, 150 ms latency, 1.6 Mbps download and 4× CPU slowdown.
 Live-scene readiness is reported separately because decorative 3D must not gate listening.
+For tapped recordings the report also shows, without gating, whether the scene started before the tap, after the first sound, or in between.
 Reports also include LCP, CLS, sampled interaction timing and transferred resources.
 Sampled interaction timing is not field INP, and page-target network accounting can omit worker transfers.
 Cloud audio samples must stay within verified free egress and operation allowances.

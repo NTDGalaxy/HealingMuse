@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { percentile, summarize } from "../../scripts/perf/stats.mjs";
+import { percentile, sceneOrder, summarize } from "../../scripts/perf/stats.mjs";
 
 const row = (readinessMs: number | null, audioMs: number | null = null) => ({
   readinessMs,
@@ -31,5 +31,30 @@ describe("timed gate statistics", () => {
     expect(summarize(slow, rule).readinessP95Ms).toBe(3100);
     expect(summarize(slow, rule).passed).toBe(false);
     expect(summarize(good, { ...rule, audio: false }).audioP95Ms).toBeNull();
+  });
+
+  it("classifies when the scene started relative to the tap and the first sound", () => {
+    const times = { clickMs: 1000, audioAtMs: 1800 };
+    expect(sceneOrder({ ...times, sceneStartMs: 1800 })).toBe("after-audio");
+    expect(sceneOrder({ ...times, sceneStartMs: 2500 })).toBe("after-audio");
+    expect(sceneOrder({ ...times, sceneStartMs: 1200 })).toBe("before-audio");
+    expect(sceneOrder({ ...times, sceneStartMs: 900 })).toBe("before-tap");
+    expect(sceneOrder({ ...times, sceneStartMs: null })).toBe("no-scene");
+    expect(sceneOrder({ clickMs: 1000, audioAtMs: 0, sceneStartMs: 1200 })).toBe("no-audio");
+    expect(sceneOrder({ clickMs: 0, audioAtMs: 0, sceneStartMs: 1200 })).toBe("no-tap");
+  });
+
+  it("counts scene orders per cell without affecting the verdict", () => {
+    const rule = { audio: true, thresholdMs: 3000, minSamples: 3 };
+    const rows = [
+      { ...row(2500, 1200), sceneOrder: "after-audio" as const },
+      { ...row(2500, 1200), sceneOrder: "after-audio" as const },
+      { ...row(2500, 1200), sceneOrder: "before-audio" as const },
+    ];
+    expect(summarize(rows, rule)).toMatchObject({
+      sceneOrder: { "after-audio": 2, "before-audio": 1 },
+      passed: true,
+    });
+    expect(summarize([row(2500, 1200)], rule).sceneOrder).toEqual({});
   });
 });

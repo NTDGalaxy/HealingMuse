@@ -3,6 +3,8 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { GraphicsMarker } from "@/lib/garden/budget-markers";
+import { decorationMarks } from "@/lib/perf/audio-first";
+import { markOnce } from "@/lib/perf/readiness";
 import { useMotionPolicy } from "./motion-policy";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 // GSAP layer: content reveals, the scenery fade-in and scroll parallax. useMotionPolicy() decides
@@ -129,6 +131,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
             if (changed) ScrollTrigger.refresh();
           });
         observe();
+        markOnce(decorationMarks.motion);
         const observer = new MutationObserver((records) => {
           records.forEach((record) => {
             record.removedNodes.forEach((node) => {

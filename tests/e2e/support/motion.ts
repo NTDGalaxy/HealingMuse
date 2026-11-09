@@ -1,5 +1,5 @@
-import type { Page } from "@playwright/test";
-import { card, player, shell } from "./contracts";
+import { expect, type Page } from "@playwright/test";
+import { card, garden, player, shell } from "./contracts";
 
 // In-page probes for the garden motion. Selectors are passed in as arguments so the probes
 // follow contracts.ts like every other lookup.
@@ -8,6 +8,7 @@ type Probes = typeof window & {
   originalAudio?: HTMLAudioElement;
   arrivals?: string[];
   cardMoves?: string[];
+  firstSound?: number;
 };
 
 /**
@@ -84,4 +85,36 @@ export async function watchCardMoves(page: Page) {
 
 export function cardMoved(page: Page, which: "first" | "later") {
   return page.evaluate((which) => (window as Probes).cardMoves!.includes(which), which);
+}
+
+/** Waits until the GSAP garden layer has run its first pass, so later reveals can be observed. */
+export async function expectMotionStarted(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (mark) => performance.getEntriesByName(mark, "mark").length,
+        garden.motionStartMark,
+      ),
+    )
+    .toBeGreaterThan(0);
+}
+
+/** Records, from the first document onwards, when the first media element starts playing. */
+export async function watchFirstSound(page: Page) {
+  await page.addInitScript(() =>
+    document.addEventListener(
+      "playing",
+      () => ((window as Probes).firstSound ??= performance.now()),
+      true,
+    ),
+  );
+}
+
+/** Whether the garden scene started at or after the sound recorded by `watchFirstSound`. */
+export function sceneStartedAfterFirstSound(page: Page) {
+  return page.evaluate((mark) => {
+    const start = performance.getEntriesByName(mark, "mark")[0]?.startTime;
+    const sound = (window as Probes).firstSound;
+    return start !== undefined && sound !== undefined && start >= sound;
+  }, garden.sceneStartMark);
 }

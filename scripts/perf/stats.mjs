@@ -14,12 +14,30 @@ export function percentile(values, p) {
 }
 
 /**
+ * Where the garden scene started relative to the play tap and the first sound (audio-first start).
+ * Reported, never gated: "after-audio" is the intended order once a play is pending, and
+ * "before-tap" means the scene had already started when the play was tapped.
+ * @typedef {"after-audio" | "before-audio" | "before-tap" | "no-scene" | "no-audio" | "no-tap"} SceneOrder
+ * @param {{ clickMs: number, audioAtMs: number, sceneStartMs: number | null }} times
+ *   page-clock times; 0 means the tap or the sound did not happen
+ * @returns {SceneOrder}
+ */
+export function sceneOrder({ clickMs, audioAtMs, sceneStartMs }) {
+  if (!clickMs) return "no-tap";
+  if (sceneStartMs === null) return "no-scene";
+  if (sceneStartMs < clickMs) return "before-tap";
+  if (!audioAtMs) return "no-audio";
+  return sceneStartMs >= audioAtMs ? "after-audio" : "before-audio";
+}
+
+/**
  * @typedef {{ readinessMs: number | null, audioMs: number | null, lcpMs: number | null,
- *   cls: number, interactionMs: number, sceneReadyMs: number | null, errors: number }} Observation
+ *   cls: number, interactionMs: number, sceneReadyMs: number | null, errors: number,
+ *   sceneOrder?: SceneOrder }} Observation
  * @typedef {{ samples: number, readinessP95Ms: number | null, audioP95Ms: number | null,
  *   lcpP95Ms: number | null, clsMax: number, interactionP95Ms: number | null,
  *   sceneReadyP95Ms: number | null, sceneMissing: number, errors: number, missingReadiness: number,
- *   missingAudio: number, passed: boolean }} CellSummary
+ *   missingAudio: number, sceneOrder: Partial<Record<SceneOrder, number>>, passed: boolean }} CellSummary
  */
 
 /**
@@ -34,6 +52,10 @@ export function summarize(observations, rule) {
   const audioP95Ms = rule.audio ? percentile(pick("audioMs"), 0.95) : null;
   const missingReadiness = observations.filter((o) => o.readinessMs === null).length;
   const missingAudio = rule.audio ? observations.filter((o) => o.audioMs === null).length : 0;
+  /** @type {Partial<Record<SceneOrder, number>>} */
+  const order = {};
+  for (const { sceneOrder: value } of observations)
+    if (value) order[value] = (order[value] ?? 0) + 1;
   const passed =
     observations.length >= rule.minSamples &&
     missingReadiness === 0 &&
@@ -53,6 +75,7 @@ export function summarize(observations, rule) {
     errors: observations.reduce((sum, o) => sum + o.errors, 0),
     missingReadiness,
     missingAudio,
+    sceneOrder: order,
     passed,
   };
 }
