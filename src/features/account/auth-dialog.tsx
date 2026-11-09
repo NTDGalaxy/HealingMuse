@@ -28,6 +28,22 @@ export function AuthDialog() {
   const [error, setError] = useState("");
   const [invalid, setInvalid] = useState(false);
   const attempt = useRef(0);
+  // Closed from outside (an account arrived while it was open): the next opening starts afresh,
+  // as it does after the listener closes it.
+  const [shown, setShown] = useState(authOpen);
+  if (shown !== authOpen) {
+    setShown(authOpen);
+    if (!authOpen) {
+      setMethod("password");
+      setPassword("");
+      setCode("");
+      setSent(false);
+      setError("");
+      setInvalid(false);
+      setBusy(false);
+      setAgreed(false);
+    }
+  }
 
   function focusInput(id: string) {
     requestAnimationFrame(() => document.getElementById(id)?.focus());

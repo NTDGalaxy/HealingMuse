@@ -104,11 +104,19 @@ export function createSession({
   let loading: Promise<BrowserClient | null> | null = null;
   let active = false;
   let subscription: { unsubscribe(): void } | null = null;
+  // An account that arrives while the sign-in dialog is open (restored, or signed in in another
+  // tab) closes it: there is nothing left to sign in to.
   const setUser = (user: User | null) =>
     store.set((current) =>
-      current.user === user && !current.authLoading
+      current.user === user && !current.authLoading && !(user && current.authOpen)
         ? current
-        : { ...current, user, userId: user?.id ?? null, authLoading: false },
+        : {
+            ...current,
+            user,
+            userId: user?.id ?? null,
+            authLoading: false,
+            authOpen: user ? false : current.authOpen,
+          },
     );
   const settle = () =>
     store.set((current) => (current.authLoading ? { ...current, authLoading: false } : current));
@@ -172,7 +180,7 @@ export function createSession({
       else settle();
       // Until the client loads, another tab's sign-in arrives on the channel Supabase broadcasts
       // auth events on (named after its storage key), or as a session cookie when this tab
-      // becomes visible again.
+      // becomes visible again or the connection returns (a download that failed offline).
       const tabs =
         storageKey && typeof BroadcastChannel !== "undefined"
           ? new BroadcastChannel(storageKey)
@@ -187,6 +195,7 @@ export function createSession({
           void load();
       };
       if (typeof document !== "undefined") document.addEventListener("visibilitychange", resume);
+      if (typeof window !== "undefined") window.addEventListener("online", resume);
       return () => {
         active = false;
         subscription?.unsubscribe();
@@ -194,6 +203,7 @@ export function createSession({
         tabs?.close();
         if (typeof document !== "undefined")
           document.removeEventListener("visibilitychange", resume);
+        if (typeof window !== "undefined") window.removeEventListener("online", resume);
       };
     },
   };

@@ -304,6 +304,44 @@ describe("session", () => {
     otherTab.close();
     stop();
   });
+  it("retries a returning account's failed download when the connection returns", async () => {
+    const tab = Object.assign(new EventTarget(), { visibilityState: "visible" });
+    vi.stubGlobal("window", new EventTarget());
+    vi.stubGlobal("document", tab);
+    let attempts = 0;
+    const session = createSession({
+      page: returning,
+      loadClient: async () => {
+        if (++attempts === 1) throw new Error("offline");
+        return fake.client as never;
+      },
+    });
+    const stop = session.start();
+    await settle();
+    expect(session.getSnapshot()).toMatchObject({ userId: null, authLoading: false });
+    window.dispatchEvent(new Event("online"));
+    await settle();
+    expect(attempts).toBe(2);
+    fake.emit({ id: "returning" });
+    expect(session.getSnapshot().userId).toBe("returning");
+    stop();
+    window.dispatchEvent(new Event("online"));
+    expect(attempts).toBe(2);
+  });
+  it("closes the sign-in dialog when an account arrives while it is open", async () => {
+    const session = createSession({ page: returning });
+    session.start();
+    session.openAuth();
+    await settle();
+    expect(session.getSnapshot()).toMatchObject({ authOpen: true, authLoading: true });
+    fake.emit({ id: "a" });
+    expect(session.getSnapshot()).toMatchObject({ userId: "a", authOpen: false });
+    fake.emit(null);
+    session.openAuth();
+    expect(session.getSnapshot().authOpen).toBe(true);
+    fake.emit(null);
+    expect(session.getSnapshot().authOpen).toBe(true);
+  });
   it("stays a guest when the client cannot be downloaded, and can retry", async () => {
     let attempts = 0;
     const session = createSession({

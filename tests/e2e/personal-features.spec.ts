@@ -1374,3 +1374,41 @@ test("after personal data fails to load, saving a new playlist returns focus to 
   await expect(ui.dialog).toHaveCount(0);
   await expect(create).toBeFocused();
 });
+test("a returning account whose sign-in code failed to download is restored when the connection returns", async ({
+  page,
+  context,
+}) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  const client = `**/${harness.modules.authClient}*`;
+  const offline = (route: Route) => route.abort("internetdisconnected");
+  await page.route(client, offline);
+  await ui.open();
+  // Until the client arrives the account cannot be restored, so the page carries on as a guest.
+  await expect(
+    page.getByRole("heading", { name: ui.t("auth.required"), exact: true }),
+  ).toBeVisible();
+  await page.unroute(client, offline);
+  await context.setOffline(true);
+  await context.setOffline(false);
+  await expect(ui.button("library.newPlaylist")).toBeVisible();
+});
+test("a sign-in dialog opened while an account is being restored closes once it is", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(`**/${harness.modules.authClient}*`, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await ui.open();
+  await ui.show("recording");
+  // A heart pressed before the account is known asks the listener to sign in.
+  await ui.recordings.favorite(harness.recording.title.en).click();
+  await expect(ui.dialog.getByLabel(ui.t("auth.email"), { exact: true })).toBeVisible();
+  release();
+  await expect(ui.dialog).toHaveCount(0);
+});
