@@ -11,6 +11,7 @@ import type { Locale, Playlist } from "@/lib/types";
 import { formatBytes } from "@/lib/audio";
 import { api, mutation } from "@/lib/browser/api";
 import { AppearanceControls } from "./appearance";
+import { primaryControl } from "@/lib/perf/readiness";
 import { recentMoodDays } from "@/lib/wellbeing";
 
 export function AccountGate({
@@ -41,7 +42,7 @@ export function AccountGate({
               : "auth.requiredText",
         )}
       >
-        <button className="button" onClick={app.openAuth}>
+        <button className="button" onClick={app.openAuth} {...primaryControl()}>
           {t("nav.signIn")}
         </button>
       </Empty>
@@ -372,9 +373,9 @@ export function DownloadsView() {
       </div>
       {app.downloaded.length ? (
         <div className="track-grid">
-          {app.downloaded.map((item) => (
+          {app.downloaded.map((item, index) => (
             <div key={item.id}>
-              <TrackCard track={item.track} />
+              <TrackCard track={item.track} primary={index === 0} />
               <button
                 className="text-button remove-download"
                 onClick={() => void app.remove(item.id)}
@@ -594,7 +595,7 @@ export function SettingsView() {
       <div className="settings-stack">
         <section className="panel settings-appearance">
           <h2>{t("settings.appearance")}</h2>
-          <AppearanceControls />
+          <AppearanceControls primary />
           <div className="setting-row">
             <strong>{t("settings.language")}</strong>
             <div className="language-switch">

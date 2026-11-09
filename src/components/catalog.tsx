@@ -21,6 +21,7 @@ import { Dialog } from "./dialog";
 import { clock } from "@/lib/audio";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Locale, Track } from "@/lib/types";
 import { CatalogControls } from "./catalog-controls";
+import { primaryControl } from "@/lib/perf/readiness";
 
 export function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
   return (
@@ -54,12 +55,15 @@ export function TrackCard({
   queue,
   continuation,
   selection,
+  primary = false,
 }: {
   track: Track;
   compact?: boolean;
   queue?: Track[];
   continuation?: CatalogQuery;
   selection?: { selected: boolean; choose: () => void; label: string; disabled?: boolean };
+  /** Marks this card's play control as the route's primary control (readiness contract). */
+  primary?: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
@@ -79,6 +83,7 @@ export function TrackCard({
         <span className="track-category">{t(`catalog.${track.category}`)}</span>
         <button
           className="card-play"
+          {...primaryControl(primary && !selection)}
           aria-label={selection?.label ?? t("catalog.playTitle", { title })}
           aria-pressed={selection ? selection.selected : undefined}
           disabled={selection?.disabled}
@@ -334,6 +339,7 @@ export function HomeView({
                 continuation={
                   initialPage.nextCursor ? { limit: 12, cursor: initialPage.nextCursor } : undefined
                 }
+                primary
               />
             ))}
           </div>
@@ -429,7 +435,7 @@ export function ExploreView({
             {pending ? t("common.loading") : t("catalog.results", { count: initialPage.total })}
           </p>
           <div className="track-grid" data-result-key={JSON.stringify(query)}>
-            {tracks.map((track) => (
+            {tracks.map((track, index) => (
               <TrackCard
                 key={track.id}
                 track={track}
@@ -437,6 +443,7 @@ export function ExploreView({
                 continuation={
                   initialPage.nextCursor ? { ...query, cursor: initialPage.nextCursor } : undefined
                 }
+                primary={index === 0}
               />
             ))}
           </div>

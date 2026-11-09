@@ -7,6 +7,7 @@ import { monitor } from "@/lib/browser/monitor";
 import { useApp, useOnline } from "./app-state";
 import { PageHeading } from "./catalog";
 import { PasswordInput } from "./password-input";
+import { primaryControl } from "@/lib/perf/readiness";
 
 export function PasswordResetView() {
   const { user } = useApp();
@@ -38,7 +39,7 @@ function PasswordResetContent() {
         ) : !app.user ? (
           <>
             <p>{t("auth.recoveryRequired")}</p>
-            <button className="button" onClick={app.openAuth}>
+            <button className="button" onClick={app.openAuth} {...primaryControl()}>
               {t("nav.signIn")}
             </button>
           </>

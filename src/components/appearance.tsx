@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import type { Appearance, GardenPreference, GardenTheme } from "@/lib/garden/config";
 import { useApp } from "./app-state";
 import { Dialog } from "./dialog";
+import { primaryControl } from "@/lib/perf/readiness";
 
 type Preferences = { appearance: Appearance; garden: GardenPreference; theme: GardenTheme };
 const Context = createContext<
@@ -103,7 +104,7 @@ export function useAppearance() {
   if (!value) throw new Error("AppearanceProvider is required");
   return value;
 }
-export function AppearanceControls() {
+export function AppearanceControls({ primary = false }: { primary?: boolean }) {
   const t = useTranslations("appearance");
   const preferences = useAppearance();
   const app = useApp();
@@ -113,6 +114,7 @@ export function AppearanceControls() {
         {t("theme")}
         <select
           aria-label={t("theme")}
+          {...primaryControl(primary)}
           value={preferences.appearance}
           onChange={(event) => preferences.setAppearance(event.target.value as Appearance)}
         >

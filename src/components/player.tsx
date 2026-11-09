@@ -34,6 +34,7 @@ import { useApp, useOnline } from "./app-state";
 import { Dialog } from "./dialog";
 import { NatureArt } from "./art";
 import { YouTubeEmbed } from "./youtube";
+import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 
 const Context = createContext<{
   current: Track | null;
@@ -87,6 +88,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const online = useOnline();
   const audio = useRef<HTMLAudioElement>(null);
+  // Readiness contract: the single persistent <audio> element is mounted.
+  useLayoutEffect(() => {
+    if (audio.current) markOnce(readinessMarks.player);
+  }, []);
   const epoch = useRef(0);
   const blobUrl = useRef<string | null>(null);
   const queueRef = useRef<Track[]>([]);

@@ -8,6 +8,7 @@ import { clock } from "@/lib/audio";
 import type { CatalogPage } from "@/lib/types";
 import { useBinaural } from "./binaural-provider";
 import { BinauralCatalogue } from "./binaural-catalogue";
+import { primaryControl } from "@/lib/perf/readiness";
 
 export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPage }) {
   const t = useTranslations("binaural");
@@ -163,6 +164,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           <button
             type="button"
             className="button"
+            {...primaryControl()}
             disabled={
               !session.ready || busy || (!playing && (session.backgroundLoading || durationError))
             }

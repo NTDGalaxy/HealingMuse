@@ -19,7 +19,8 @@ import { useApp, useOnline } from "./app-state";
 import { AuthDialog } from "./auth-dialog";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useState } from "react";
+import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
 import { Dialog } from "./dialog";
 import type { Locale } from "@/lib/types";
@@ -52,6 +53,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const app = useApp();
   const online = useOnline();
   const [more, setMore] = useState(false);
+  // Readiness contract: navigation is hydrated and usable from this commit on.
+  useLayoutEffect(() => markOnce(readinessMarks.shell), []);
   useEffect(() => {
     const revealFocus = (event: FocusEvent) => {
       const element = event.target;
