@@ -56,6 +56,20 @@ const callbackParameters = new Set([
   "error_description",
 ]);
 
+/** A PKCE redirect's one-time code (and flow id), as the page found it when it started. */
+export interface AuthCallback {
+  code: string;
+  flowId: string | null;
+}
+
+/** The PKCE code in a page's address, read as supabase-js reads it (fragment, then query). */
+export function authCallback(page: PageSignals): AuthCallback | null {
+  const parameters = new URLSearchParams(page.hash.replace(/^#/, ""));
+  for (const [name, value] of new URLSearchParams(page.search)) parameters.set(name, value);
+  const code = parameters.get("code");
+  return code ? { code, flowId: parameters.get("sb_flow_id") } : null;
+}
+
 /** What a page start says about the account, before any Supabase code runs. */
 export interface StartSignals {
   /** A session cookie (whole or chunked) may hold an account to restore. */
@@ -121,6 +135,9 @@ export function createSession({
   const storageKey = authStorageKey();
   let client: BrowserClient | null = null;
   let loading: Promise<BrowserClient | null> | null = null;
+  // The redirect the page started with, completed once the client exists whatever the address
+  // has become by then (the client itself is told not to read the address).
+  let callback: AuthCallback | null = null;
   let active = false;
   let subscription: { unsubscribe(): void } | null = null;
   // An account that arrives while the sign-in dialog is open (restored, or signed in in another
@@ -148,13 +165,37 @@ export function createSession({
       setUser(session?.user ?? null),
     ).data.subscription;
   };
+  const completeCallback = async (supabase: BrowserClient | null) => {
+    const pending = callback;
+    callback = null;
+    if (!supabase || !pending) return;
+    // The verifier the request stored (in this browser) proves the code; without it, or with a
+    // used code, the exchange fails and the page settles as it is. Either way it sends nothing
+    // the address did not already carry.
+    const { error } = await supabase.auth.exchangeCodeForSession(
+      pending.code,
+      pending.flowId ? { flowId: pending.flowId } : undefined,
+    );
+    if (error) return;
+    // As supabase-js did: drop the used code from the address it landed on, if still there.
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("code") !== pending.code) return;
+    url.searchParams.delete("code");
+    url.searchParams.delete("sb_flow_id");
+    window.history.replaceState(window.history.state, "", url.toString());
+  };
   const load = (): Promise<BrowserClient | null> => {
     if (!isConfigured) return Promise.resolve(null);
     if (client) return Promise.resolve(client);
     loading ??= loadClient().then(
-      (loaded) => {
+      async (loaded) => {
         client = loaded;
         loading = null;
+        // Subscribing after the exchange makes INITIAL_SESSION carry its session, so the page
+        // goes straight from restoring to signed in. Completing the redirect is best effort: if it
+        // fails in any way (a rejected exchange, a throw, the address cleanup) the page must still
+        // subscribe, or it would stay restoring.
+        await completeCallback(loaded).catch(() => {});
         follow();
         return loaded;
       },
@@ -196,7 +237,9 @@ export function createSession({
         return () => {
           active = false;
         };
-      const signals = startSignals(page(), storageKey);
+      const landing = page();
+      const signals = startSignals(landing, storageKey);
+      callback = authCallback(landing);
       if (client) follow();
       else if (signals.session || signals.callback) {
         restore();

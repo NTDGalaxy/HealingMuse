@@ -15,6 +15,8 @@ const fake = vi.hoisted(() => {
     channels: [] as Channel[],
     removed: [] as Channel[],
     signOutError: null as null | { message: string },
+    /** How exchanging an auth redirect's code behaves: resolve, reject, or throw synchronously. */
+    exchange: "resolve" as "resolve" | "reject" | "throw",
     /** Browser clients handed out, that is, how often the client module was loaded and used. */
     loads: 0,
   };
@@ -26,6 +28,11 @@ const fake = vi.hoisted(() => {
       },
       async signOut() {
         return { error: state.signOutError };
+      },
+      exchangeCodeForSession() {
+        if (state.exchange === "throw") throw new TypeError("exchange unavailable");
+        if (state.exchange === "reject") return Promise.reject(new Error("network"));
+        return Promise.resolve({ data: { session: null }, error: null });
       },
     },
     channel(name: string) {
@@ -133,6 +140,7 @@ beforeEach(() => {
   fake.state.channels.length = 0;
   fake.state.removed.length = 0;
   fake.state.signOutError = null;
+  fake.state.exchange = "resolve";
   fake.state.loads = 0;
 });
 
@@ -286,6 +294,22 @@ describe("session", () => {
     await settle();
     expect(password.client()).toBe(fake.client);
     expect(guestPage.client()).toBeNull();
+  });
+  it("still follows the account when completing an auth redirect fails", async () => {
+    for (const exchange of ["reject", "throw"] as const) {
+      fake.state.auth.clear();
+      fake.state.exchange = exchange;
+      const session = createSession({
+        page: () => page({ search: "?code=x" }),
+        loadClient: async () => fake.client as never,
+      });
+      session.start();
+      await expect(session.load()).resolves.toBe(fake.client);
+      // Subscribed, so INITIAL_SESSION settles the page instead of leaving it restoring.
+      expect(fake.state.auth.size).toBe(1);
+      fake.emit(null);
+      expect(session.getSnapshot()).toMatchObject({ user: null, authLoading: false });
+    }
   });
   it("settles a guest at once and loads the client only when sign-in opens", async () => {
     const session = createSession({ page: guest });

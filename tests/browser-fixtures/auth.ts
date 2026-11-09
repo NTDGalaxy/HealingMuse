@@ -1,6 +1,7 @@
 // Synthetic Supabase browser client, substituted for @/lib/supabase/client by the fixture server.
-// Like the real client it keeps the session in a cookie, finishes an auth redirect (?code=) when
-// it is created and tells other tabs about sign-in and sign-out on the storage-key channel.
+// Like the real client it keeps the session in a cookie and tells other tabs about sign-in and
+// sign-out on the storage-key channel. Like the real one (created with detectSessionInUrl: false)
+// it never reads an auth redirect from the address: the app exchanges the code it captured.
 import type { User } from "@supabase/supabase-js";
 import { hasSessionCookie, setSessionCookie, storageKey, user } from "./synthetic-session";
 
@@ -23,16 +24,6 @@ function change(event: "SIGNED_IN" | "SIGNED_OUT") {
 function signedIn() {
   change("SIGNED_IN");
   return { data: { session: { user } }, error: null };
-}
-
-// A recovery or sign-in link lands with a one-time code, which the client exchanges for a
-// session and removes from the address, as detectSessionInUrl does.
-const landing = new URL(location.href);
-if (landing.searchParams.has("code")) {
-  record("exchangeCodeForSession");
-  setSessionCookie(true);
-  landing.searchParams.delete("code");
-  history.replaceState(history.state, "", landing);
 }
 
 type Channel = {
@@ -103,6 +94,12 @@ const client = {
       if (location.search.includes("password-update-error"))
         return { data: { user: null }, error: { status: 422, code: "weak_password" } };
       return { data: { user }, error: null };
+    },
+    async exchangeCodeForSession(code: string) {
+      record("exchangeCodeForSession");
+      if (code.startsWith("used"))
+        return { data: { session: null }, error: { status: 404, code: "flow_state_not_found" } };
+      return signedIn();
     },
     async verifyOtp({ token }: { token: string }) {
       record("verifyOtp");

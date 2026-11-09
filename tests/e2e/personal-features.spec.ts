@@ -1433,3 +1433,25 @@ test("while a returning account is restored, Settings offers no guest sign-in", 
   await expect(settings.account.getByText(email, { exact: true })).toBeVisible();
   await expect(settings.guestNote).toHaveCount(0);
 });
+test("a recovery link completes its sign-in even after navigating before the sign-in code arrives", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const settings = new Settings(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(`**/${harness.modules.authClient}*`, async (route) => {
+    await held;
+    await route.continue();
+  });
+  // The recovery email's link lands with a one-time code and no session cookie yet.
+  await ui.open({ guest: true, flags: ["code=synthetic-recovery"] });
+  await ui.show("settings");
+  // The listener moves on within the app before the sign-in code has downloaded.
+  await page.locator(chrome.languageLink("vi")).click();
+  await expect(page).not.toHaveURL(/code=/);
+  release();
+  await expect(settings.account.getByText(email, { exact: true })).toBeVisible();
+  expect(await ui.authCalls()).toEqual(["exchangeCodeForSession"]);
+});
