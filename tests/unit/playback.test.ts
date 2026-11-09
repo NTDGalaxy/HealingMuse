@@ -13,14 +13,21 @@ import { createAudioFocus } from "@/lib/playback/audio-focus";
 import { setMediaActions, transportActions } from "@/lib/playback/media-session";
 import { createListeningSessions } from "@/lib/playback/session-machine";
 
-/** A media element that plays instantly; `refusePlay` simulates an autoplay block. */
+/**
+ * A media element that follows HTMLMediaElement where the engine depends on it: play() rejects
+ * without a source and, while `buffering`, stays pending until `ready()`; pause() and load()
+ * reject pending play() requests with an AbortError in a later task. `refusePlay` simulates an
+ * autoplay block.
+ */
 class FakeAudio extends EventTarget implements AudioOutput {
   paused = true;
   currentTime = 0;
   duration = Number.NaN;
   error: unknown = null;
   refusePlay = false;
+  buffering = false;
   private source: string | null = null;
+  private pending: { resolve: () => void; reject: (error: unknown) => void }[] = [];
   get src() {
     return this.source ?? "";
   }
@@ -33,20 +40,42 @@ class FakeAudio extends EventTarget implements AudioOutput {
   removeAttribute(name: string) {
     if (name === "src") this.source = null;
   }
-  load() {}
-  async play() {
-    if (this.refusePlay) throw new DOMException("blocked", "NotAllowedError");
-    if (!this.paused) return;
-    this.paused = false;
-    this.dispatchEvent(new Event("play"));
+  load() {
+    this.paused = true;
+    this.abortPending();
+  }
+  play(): Promise<void> {
+    if (this.refusePlay) return Promise.reject(new DOMException("blocked", "NotAllowedError"));
+    if (this.source === null)
+      return Promise.reject(new DOMException("no source", "NotSupportedError"));
+    if (this.paused) {
+      this.paused = false;
+      this.dispatchEvent(new Event("play"));
+    }
+    if (!this.buffering) return Promise.resolve();
+    return new Promise((resolve, reject) => this.pending.push({ resolve, reject }));
+  }
+  /** Enough media has arrived: pending play() requests resolve. */
+  ready() {
+    this.buffering = false;
+    for (const request of this.pending.splice(0)) request.resolve();
   }
   pause() {
+    this.abortPending();
     if (this.paused) return;
     this.paused = true;
     this.dispatchEvent(new Event("pause"));
   }
   emit(type: string) {
     this.dispatchEvent(new Event(type));
+  }
+  private abortPending() {
+    const interrupted = this.pending.splice(0);
+    if (!interrupted.length) return;
+    setTimeout(() => {
+      for (const request of interrupted)
+        request.reject(new DOMException("The play() request was interrupted", "AbortError"));
+    });
   }
 }
 
@@ -64,8 +93,11 @@ const b = recording("b");
 const c = recording("c");
 const video = recording("video", "youtube");
 
-/** Lets every pending promise chain settle. */
-const flush = () => new Promise((resolve) => setImmediate(resolve));
+/** Lets every pending promise chain settle, including work queued in a later task. */
+const flush = () =>
+  new Promise((resolve) => setTimeout(resolve)).then(
+    () => new Promise((resolve) => setImmediate(resolve)),
+  );
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -464,6 +496,71 @@ describe("playback engine", () => {
     slow.resolve("grant:a");
     await flush();
     expect(audio.getAttribute("src")).toBeNull();
+  });
+});
+
+describe("browsing resets during a pending catalogue page", () => {
+  function pagedSetup() {
+    let page = deferred<CatalogPage>();
+    const searches: string[] = [];
+    const harness = setup({
+      catalogPage: (search) => {
+        searches.push(search.toString());
+        return page.promise;
+      },
+      userId: () => "u",
+      privacy: { owner: "u", consent: false },
+    });
+    return {
+      ...harness,
+      searches,
+      page: () => page,
+      nextPage: () => (page = deferred<CatalogPage>()),
+    };
+  }
+
+  it("Next fetches again after Finish superseded a page", async () => {
+    const { engine, searches, page, nextPage } = pagedSetup();
+    engine.play(b, [a, b], { limit: 12, cursor: "x" });
+    await flush();
+    engine.advance(1);
+    engine.finish();
+    page().resolve({ items: [c], total: 3, nextCursor: null });
+    await flush();
+    expect(engine.state.getSnapshot().current).toBe(b);
+    const second = nextPage();
+    engine.advance(1);
+    expect(searches).toHaveLength(2);
+    second.resolve({ items: [c], total: 3, nextCursor: null });
+    await flush();
+    expect(engine.state.getSnapshot().current).toBe(c);
+  });
+
+  it("Next still ends listening after an account change superseded a page", async () => {
+    const { engine, audio, page } = pagedSetup();
+    engine.play(b, [a, b], { limit: 12, cursor: "x" });
+    await flush();
+    engine.advance(1);
+    engine.setPrivacy({ owner: "v", consent: false });
+    page().resolve({ items: [c], total: 3, nextCursor: null });
+    await flush();
+    expect(audio.paused).toBe(false);
+    engine.advance(1);
+    expect(audio.paused).toBe(true);
+  });
+
+  it("a late page never replaces a recording tapped meanwhile, and auto-advance still works", async () => {
+    const { engine, audio, page } = pagedSetup();
+    engine.play(b, [a, b], { limit: 12, cursor: "x" });
+    await flush();
+    engine.advance(1);
+    engine.play(a, [a, b]);
+    page().resolve({ items: [c], total: 3, nextCursor: null });
+    await flush();
+    expect(engine.state.getSnapshot().current).toBe(a);
+    audio.emit("ended");
+    await flush();
+    expect(engine.state.getSnapshot().current).toBe(b);
   });
 });
 
