@@ -480,5 +480,5 @@ Write full sentences on separate lines in long Markdown files.
 
 Application source is distributed under the [MIT license](LICENSE).
 Music and third-party artwork retain their individual licenses and attribution requirements.
-See recording details, the Credits page, [audio source metadata](content/audio-sources.json), [artwork credits](content/artwork-credits.json), [scenery credits](content/scenery-credits.json) and [garden provenance](content/garden-assets.json).
+See recording details, the Credits page, [audio source metadata](content/audio-sources.json), [artwork credits](content/artwork-credits.json) and [garden provenance](content/garden-assets.json).
 Development-generated decorative concepts are distinct from the human-created music catalogue.
