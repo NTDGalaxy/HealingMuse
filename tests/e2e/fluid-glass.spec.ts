@@ -37,7 +37,7 @@ test("route and reused catalogue results arrive without moving listening targets
   await expectMotionSettled(page);
   await resetCardArrivals(page);
   const title = await recordings.titles.first().textContent();
-  await new Explore(page).filterChips.nth(1).click();
+  await new Explore(page).category("instrumental").click();
   await expect(page).toHaveURL(/category=instrumental/);
   await expect.poll(() => cardArrived(page)).toBe(true);
   await expect(recordings.titles.first()).toHaveText(title!);

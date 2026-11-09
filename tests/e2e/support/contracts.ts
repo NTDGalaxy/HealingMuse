@@ -1,3 +1,4 @@
+import { revealTargets } from "../../../src/lib/garden/reveal-targets";
 import { readinessMarks } from "../../../src/lib/perf/readiness";
 import type { Locale } from "./i18n";
 
@@ -13,13 +14,9 @@ const part = (name: string) => `[data-part="${name}"]`;
 
 /** The main landmark, for CSS contexts (axe scopes, in-page probes) that cannot take a role. */
 const main = "main";
-const trackCard = ".track-card";
-const cardPlay = ".card-play";
-const featured = ".featured-recording";
-const featuredVisible = `${featured}:visible`;
-const moreRecordings = ".home-more-recordings";
-const filterDetails = ".catalog-filter-details";
 const binauralBackground = ".binaural-background";
+const trackCard = part("track-card");
+const cardPlay = part("track-play");
 
 /** The document element and the preferences it reflects before and after hydration. */
 export const documentRoot = {
@@ -102,25 +99,19 @@ export const chunkMarkers = {
 
 export const card = {
   root: trackCard,
-  className: trackCard.slice(1),
-  visible: `${trackCard}:visible`,
   play: cardPlay,
-  playLabel: ".card-play-label",
-  title: ".track-title",
-  description: ".track-description",
-  descriptionText: ".track-description p",
-  art: ".track-art",
-  actionButton: ".track-actions button",
-  actionIconButton: ".track-actions .icon-button",
-  downloadedBadge: ".downloaded-badge",
+  playLabel: part("track-play-label"),
+  title: part("track-title"),
+  /** The text column: title, artist and the actions row. */
+  description: part("track-description"),
+  artist: part("track-artist"),
+  art: part("track-art"),
+  /** The row of favourite, download and details buttons. */
+  actions: part("track-actions"),
   /** The featured recording wrapper, used to tell the first listening target from later ones. */
-  featured,
-  featuredCard: `${featuredVisible} ${trackCard}`,
-  featuredPlay: `${featuredVisible} ${cardPlay}`,
-  featuredActionButton: `${featuredVisible} .track-actions button`,
-  moreCard: `${moreRecordings} ${trackCard}`,
-  morePlayLabel: `${moreRecordings} .card-play-label`,
-  mainPlay: `${main} ${cardPlay}`,
+  featured: part("featured-recording"),
+  /** Home's shelf of further recordings under the featured one. */
+  more: part("more-recordings"),
 } as const;
 
 export const player = {
@@ -139,19 +130,11 @@ export const player = {
 export const playbackGrantPath = "/api/grants/";
 
 export const explore = {
-  filterChip: ".filter-chip",
-  filterRow: ".filter-row",
-  filterSummary: `${filterDetails} summary`,
-  filterSummaryChild: `${filterDetails} > summary`,
-  mainFilterSummary: `${main} ${filterDetails} summary`,
-  facets: ".catalog-facets",
-  mainFacets: `${main} .catalog-facets`,
-  facet: (name: "genre" | "goal" | "instrument" | "tradition") => `#filter-${name}`,
-  resultsNote: ".results-note",
-  /** The results note of a lazily loaded list in the reading region, never a hidden streamed copy. */
-  mainResultsNote: `${main} .results-note:visible`,
+  /** The four facet selects inside the filter disclosure. */
+  facets: part("catalog-facets"),
   pager: "fieldset",
-  mainCategoryLink: (category: string) => `${main} a[href*="category=${category}"]`,
+  /** Any link into one catalogue category. */
+  categoryLink: (category: string) => `[href*="category=${category}"]`,
 } as const;
 
 export const binaural = {
@@ -172,7 +155,6 @@ export const binaural = {
   backgroundPlay: `${binauralBackground} ${cardPlay}`,
   range: ".binaural-range",
   selection: ".binaural-catalogue-selection",
-  facet: (name: "genre" | "goal" | "instrument" | "tradition") => `#binaural-filter-${name}`,
 } as const;
 
 export const settings = {
@@ -222,24 +204,11 @@ export const storage = {
   downloads: { name: "healingmuse-downloads", version: 1, store: "recordings" },
 } as const;
 
-/** Elements the GSAP garden motion reveals inside the main content. */
-export const motionTargets = [
-  ".home-discovery",
-  trackCard,
-  ".panel",
-  ".empty-state",
-  ".storage-panel",
-  ".binaural-modes",
-  ".binaural-player",
-  ".binaural-preferences",
-  ".binaural-education",
-  ".legal-page",
-  ".credit-list",
-  ".garden-credits",
-  ".info-panel",
-]
-  .map((target) => `${main} ${target}`)
-  .join(", ");
+/**
+ * Elements the GSAP garden motion reveals inside the main content, exactly as the motion layer
+ * selects them, so the wait for motion to settle follows the application.
+ */
+export const motionTargets = revealTargets;
 
 /** Computed-style expectations for motion and translucent surfaces. */
 export const style = {

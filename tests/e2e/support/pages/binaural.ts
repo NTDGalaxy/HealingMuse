@@ -120,7 +120,7 @@ export class Binaural {
   }
   /** The mixer catalogue, which reuses Explore's search, facets and paging. */
   get catalogue() {
-    return new Explore(this.page, this.locale, this.background, binaural.facet);
+    return new Explore(this.page, this.locale, this.background);
   }
   get range() {
     return this.background.locator(binaural.range);

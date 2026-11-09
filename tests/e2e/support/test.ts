@@ -318,7 +318,7 @@ export async function waitForAudioClock(page: Page, seconds: number) {
  * ignored because they never settle by design.
  */
 export async function expectMotionSettled(page: Page, targets?: Locator) {
-  const moving = targets ?? page.locator(motionTargets);
+  const moving = targets ?? page.getByRole("main").locator(motionTargets);
   await test.step(
     "motion settles",
     async () => {

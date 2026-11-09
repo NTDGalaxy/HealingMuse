@@ -59,12 +59,14 @@ export const TrackCard = memo(function TrackCard({
   return (
     <article
       className={`track-card ${compact ? "track-compact" : ""} ${selection?.selected ? "track-selected" : ""}`}
+      data-part="track-card"
     >
-      <div className="track-art">
+      <div className="track-art" data-part="track-art">
         <NatureArt kind={track.artwork} color={track.color} />
         <span className="track-category">{t(`catalog.${track.category}`)}</span>
         <button
           className="card-play"
+          data-part="track-play"
           {...primaryControl(primary && !selection)}
           aria-label={selection?.label ?? t("catalog.playTitle", { title })}
           aria-pressed={selection ? selection.selected : undefined}
@@ -80,7 +82,11 @@ export const TrackCard = memo(function TrackCard({
           ) : (
             <Play size={22} fill="currentColor" aria-hidden="true" />
           )}
-          {!selection && <span className="card-play-label">{t("common.play")}</span>}
+          {!selection && (
+            <span className="card-play-label" data-part="track-play-label">
+              {t("common.play")}
+            </span>
+          )}
         </button>
         {downloaded && (
           <span className="downloaded-badge" title={t("catalog.downloaded")}>
@@ -89,9 +95,10 @@ export const TrackCard = memo(function TrackCard({
           </span>
         )}
       </div>
-      <div className="track-description">
+      <div className="track-description" data-part="track-description">
         <button
           className="track-title"
+          data-part="track-title"
           aria-label={selection?.label}
           aria-pressed={selection ? selection.selected : undefined}
           disabled={selection?.disabled}
@@ -99,10 +106,10 @@ export const TrackCard = memo(function TrackCard({
         >
           {title}
         </button>
-        <p>{track.artist}</p>
+        <p data-part="track-artist">{track.artist}</p>
         <div className="track-bottom">
           <span className="duration">{clock(track.duration)}</span>
-          <div className="track-actions">
+          <div className="track-actions" data-part="track-actions">
             <button
               className="icon-button"
               aria-label={t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
@@ -328,7 +335,7 @@ export function HomeView({
               <p>{t("home.featuredNote")}</p>
             </div>
           </div>
-          <div className="featured-recording">
+          <div className="featured-recording" data-part="featured-recording">
             {tracks.slice(0, 1).map((track) => (
               <TrackCard
                 key={track.id}
@@ -346,7 +353,7 @@ export function HomeView({
       )}
       <HomeDiscovery />
       {tracks.length > 1 && (
-        <section className="home-more-recordings">
+        <section className="home-more-recordings" data-part="more-recordings">
           <div className="track-grid">
             {tracks.slice(1, 4).map((track) => (
               <TrackCard

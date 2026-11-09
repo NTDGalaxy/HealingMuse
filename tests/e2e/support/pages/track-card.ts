@@ -18,14 +18,15 @@ export class TrackCard {
   get description() {
     return this.root.locator(card.description);
   }
-  get descriptionText() {
-    return this.root.locator(card.descriptionText);
+  get artist() {
+    return this.root.locator(card.artist);
   }
   get art() {
     return this.root.locator(card.art);
   }
+  /** The favourite, download and details buttons. */
   get actionIconButtons() {
-    return this.root.locator(card.actionIconButton);
+    return this.root.locator(card.actions).getByRole("button");
   }
 }
 
@@ -45,25 +46,27 @@ export class Recordings {
 
   /** The first listening target on Home. */
   get featured() {
-    return new TrackCard(this.scope.locator(card.featuredCard));
+    return new TrackCard(
+      this.scope.locator(card.featured).filter({ visible: true }).locator(card.root),
+    );
   }
   get featuredPlay() {
-    return this.scope.locator(card.featuredPlay);
+    return this.featured.play;
   }
   get featuredActionButtons() {
-    return this.scope.locator(card.featuredActionButton);
+    return this.featured.actionIconButtons;
   }
   get moreCards() {
-    return this.scope.locator(card.moreCard);
+    return this.scope.locator(card.more).locator(card.root);
   }
   get morePlayLabels() {
-    return this.scope.locator(card.morePlayLabel);
+    return this.scope.locator(card.more).locator(card.playLabel);
   }
   get cards() {
     return this.scope.locator(card.root);
   }
   get visibleCards() {
-    return this.scope.locator(card.visible);
+    return this.cards.filter({ visible: true });
   }
   get titles() {
     return this.scope.locator(card.title);
@@ -73,13 +76,14 @@ export class Recordings {
   }
   /** Play buttons in the main reading region, excluding Next's hidden streamed copy. */
   get mainPlays() {
-    return this.scope.locator(card.mainPlay);
+    return this.scope.getByRole("main").locator(card.play);
   }
   get actionIconButtons() {
-    return this.scope.locator(card.actionIconButton);
+    return this.scope.locator(card.actions).getByRole("button");
   }
+  /** The badges of recordings saved on this device, named by their tooltip. */
   get downloadedBadges() {
-    return this.scope.locator(card.downloadedBadge);
+    return this.scope.getByTitle(this.t("catalog.downloaded"), { exact: true });
   }
   card(index: number) {
     return new TrackCard(this.cards.nth(index));

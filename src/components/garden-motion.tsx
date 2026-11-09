@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { GraphicsMarker } from "@/lib/garden/budget-markers";
+import { revealTargets } from "@/lib/garden/reveal-targets";
 import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
 import { useMotionPolicy } from "./motion-policy";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -61,8 +62,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
         const observed = new WeakSet<Element>();
         const revealed = new WeakSet<Element>();
         const stationary = new WeakSet<Element>();
-        const targets =
-          ".home-discovery, .track-card, .panel, .empty-state, .storage-panel, .binaural-modes, .binaural-player, .binaural-preferences, .binaural-education, .legal-page, .credit-list, .garden-credits, .info-panel";
+        const targets = revealTargets;
         const reveal = (elements: Element[]) =>
           context.add(() => {
             elements.forEach((element, index) => {

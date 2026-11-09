@@ -7,7 +7,7 @@ import { card, garden, player, shell } from "./contracts";
 
 type Probes = typeof window & {
   originalAudio?: HTMLAudioElement;
-  arrivals?: string[];
+  arrivals?: number;
   cardMoves?: string[];
   firstSound?: number;
   motionPasses?: number[];
@@ -22,7 +22,7 @@ export async function watchCardArrivals(page: Page) {
     ({ audio, main, trackCard }) => {
       const state = window as Probes;
       state.originalAudio = document.querySelector<HTMLAudioElement>(audio)!;
-      state.arrivals = [];
+      state.arrivals = 0;
       new MutationObserver((records) => {
         for (const record of records) {
           const target = record.target as HTMLElement;
@@ -31,7 +31,7 @@ export async function watchCardArrivals(page: Page) {
             target.style.opacity &&
             Number(target.style.opacity) < 0.99
           )
-            state.arrivals!.push(target.className);
+            state.arrivals!++;
         }
       }).observe(document.querySelector(main)!, {
         subtree: true,
@@ -52,15 +52,12 @@ export function sameAudioStillPlaying(page: Page) {
 }
 
 export async function resetCardArrivals(page: Page) {
-  await page.evaluate(() => ((window as Probes).arrivals = []));
+  await page.evaluate(() => ((window as Probes).arrivals = 0));
 }
 
 /** Whether a recording card arrived since the last reset. */
 export function cardArrived(page: Page) {
-  return page.evaluate(
-    (className) => (window as Probes).arrivals!.some((value) => value.includes(className)),
-    card.className,
-  );
+  return page.evaluate(() => (window as Probes).arrivals! > 0);
 }
 
 /**

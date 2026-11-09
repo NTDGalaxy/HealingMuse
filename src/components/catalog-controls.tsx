@@ -79,7 +79,7 @@ export function CatalogControls({
         onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
       >
         <summary>{t("catalog.filters")}</summary>
-        <div className="catalog-facets">
+        <div className="catalog-facets" data-part="catalog-facets">
           {(["goal", "genre", "instrument", "tradition"] as const).map((field) => {
             const fieldId = id === "catalog" ? `filter-${field}` : `${id}-filter-${field}`;
             return (

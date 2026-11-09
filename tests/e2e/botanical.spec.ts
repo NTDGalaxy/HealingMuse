@@ -100,7 +100,7 @@ for (const locale of ["en", "vi"] as const)
       await shell.expectTheme(theme);
       await expect(new Player(page, locale).bar).toBeHidden();
       const first = new Recordings(page, locale).featured;
-      for (const part of [first.title, first.descriptionText, first.play]) {
+      for (const part of [first.title, first.artist, first.play]) {
         const bounds = (await part.boundingBox())!;
         expect(bounds.y).toBeGreaterThan(0);
         expect(bounds.y + bounds.height).toBeLessThan((await shell.mobileNav.boundingBox())!.y);
