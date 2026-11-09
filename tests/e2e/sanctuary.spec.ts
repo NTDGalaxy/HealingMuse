@@ -1,57 +1,58 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, storeCalm } from "./support/test";
+import { shell as chrome, style } from "./support/contracts";
+import { Explore, Player, Recordings, Shell } from "./support/pages";
 
 test("phone discovery shows playable choices and expands native listening filters by keyboard", async ({
   page,
 }) => {
+  const shell = new Shell(page, "vi");
+  const explore = new Explore(page, "vi");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/vi/explore");
-  const firstPlay = page.locator("#main-content .card-play").first();
+  const firstPlay = new Recordings(page, "vi").mainPlays.first();
   await expect(firstPlay).toBeVisible();
   const bounds = (await firstPlay.boundingBox())!;
-  await expect(page.locator(".player-bar")).toBeHidden();
-  const playerTop = (await page.locator(".mobile-nav").boundingBox())!.y;
+  await expect(new Player(page, "vi").bar).toBeHidden();
+  const playerTop = (await shell.mobileNav.boundingBox())!.y;
   expect(bounds.y + bounds.height).toBeLessThan(playerTop);
-  const summary = page.locator("#main-content .catalog-filter-details summary");
+  const summary = explore.mainFilterSummary;
   await summary.focus();
   await page.keyboard.press("Space");
-  const facets = page.locator("#main-content .catalog-facets");
+  const facets = explore.mainFacets;
   await expect(facets).toBeVisible();
-  await facets.locator("#filter-genre").selectOption("classical");
+  await explore.facet("genre", facets).selectOption("classical");
   await expect(page).toHaveURL(/genre=classical/);
-  await expect(facets.locator("#filter-genre")).toHaveValue("classical");
-  await facets.locator("#filter-genre").selectOption("");
+  await expect(explore.facet("genre", facets)).toHaveValue("classical");
+  await explore.facet("genre", facets).selectOption("");
   await expect(firstPlay).toBeVisible();
 });
 
 test("reduced motion, stored Calm mode and reduced transparency remove decorative effects", async ({
   page,
 }) => {
+  const shell = new Shell(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/en");
-  await expect(page.locator("#main-content h1")).toBeVisible();
-  expect(
-    await page.locator("#main-content h1").evaluate((heading) => heading.getAnimations().length),
-  ).toBe(0);
+  await expect(shell.mainHeading).toBeVisible();
+  expect(await shell.mainHeading.evaluate((heading) => heading.getAnimations().length)).toBe(0);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.evaluate(() => localStorage.setItem("healingmuse-calm", "true"));
+  await storeCalm(page);
   await page.reload();
-  await expect(page.locator(".app-shell")).toHaveClass(/calm-mode/);
+  await shell.expectCalm();
   await page.evaluate(() => scrollTo(0, 500));
   expect(
-    await page
-      .locator("#sanctuary-scenery")
-      .evaluate((element) => element.style.getPropertyValue("--scenic-shift")),
+    await shell.scenery.evaluate(
+      (element, property) => element.style.getPropertyValue(property),
+      chrome.sceneryShift,
+    ),
   ).toBe("");
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
+    features: [{ ...style.reducedTransparency }],
   });
-  for (const selector of [".topbar", ".search-box", ".player-bar"]) {
+  for (const surface of [shell.topbar, shell.searchBox, new Player(page).bar]) {
     expect(
-      await page
-        .locator(selector)
-        .first()
-        .evaluate((element) => getComputedStyle(element).backdropFilter),
-    ).toBe("none");
+      await surface.first().evaluate((element) => getComputedStyle(element).backdropFilter),
+    ).toBe(style.none);
   }
 });

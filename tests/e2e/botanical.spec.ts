@@ -1,22 +1,30 @@
-import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import {
+  test,
+  expect,
+  expectAccessible,
+  expectNoHorizontalOverflow,
+  expectPlaying,
+} from "./support/test";
+import { dialog as dialogs, shell as chrome, size } from "./support/contracts";
+import { Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
   await page.goto("/en");
-  await expect(page.locator('#main-content a[href*="category=nature"]')).toHaveCount(0);
+  await expect(new Explore(page).mainCategoryLink("nature")).toHaveCount(0);
 });
 
 test("phone recording actions stay above fixed navigation when reached by keyboard", async ({
   page,
 }) => {
+  const shell = new Shell(page, "vi");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/vi");
-  const card = page.locator(".track-card").first();
-  await card.locator(".card-play").focus();
+  const card = new TrackCard(new Recordings(page, "vi").cards.first());
+  await card.play.focus();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
-  const control = page.locator(":focus");
+  const control = shell.focused;
   await expect(control).toBeVisible();
   expect(
     await control.evaluate((element) => {
@@ -27,75 +35,66 @@ test("phone recording actions stay above fixed navigation when reached by keyboa
   ).toBe(true);
 });
 
-for (const locale of ["en", "vi"])
-  for (const theme of ["day", "night"]) {
+for (const locale of ["en", "vi"] as const)
+  for (const theme of ["day", "night"] as const) {
     test(`${locale} ${theme} keeps the first recording identified and immediately playable`, async ({
       page,
+      appearance,
     }) => {
+      const shell = new Shell(page, locale);
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.addInitScript(
-        (theme) =>
-          localStorage.setItem(
-            "healingmuse-appearance-v1",
-            JSON.stringify({ appearance: theme, garden: "still" }),
-          ),
-        theme,
-      );
+      await appearance({ theme, garden: "still" });
       await page.goto(`/${locale}`);
-      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-      await expect(page.locator(".player-bar")).toBeHidden();
-      const first = page.locator(".featured-recording:visible .track-card");
-      for (const selector of [".track-title", ".track-description p", ".card-play"]) {
-        const bounds = (await first.locator(selector).boundingBox())!;
+      await shell.expectTheme(theme);
+      await expect(new Player(page, locale).bar).toBeHidden();
+      const first = new Recordings(page, locale).featured;
+      for (const part of [first.title, first.descriptionText, first.play]) {
+        const bounds = (await part.boundingBox())!;
         expect(bounds.y).toBeGreaterThan(0);
-        expect(bounds.y + bounds.height).toBeLessThan(
-          (await page.locator(".mobile-nav").boundingBox())!.y,
-        );
+        expect(bounds.y + bounds.height).toBeLessThan((await shell.mobileNav.boundingBox())!.y);
       }
-      await expect(first.locator(".card-play-label")).toBeVisible();
-      const label = await first.locator(".card-play-label").boundingBox();
-      expect(label!.height).toBeLessThanOrEqual(24);
-      const art = await first.locator(".track-art").boundingBox();
-      const description = await first.locator(".track-description").boundingBox();
+      await expect(first.playLabel).toBeVisible();
+      const label = await first.playLabel.boundingBox();
+      expect(label!.height).toBeLessThanOrEqual(size.compactLabel);
+      const art = await first.art.boundingBox();
+      const description = await first.description.boundingBox();
       expect(art!.x + art!.width).toBeLessThan(description!.x);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-        true,
-      );
-      await expect(page.locator(".garden-canvas canvas")).toHaveCount(0);
+      await expectNoHorizontalOverflow(page);
+      await expect(shell.gardenCanvas).toHaveCount(0);
     });
   }
 
 test("global appearance persists and More restores keyboard focus", async ({ page }) => {
+  const shell = new Shell(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en");
-  await page.getByRole("button", { name: "Your garden", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Appearance", { exact: true }).selectOption("night");
-  await dialog.getByLabel("Garden detail", { exact: true }).selectOption("still");
+  await shell.gardenButton.click();
+  const dialog = shell.dialog;
+  await shell.appearanceSelect.selectOption("night");
+  await shell.gardenDetailSelect.selectOption("still");
   await dialog.getByRole("checkbox").check();
-  await expect(page.locator(".app-shell")).toHaveClass(/calm-mode/);
+  await shell.expectCalm();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Your garden", exact: true })).toBeFocused();
+  await expect(shell.gardenButton).toBeFocused();
   await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
-  await expect(page.locator(".garden-canvas canvas")).toHaveCount(0);
-  const more = page.locator(".mobile-nav").getByRole("button", { name: "More", exact: true });
+  await shell.expectTheme("night");
+  await expect(shell.gardenCanvas).toHaveCount(0);
+  const more = shell.moreButton;
   await more.click();
-  await expect(
-    page.getByRole("dialog").getByRole("link", { name: "Downloads", exact: true }),
-  ).toBeVisible();
+  await expect(shell.dialogNavLink("downloads")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(more).toBeFocused();
   await more.click();
-  await page.getByRole("dialog").getByRole("link", { name: "Settings", exact: true }).click();
+  await shell.dialogNavLink("settings").click();
   await expect(page).toHaveURL(/\/en\/settings$/);
-  await expect(page.locator(".mobile-nav button")).toHaveAttribute("data-current", "true");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await shell.expectCurrentMoreButton();
+  await expect(shell.dialog).toHaveCount(0);
 });
 
 test("renderer startup failure leaves working recording controls and a poster", async ({
   page,
 }) => {
+  const shell = new Shell(page);
   await page.addInitScript(() => {
     window.Worker = class {
       constructor() {
@@ -109,91 +108,67 @@ test("renderer startup failure leaves working recording controls and a poster", 
     } as typeof getContext;
   });
   await page.goto("/en");
-  await expect(page.locator(".garden-canvas")).toHaveAttribute("data-state", "still");
-  await page.locator(".featured-recording:visible .card-play").click();
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-    .toBe(true);
-  await expect(page.locator(".player-bar")).toBeVisible();
+  await shell.expectGardenState("still");
+  await new Recordings(page).featuredPlay.click();
+  await expectPlaying(page);
+  await expect(new Player(page).bar).toBeVisible();
 });
 
-test("the active listening queue remains readable in Night appearance", async ({ page }) => {
-  await page.addInitScript(() =>
-    localStorage.setItem(
-      "healingmuse-appearance-v1",
-      JSON.stringify({ appearance: "night", garden: "still" }),
-    ),
-  );
+test("the active listening queue remains readable in Night appearance", async ({
+  page,
+  appearance,
+}) => {
+  const shell = new Shell(page);
+  const player = new Player(page);
+  await appearance({ theme: "night", garden: "still" });
   await page.goto("/en");
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
-  await page.locator(".featured-recording:visible .card-play").click();
-  await page.getByRole("button", { name: "Listening queue", exact: true }).click();
-  await expect(page.locator('.queue-list button[aria-current="true"]')).toHaveCount(1);
-  expect(
-    (
-      await new AxeBuilder({ page })
-        .include(".dialog-content")
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze()
-    ).violations,
-  ).toEqual([]);
+  await shell.expectTheme("night");
+  await new Recordings(page).featuredPlay.click();
+  await player.button("queue").click();
+  await expect(player.currentQueueItem).toHaveCount(1);
+  await expectAccessible(page, dialogs.content);
   await page.keyboard.press("Escape");
-  await page.locator('.side-nav a[href="/en/explore"]').hover();
-  expect(
-    (
-      await new AxeBuilder({ page })
-        .include(".sidebar")
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze()
-    ).violations,
-  ).toEqual([]);
+  await shell.sideNavLink("/en/explore").hover();
+  await expectAccessible(page, chrome.sidebar);
 });
 
 test.describe("WebGL lifecycle", () => {
   test("sustained slow frames reduce quality and fall back without blocking audio", async ({
     page,
   }) => {
+    const shell = new Shell(page);
     await page.addInitScript(() => {
       Object.defineProperty(window, "Worker", { value: undefined, configurable: true });
       const request = window.requestAnimationFrame.bind(window);
       window.requestAnimationFrame = (callback) => request((time) => callback(time * 20));
     });
     await page.goto("/en");
-    const host = page.locator(".garden-canvas");
-    await expect(host).toHaveAttribute("data-state", "still");
-    await expect(host).toHaveAttribute("data-quality", "0");
-    await expect(host.locator("canvas")).toHaveCount(0);
-    await expect(page.locator("html")).toHaveAttribute("data-garden", "auto");
-    await page.locator(".featured-recording:visible .card-play").click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
+    await shell.expectGardenState("still");
+    await shell.expectGardenQuality("0");
+    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await shell.expectGardenDetail("auto");
+    await new Recordings(page).featuredPlay.click();
+    await expectPlaying(page);
   });
 
   test("main-thread fallback and context loss preserve active audio", async ({ page }) => {
+    const shell = new Shell(page);
     await page.addInitScript(() =>
       Object.defineProperty(window, "Worker", { value: undefined, configurable: true }),
     );
     await page.goto("/en");
-    const host = page.locator(".garden-canvas");
-    await expect(host).toHaveAttribute("data-state", "ready");
-    await expect(host).toHaveAttribute("data-renderer", "main");
-    await page.locator(".featured-recording:visible .card-play").click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
-    await host
-      .locator("canvas")
-      .evaluate((canvas) =>
-        (canvas as HTMLCanvasElement)
-          .getContext("webgl2")!
-          .getExtension("WEBGL_lose_context")!
-          .loseContext(),
-      );
-    await expect(host).toHaveAttribute("data-state", "still");
-    await expect(host.locator("canvas")).toHaveCount(0);
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
+    await shell.expectGardenState("ready");
+    await shell.expectGardenRenderer("main");
+    await new Recordings(page).featuredPlay.click();
+    await expectPlaying(page);
+    await shell.gardenHostCanvas.evaluate((canvas) =>
+      (canvas as HTMLCanvasElement)
+        .getContext("webgl2")!
+        .getExtension("WEBGL_lose_context")!
+        .loseContext(),
+    );
+    await shell.expectGardenState("still");
+    await expect(shell.gardenHostCanvas).toHaveCount(0);
+    await expectPlaying(page);
   });
 });

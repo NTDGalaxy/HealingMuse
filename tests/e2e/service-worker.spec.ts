@@ -1,7 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, expectPlaying, registerServiceWorker, seedDownload } from "./support/test";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import type { Track } from "@/lib/types";
+import { preparedAudio, preparedCatalogue } from "./support/catalogue";
+import { Recordings } from "./support/pages";
 
 test("a waiting shell update preserves downloaded playback and offline startup", async ({
   page,
@@ -9,9 +10,9 @@ test("a waiting shell update preserves downloaded playback and offline startup",
 }) => {
   let version = 1;
   const template = await readFile("src/offline/service-worker.js", "utf8");
-  const track: Track = JSON.parse(await readFile("media/prepared/catalog.json", "utf8"))[0];
-  if (track.source.kind !== "hosted") throw new Error("Hosted fixture required");
-  const bytes = await readFile(`media/prepared/${track.source.path}`);
+  const track = (await preparedCatalogue())[0];
+  const bytes = await preparedAudio(track);
+  const recordings = new Recordings(page);
   const files = new Map<string, Buffer>([["/fixture.mp3", bytes]]);
   for (const path of [
     "/offline/index.html",
@@ -68,36 +69,11 @@ test("a waiting shell update preserves downloaded playback and offline startup",
   const origin = `http://127.0.0.1:${address.port}`;
   try {
     await page.goto(`${origin}/en/downloads`);
-    await page.evaluate(async (track) => {
-      await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
-      const blob = await (await fetch("/fixture.mp3")).blob();
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("healingmuse-downloads", 1);
-        request.onupgradeneeded = () =>
-          request.result.createObjectStore("recordings", { keyPath: "id" });
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("recordings", "readwrite");
-        tx.objectStore("recordings").put({
-          id: track.id,
-          track,
-          blob,
-          bytes: blob.size,
-          downloadedAt: new Date().toISOString(),
-        });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    }, track);
+    await registerServiceWorker(page, "/sw.js");
+    await seedDownload(page, track, "/fixture.mp3");
     await page.reload();
-    await page.getByRole("button", { name: `Listen to ${track.title.en}`, exact: true }).click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
+    await recordings.listen(track.title.en).click();
+    await expectPlaying(page);
     version = 2;
     await page.evaluate(async () => {
       await (await navigator.serviceWorker.getRegistration())!.update();
@@ -107,9 +83,7 @@ test("a waiting shell update preserves downloaded playback and offline startup",
         page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting),
       )
       .toBe(true);
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
+    await expectPlaying(page);
     await page.evaluate(async () => {
       const registration = (await navigator.serviceWorker.getRegistration())!;
       await new Promise<void>((resolve) => {
@@ -124,11 +98,9 @@ test("a waiting shell update preserves downloaded playback and offline startup",
       .toEqual(["healingmuse-shell-test-2"]);
     await context.setOffline(true);
     await page.goto(`${origin}/en/downloads`);
-    await page.getByRole("button", { name: `Listen to ${track.title.en}`, exact: true }).click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
-    await page.getByText("Credits and recording rights", { exact: true }).click();
+    await recordings.listen(track.title.en).click();
+    await expectPlaying(page);
+    await page.getByText(recordings.t("catalog.credit"), { exact: true }).click();
     await expect(page.getByText(track.attribution, { exact: true })).toBeVisible();
   } finally {
     await context.setOffline(false);

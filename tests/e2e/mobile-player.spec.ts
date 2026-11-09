@@ -1,25 +1,23 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, expectNoHorizontalOverflow } from "./support/test";
+import { size } from "./support/contracts";
+import { Player, Recordings, Shell } from "./support/pages";
 test("the phone player exposes its complete keyboard-operable controls", async ({ page }) => {
+  const shell = new Shell(page);
+  const player = new Player(page);
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto("/en");
-  await page.locator(".featured-recording:visible .card-play").click();
-  await page.getByRole("button", { name: "Controls", exact: true }).click();
-  for (const name of [
-    "Previous recording",
-    "Next recording",
-    "Repeat queue",
-    "Listening queue",
-    "Finish session",
-  ]) {
-    const button = page.getByRole("button", { name, exact: true });
+  await new Recordings(page).featuredPlay.click();
+  await player.button("expand").click();
+  for (const key of ["previous", "next", "repeat", "queue", "finish"] as const) {
+    const button = player.button(key);
     await expect(button).toBeVisible();
     const box = await button.boundingBox();
-    expect(box!.width).toBeGreaterThanOrEqual(44);
-    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.width).toBeGreaterThanOrEqual(size.touchTarget);
+    expect(box!.height).toBeGreaterThanOrEqual(size.touchTarget);
   }
-  await page.getByRole("button", { name: "Listening queue", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await player.button("queue").click();
+  await expect(shell.dialog).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Listening queue", exact: true })).toBeFocused();
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(player.button("queue")).toBeFocused();
+  await expectNoHorizontalOverflow(page);
 });

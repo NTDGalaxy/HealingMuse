@@ -1,230 +1,152 @@
-import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import { test, expect, expectAccessible, expectMotionSettled, expectPlaying } from "./support/test";
+import { dialog as dialogs, shell as chrome, size, style } from "./support/contracts";
+import {
+  cardArrived,
+  cardMoved,
+  resetCardArrivals,
+  sameAudioStillPlaying,
+  watchCardArrivals,
+  watchCardMoves,
+} from "./support/motion";
+import { Binaural, Explore, Recordings, Settings, Shell } from "./support/pages";
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() =>
-    localStorage.setItem(
-      "healingmuse-appearance-v1",
-      JSON.stringify({ appearance: "day", garden: "still" }),
-    ),
-  );
+test.beforeEach(async ({ appearance }) => {
+  await appearance({ theme: "day", garden: "still" });
 });
 
 test("route and reused catalogue results arrive without moving listening targets", async ({
   page,
 }) => {
+  const shell = new Shell(page);
+  const recordings = new Recordings(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en");
-  await page.locator(".featured-recording:visible .card-play").click();
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-    .toBe(true);
-  await page.evaluate(() => {
-    const state = window as typeof window & {
-      originalAudio?: HTMLAudioElement;
-      arrivals?: string[];
-    };
-    state.originalAudio = document.querySelector("audio")!;
-    state.arrivals = [];
-    new MutationObserver((records) => {
-      for (const record of records) {
-        const target = record.target as HTMLElement;
-        if (
-          target.matches(".track-card") &&
-          target.style.opacity &&
-          Number(target.style.opacity) < 0.99
-        )
-          state.arrivals!.push(target.className);
-      }
-    }).observe(document.getElementById("main-content")!, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["style"],
-    });
-  });
-  await page.locator(".mobile-nav").getByRole("link", { name: "Explore", exact: true }).click();
+  await recordings.featuredPlay.click();
+  await expectPlaying(page);
+  await watchCardArrivals(page);
+  await shell.mobileNav.getByRole("link", { name: shell.t("nav.explore"), exact: true }).click();
   await expect(page).toHaveURL(/\/en\/explore$/);
   expect(
-    await page
-      .locator(".page-heading")
-      .evaluate((element) => getComputedStyle(element).animationName),
-  ).toBe("heading-arrive");
-  await expect(page.locator(".page-heading")).not.toHaveAttribute("style", /transform|opacity/);
-  expect(
-    await page.evaluate(() => {
-      const audio = document.querySelector("audio")!;
-      return (
-        audio === (window as typeof window & { originalAudio: HTMLAudioElement }).originalAudio &&
-        !audio.paused
-      );
-    }),
-  ).toBe(true);
-  await page.waitForTimeout(650);
-  await page.evaluate(() => ((window as typeof window & { arrivals: string[] }).arrivals = []));
-  const title = await page.locator(".track-title").first().textContent();
-  await page.locator(".filter-chip").nth(1).click();
+    await shell.pageHeading.evaluate((element) => getComputedStyle(element).animationName),
+  ).toBe(style.headingArrival);
+  await expect(shell.pageHeading).not.toHaveAttribute("style", /transform|opacity/);
+  expect(await sameAudioStillPlaying(page)).toBe(true);
+  await expectMotionSettled(page);
+  await resetCardArrivals(page);
+  const title = await recordings.titles.first().textContent();
+  await new Explore(page).filterChips.nth(1).click();
   await expect(page).toHaveURL(/category=instrumental/);
+  await expect.poll(() => cardArrived(page)).toBe(true);
+  await expect(recordings.titles.first()).toHaveText(title!);
   await expect
-    .poll(() =>
-      page.evaluate(() =>
-        (window as typeof window & { arrivals: string[] }).arrivals.some((value) =>
-          value.includes("track-card"),
-        ),
-      ),
-    )
-    .toBe(true);
-  await expect(page.locator(".track-title").first()).toHaveText(title!);
-  await expect
-    .poll(() =>
-      page
-        .locator(".track-card")
-        .first()
-        .evaluate((element) => getComputedStyle(element).transform),
-    )
-    .toBe("none");
-  await page.waitForTimeout(650);
-  await expect(page.locator(".track-card").first()).not.toHaveAttribute(
-    "style",
-    /opacity|transform/,
-  );
+    .poll(() => recordings.cards.first().evaluate((element) => getComputedStyle(element).transform))
+    .toBe(style.none);
+  await expectMotionSettled(page, recordings.cards.first());
+  await expect(recordings.cards.first()).not.toHaveAttribute("style", /opacity|transform/);
 });
 
 test("dialog entrances and exits keep repeated keyboard focus restoration", async ({ page }) => {
+  const shell = new Shell(page);
   await page.goto("/en");
-  const details = page.locator(".featured-recording:visible .track-actions button").last();
-  for (const trigger of [
-    details,
-    page.getByRole("button", { name: "Your garden", exact: true }),
-    details,
-  ]) {
+  const details = new Recordings(page).featuredActionButtons.last();
+  for (const trigger of [details, shell.gardenButton, details]) {
     await trigger.click();
-    const dialog = page.getByRole("dialog");
+    const dialog = shell.dialog;
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((element) => getComputedStyle(element).animationName)).toBe(
-      "dialog-arrive",
+      style.dialogArrival,
     );
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
   }
   await details.click();
-  expect((await new AxeBuilder({ page }).include('[role="dialog"]').analyze()).violations).toEqual(
-    [],
-  );
+  await expectAccessible(page, dialogs.role, { allRules: true });
 });
 
 test("later phone cards rise while the first listening target stays stationary", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => {
-    const moves: string[] = [];
-    (window as typeof window & { cardMoves: string[] }).cardMoves = moves;
-    new MutationObserver((records) => {
-      for (const record of records) {
-        const target = record.target as HTMLElement;
-        if (!target.matches(".track-card") || !target.style.transform) continue;
-        if (Math.abs(new DOMMatrixReadOnly(getComputedStyle(target).transform).m42) > 1)
-          moves.push(target.closest(".featured-recording") ? "first" : "later");
-      }
-    }).observe(document, { subtree: true, attributes: true, attributeFilter: ["style"] });
-  });
+  await watchCardMoves(page);
   await page.goto("/vi");
-  await page.waitForTimeout(650);
-  await page.locator(".home-more-recordings .track-card").last().scrollIntoViewIfNeeded();
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        (window as typeof window & { cardMoves: string[] }).cardMoves.includes("later"),
-      ),
-    )
-    .toBe(true);
-  expect(
-    await page.evaluate(() =>
-      (window as typeof window & { cardMoves: string[] }).cardMoves.includes("first"),
-    ),
-  ).toBe(false);
+  await expectMotionSettled(page);
+  await new Recordings(page, "vi").moreCards.last().scrollIntoViewIfNeeded();
+  await expect.poll(() => cardMoved(page, "later")).toBe(true);
+  expect(await cardMoved(page, "first")).toBe(false);
 });
 
 for (const preference of ["calm", "reduced"] as const) {
-  test(`${preference} stops page, dialog and selection decoration`, async ({ page }) => {
+  test(`${preference} stops page, dialog and selection decoration`, async ({
+    page,
+    appearance,
+  }) => {
+    const shell = new Shell(page);
+    const binaural = new Binaural(page);
     await page.setViewportSize({ width: 390, height: 844 });
     if (preference === "reduced") await page.emulateMedia({ reducedMotion: "reduce" });
-    else await page.addInitScript(() => localStorage.setItem("healingmuse-calm", "true"));
-    await page.goto("/en/brainwave-entrainment");
-    await page.locator(".binaural-mode").nth(2).click();
-    const more = page.locator(".mobile-nav button");
+    else await appearance({ calm: true });
+    await page.goto(binaural.path);
+    await binaural.modeChoices.nth(2).click();
+    const more = shell.mobileNavButton;
     await more.hover();
     const resting = await more.boundingBox();
     await page.mouse.down();
     expect(await more.boundingBox()).toEqual(resting);
     await page.mouse.up();
-    await expect(
-      page.getByRole("dialog").getByRole("link", { name: "Settings", exact: true }),
-    ).toBeVisible();
+    await expect(shell.dialogNavLink("settings")).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.getByRole("button", { name: "Your garden", exact: true }).click();
-    const dialog = page.getByRole("dialog");
+    await expect(shell.dialog).toHaveCount(0);
+    await shell.gardenButton.click();
+    const dialog = shell.dialog;
     await expect(dialog).toBeVisible();
     expect(await dialog.evaluate((element) => getComputedStyle(element).animationName)).toBe(
-      "none",
+      style.none,
     );
-    const close = dialog.getByRole("button", { name: "Close", exact: true });
+    const close = dialog.getByRole("button", { name: shell.t("common.close"), exact: true });
     await close.hover();
     await page.mouse.down();
-    expect(await close.evaluate((element) => getComputedStyle(element).scale)).toBe("none");
+    expect(await close.evaluate((element) => getComputedStyle(element).scale)).toBe(style.none);
     await page.mouse.up();
     // A held-pointer probe checks :active, not click dispatch after a layout/focus update.
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await page.getByRole("button", { name: "Your garden", exact: true }).click();
+    await shell.gardenButton.click();
     expect(
-      await page
-        .locator(".binaural-mode.selected input")
-        .evaluate((element) => getComputedStyle(element).animationName),
-    ).toBe("none");
+      await binaural.selectedModeInput.evaluate(
+        (element) => getComputedStyle(element).animationName,
+      ),
+    ).toBe(style.none);
     await page.keyboard.press("Escape");
-    expect(
-      await page.locator(".page-heading").evaluate((element) => element.getAttribute("style")),
-    ).toBeNull();
+    expect(await shell.pageHeading.evaluate((element) => element.getAttribute("style"))).toBeNull();
   });
 }
 
 test("glass remains readable in both themes and becomes opaque with reduced transparency", async ({
   page,
+  appearance,
 }) => {
-  for (const theme of ["day", "night"]) {
-    await page.addInitScript(
-      (theme) =>
-        localStorage.setItem(
-          "healingmuse-appearance-v1",
-          JSON.stringify({ appearance: theme, garden: "still" }),
-        ),
-      theme,
-    );
+  const shell = new Shell(page);
+  for (const theme of ["day", "night"] as const) {
+    await appearance({ theme, garden: "still" });
     await page.goto("/en/settings");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-    const panel = page.locator(".panel").first();
+    await shell.expectTheme(theme);
+    const panel = new Settings(page).panels.first();
     expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
-      /^rgba\(/,
+      style.translucent,
     );
-    await page.waitForTimeout(650);
-    expect((await new AxeBuilder({ page }).include("#main-content").analyze()).violations).toEqual(
-      [],
-    );
+    await expectMotionSettled(page);
+    await expectAccessible(page, chrome.main, { allRules: true });
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setEmulatedMedia", {
-      features: [{ name: "prefers-reduced-transparency", value: "reduce" }],
+      features: [{ ...style.reducedTransparency }],
     });
     expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
-      /^rgb\(/,
+      style.opaque,
     );
     expect(
-      await page
-        .locator(".sidebar")
-        .evaluate((element) => getComputedStyle(element).backdropFilter),
-    ).toBe("none");
+      await shell.sidebar.evaluate((element) => getComputedStyle(element).backdropFilter),
+    ).toBe(style.none);
     await cdp.send("Emulation.setEmulatedMedia", { features: [] });
     await cdp.detach();
   }
@@ -233,14 +155,14 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
 test("phone Calm and secondary recording labels remain attached to their controls", async ({
   page,
 }) => {
+  const settings = new Settings(page, "vi");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/vi/settings");
-  const row = page.locator(".appearance-controls .setting-row");
-  const text = (await row.locator("span").first().boundingBox())!;
-  const checkbox = (await row.locator("input").boundingBox())!;
+  const text = (await settings.appearanceRowLabel.boundingBox())!;
+  const checkbox = (await settings.appearanceRowControl.boundingBox())!;
   expect(checkbox.y).toBeLessThan(text.y + text.height);
   expect(checkbox.x).toBeGreaterThan(text.x + text.width);
   await page.goto("/vi");
-  for (const label of await page.locator(".home-more-recordings .card-play-label").all())
-    expect((await label.boundingBox())!.height).toBeLessThanOrEqual(24);
+  for (const label of await new Recordings(page, "vi").morePlayLabels.all())
+    expect((await label.boundingBox())!.height).toBeLessThanOrEqual(size.compactLabel);
 });
