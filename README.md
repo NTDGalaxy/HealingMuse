@@ -362,7 +362,7 @@ npm run db:test:b2
 npm run db:lint
 npm run security:repository
 npm run build
-npm run garden:budget
+npm run budgets
 npm run security:client
 ```
 
@@ -393,19 +393,23 @@ Those tests verify generated audio signals, without claiming brainwave synchroni
 Graphics tests cover renderer failure, context loss, unsupported workers, slow rendering, preference changes and cleanup.
 Motion checks cover reused results, repeated dialog focus restoration and reduced-motion/Calm paths.
 
-### Graphics budgets and asset generation
+### Budgets and asset generation
 
 ```bash
 npm run garden:posters
-npm run build
-npm run garden:budget
+NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci-placeholder npm run build
+npm run budgets
 ```
 
 Poster generation renders the actual runtime scenes through installed Playwright Chromium and creates responsive AVIF/WebP assets.
 It does not access cloud audio or use a paid generation service.
 Prompts, provenance and licenses are recorded in [content/garden-assets.json](content/garden-assets.json).
-The budget check measures emitted graphics chunks, including dependencies and workers, against **220 KiB gzip**.
-Each selected mobile poster must remain **80 KiB or less**.
+`npm run budgets` (also `npm run garden:budget`) runs [scripts/check-budgets.mjs](scripts/check-budgets.mjs) against the build manifests, with no browser, timing or network.
+For every route in `src/lib/routes.ts` it gates startup JS and CSS (re-gzipped at level 9), the fonts resolved from the startup `@font-face` rules, and the mobile poster against the ceilings in [budgets.json](budgets.json).
+It fails when a forbidden module (Radix dialog, three.js, GSAP, the binaural engine, Zod, supabase-js or the YouTube embed) ships in a route's startup JS without a `ratchetModules` allowance, and when a detector marker no longer matches any emitted chunk.
+The emitted graphics chunks, including dependencies and workers, must stay within **220 KiB gzip**, and each mobile poster must remain **80 KiB or less**.
+A ceiling may only rise in a commit that states the metric, its old and new value and timed-gate evidence, approved in the pull request.
+Catalogue-dependent bytes (artwork images and, with `--base=<url>`, HTML) are reported in `artifacts/budget-report.json` and never gated.
 Generated shell assets are rebuilt through `scripts/build-shell.mjs`, which also runs before normal builds.
 Edit source translations or service-worker code and regenerate their outputs instead of editing generated files directly.
 

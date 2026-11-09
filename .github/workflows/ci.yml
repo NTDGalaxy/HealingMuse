@@ -27,7 +27,12 @@ jobs:
       - run: npm run db:test:b2
       - run: npm run security:repository
       - run: npm run build
-      - run: node scripts/check-garden-budget.mjs
+        env:
+          # A production-shaped bundle for the budgets; nothing contacts this host.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci-placeholder
+          NEXT_TELEMETRY_DISABLED: "1"
+      - run: npm run budgets
       - run: npm run security:client
       - run: node scripts/test-fixtures.mjs
       - run: npx playwright install --with-deps chromium

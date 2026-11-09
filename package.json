@@ -66,7 +66,8 @@
     "supabase:subset:verify": "node scripts/supabase-subset.mjs verify",
     "release:register:subset": "node scripts/prepare-release.mjs --subset --register",
     "garden:posters": "node scripts/render-gardens.mjs",
-    "garden:budget": "node scripts/check-garden-budget.mjs"
+    "garden:budget": "node scripts/check-budgets.mjs",
+    "budgets": "node scripts/check-budgets.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1150.0",
