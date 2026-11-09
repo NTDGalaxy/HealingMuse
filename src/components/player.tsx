@@ -200,8 +200,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const version = ++epoch.current;
       const element = audio.current;
       if (!element) return;
-      await endSession();
-      if (version !== epoch.current) return;
+      // End the previous session concurrently: endSession takes and clears the session id
+      // synchronously, so saving it never races the new session and never delays the grant.
+      void endSession();
       element.pause();
       element.removeAttribute("src");
       element.load();

@@ -1,42 +1,35 @@
-import {
-  assertSameOrigin,
-  body,
-  json,
-  safeHandler,
-  requireUser,
-  assertDb,
-  HttpError,
-  rateLimit,
-} from "@/lib/server/http";
+import { z } from "zod";
+import { assertDb, json } from "@/lib/server/http";
+import { defineRoute } from "@/lib/server/route";
 import { playlistEdit, uuid } from "@/lib/validation";
-type Context = { params: Promise<{ id: string }> };
-export function PATCH(request: Request, context: Context) {
-  return safeHandler(async () => {
-    const { id } = await context.params;
-    if (!uuid.safeParse(id).success) throw new HttpError(404, "not_found");
-    const input = await body(request, playlistEdit);
-    const { db, user } = await requireUser(request);
-    await rateLimit(request, "personal", 60, user.id);
+const params = z.object({ id: uuid });
+export const PATCH = defineRoute({
+  name: "playlist",
+  auth: "user",
+  params,
+  body: playlistEdit,
+  rateLimit: { bucket: "personal", limit: 60, per: "user" },
+  handler: async ({ params: { id }, body, db }) => {
     assertDb(
       (
         await db.rpc("save_playlist", {
           p_id: id,
-          p_revision: input.revision,
-          p_title: input.title,
-          p_tracks: input.trackIds,
+          p_revision: body.revision,
+          p_title: body.title,
+          p_tracks: body.trackIds,
         })
       ).error,
     );
     return json({ ok: true });
-  });
-}
-export function DELETE(request: Request, context: Context) {
-  return safeHandler(async () => {
-    assertSameOrigin(request);
-    const { id } = await context.params;
-    if (!uuid.safeParse(id).success) throw new HttpError(404, "not_found");
-    const { db, user } = await requireUser(request);
+  },
+});
+export const DELETE = defineRoute({
+  name: "playlist",
+  auth: "user",
+  params,
+  rateLimit: { bucket: "personal", limit: 60, per: "user" },
+  handler: async ({ params: { id }, db, user }) => {
     assertDb((await db.from("playlists").delete().eq("id", id).eq("owner_id", user.id)).error);
     return json({ ok: true });
-  });
-}
+  },
+});
