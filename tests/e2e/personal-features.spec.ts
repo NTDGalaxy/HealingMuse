@@ -6,6 +6,8 @@ import {
   countPersonalReads,
   expectNoHorizontalOverflow,
   expectPlaying,
+  expectSameListeningSession,
+  markListeningSession,
   personalReads,
 } from "./support/test";
 import type { PersonalData, Playlist, Track } from "@/lib/types";
@@ -979,4 +981,19 @@ test("the Realtime echo of a saved favorite does not reload personal data again"
   await expect(ui.button("catalog.unfavorite", { title })).toHaveAttribute("aria-pressed", "true");
   await ui.broadcast("invalidate");
   expect(await personalReads(page)).toBe(4);
+});
+test("sign-in consent links open on the client without stopping playback", async ({ page }) => {
+  const ui = screens(page);
+  await serveFixtureAudio(page);
+  await page.route("**/api/grants/*", (route) => route.fulfill({ json: lastingGrant() }));
+  await ui.open({ guest: true });
+  await ui.show("recording");
+  await ui.recordings.listen(harness.recording.title.en).click();
+  await expectPlaying(page);
+  await markListeningSession(page, "consent");
+  await ui.signIn.click();
+  await ui.dialog.getByRole("link", { name: ui.t("nav.privacy"), exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/privacy$/);
+  await expect(ui.dialog).toHaveCount(0);
+  await expectSameListeningSession(page, "consent");
 });

@@ -93,6 +93,8 @@ export const card = {
 
 export const player = {
   audio: "audio",
+  /** The player's media element carrying a session mark set by `markListeningSession`. */
+  markedAudio: (mark: string) => `audio[data-session="${mark}"]`,
   bar: ".player-bar",
   error: ".player-error",
   errorAlert: '.player-error[role="alert"]',

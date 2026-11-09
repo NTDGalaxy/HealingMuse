@@ -105,6 +105,32 @@ export async function expectPlaying(page: Page, options: { beyond?: number } = {
 }
 
 /**
+ * Marks the player's media element. A full page load replaces the document, and this element
+ * with it, so `expectSameListeningSession` proves a navigation stayed on the client.
+ */
+export async function markListeningSession(page: Page, mark: string) {
+  await audioElement(page).evaluate(
+    (audio: HTMLAudioElement, mark) => (audio.dataset.session = mark),
+    mark,
+  );
+}
+
+/** The marked media element still exists and keeps playing. */
+export async function expectSameListeningSession(page: Page, mark: string) {
+  await test.step(
+    `listening session "${mark}" continues`,
+    async () => {
+      const session = page.locator(player.markedAudio(mark));
+      await expect(session).toHaveCount(1);
+      await expect
+        .poll(() => session.evaluate((audio: HTMLAudioElement) => !audio.paused))
+        .toBe(true);
+    },
+    { box: true },
+  );
+}
+
+/**
  * Counts the page's own personal-data reads (GET /api/me) from its first script, so no request
  * can be missed or counted late. Call before navigating; read the count with `personalReads`.
  */

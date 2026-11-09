@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { browserClient } from "@/lib/supabase/client";
 import { Dialog } from "./dialog";
@@ -236,9 +237,16 @@ export function AuthDialog() {
                 required
                 disabled={busy}
               />
+              {/* Client navigation keeps the persistent player; the dialog closes to show the page. */}
               <span>
-                {t("auth.agree")} <a href={"/" + locale + "/privacy"}>{t("nav.privacy")}</a> /{" "}
-                <a href={"/" + locale + "/terms"}>{t("nav.terms")}</a>
+                {t("auth.agree")}{" "}
+                <Link href={"/" + locale + "/privacy"} onClick={dismiss}>
+                  {t("nav.privacy")}
+                </Link>{" "}
+                /{" "}
+                <Link href={"/" + locale + "/terms"} onClick={dismiss}>
+                  {t("nav.terms")}
+                </Link>
               </span>
             </label>
           )}

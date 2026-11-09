@@ -285,9 +285,22 @@ export function HomeIntro() {
 function HomeDiscovery() {
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
   return (
     <div className="home-discovery">
-      <form className="search-box discovery-search" action={`/${locale}/explore`}>
+      <form
+        className="search-box discovery-search"
+        action={`/${locale}/explore`}
+        // The action stays for submissions before hydration. After it, search navigates on the
+        // client: a document load would unmount the app and stop the persistent audio.
+        onSubmit={(event) => {
+          event.preventDefault();
+          const query = new URLSearchParams();
+          for (const [name, value] of new FormData(event.currentTarget))
+            if (typeof value === "string") query.append(name, value);
+          router.push(`/${locale}/explore?${query}`);
+        }}
+      >
         <Search size={22} aria-hidden="true" />
         <label className="sr-only" htmlFor="home-search">
           {t("catalog.search")}

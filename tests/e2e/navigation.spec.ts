@@ -1,6 +1,14 @@
-import { test, expect, countDownloads, currentTime, expectPlaying } from "./support/test";
-import { recordings as prepared } from "./support/contracts";
-import { Recordings, Shell } from "./support/pages";
+import {
+  test,
+  expect,
+  countDownloads,
+  currentTime,
+  expectPlaying,
+  expectSameListeningSession,
+  markListeningSession,
+} from "./support/test";
+import { recordings as prepared, uniqueSearchTerm } from "./support/contracts";
+import { Explore, Recordings, Shell } from "./support/pages";
 test("switching language preserves the native listening session", async ({ page }) => {
   await page.goto("/en");
   await new Recordings(page).listen(prepared.first.title.en).click();
@@ -34,4 +42,14 @@ test("switching language keeps an in-flight download", async ({ page }) => {
   await expect.poll(() => countDownloads(page)).toBe(1);
   await expect(shell.downloadStatus).toHaveCount(0);
   await expect(shell.toast).toContainText(recording.title.vi);
+});
+test("Home search opens results on the same listening session", async ({ page }) => {
+  await page.goto("/en");
+  await new Recordings(page).listen(prepared.first.title.en).click();
+  await expectPlaying(page);
+  await markListeningSession(page, "home-search");
+  await new Explore(page).searchFor(uniqueSearchTerm);
+  await expect(page).toHaveURL(new RegExp(`/en/explore\\?q=${uniqueSearchTerm}$`));
+  await expect(new Recordings(page).visibleCards).toHaveCount(1);
+  await expectSameListeningSession(page, "home-search");
 });
