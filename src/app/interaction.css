@@ -213,7 +213,7 @@
       .mobile-nav a,
       .mobile-nav button,
       .language-switch a
-    ):active:not(:disabled) {
+    ):active:not(:disabled, [aria-disabled="true"]) {
     scale: 0.97;
   }
   .icon-button[aria-pressed="true"] svg,

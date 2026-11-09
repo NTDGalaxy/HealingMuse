@@ -4,8 +4,21 @@ export interface PageAction {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  /**
+   * Unavailable only for a moment, such as while the page it would follow is still loading. It is
+   * announced and shown as disabled but stays focusable, because a focused button that becomes
+   * `disabled` loses keyboard focus to the page.
+   */
+  waiting?: boolean;
   type?: "button";
 }
+
+/** The attributes that make a page action unavailable, whether for good or for a moment. */
+const availability = ({ disabled, waiting, onClick }: PageAction) => ({
+  disabled,
+  "aria-disabled": waiting || undefined,
+  onClick: waiting ? undefined : onClick,
+});
 
 /**
  * Previous and next page controls. With a `label` they form a named navigation landmark;
@@ -26,22 +39,12 @@ export function Pagination({
   return (
     <Group className="catalog-pagination" aria-label={label}>
       {back && (
-        <Button
-          variant="secondary"
-          type={back.type}
-          disabled={back.disabled}
-          onClick={back.onClick}
-        >
+        <Button variant="secondary" type={back.type} {...availability(back)}>
           {back.label}
         </Button>
       )}
       {next && (
-        <Button
-          variant={nextVariant}
-          type={next.type}
-          disabled={next.disabled}
-          onClick={next.onClick}
-        >
+        <Button variant={nextVariant} type={next.type} {...availability(next)}>
           {next.label}
         </Button>
       )}

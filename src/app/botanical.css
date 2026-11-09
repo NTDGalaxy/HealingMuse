@@ -319,7 +319,7 @@
     border-color: transparent;
     border-radius: 999px;
   }
-  .button:hover:not(:disabled),
+  .button:hover:not(:disabled, [aria-disabled="true"]),
   .play-button:hover {
     background: color-mix(in srgb, var(--green) 85%, var(--text));
   }
@@ -328,7 +328,7 @@
     background: var(--jade-tint);
     border-color: transparent;
   }
-  .button.secondary:hover:not(:disabled) {
+  .button.secondary:hover:not(:disabled, [aria-disabled="true"]) {
     color: var(--green);
     background: color-mix(in srgb, var(--jade-tint) 85%, var(--green));
   }
@@ -342,7 +342,7 @@
     color: var(--danger);
     border-color: var(--danger);
   }
-  .button.danger:hover:not(:disabled) {
+  .button.danger:hover:not(:disabled, [aria-disabled="true"]) {
     background: color-mix(in srgb, var(--danger) 85%, var(--text));
     color: var(--on-danger);
   }
@@ -358,7 +358,7 @@
     color: var(--green);
   }
   .icon-button:hover,
-  .icon-button:hover:not(:disabled),
+  .icon-button:hover:not(:disabled, [aria-disabled="true"]),
   .text-button:hover {
     background: var(--tint);
   }

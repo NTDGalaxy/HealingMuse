@@ -81,7 +81,7 @@
   .language-switch {
     color: var(--text);
   }
-  .button.secondary:hover:not(:disabled) {
+  .button.secondary:hover:not(:disabled, [aria-disabled="true"]) {
     background: #d7e9e0;
   }
   .legal-page {
@@ -135,12 +135,12 @@
   .catalog-filter-details .catalog-facets {
     margin-block: 0;
   }
-  .button:hover:not(:disabled),
+  .button:hover:not(:disabled, [aria-disabled="true"]),
   .card-play:hover {
     background: #194c3e;
     color: white;
   }
-  .button.danger:hover:not(:disabled) {
+  .button.danger:hover:not(:disabled, [aria-disabled="true"]) {
     background: #803f49;
   }
   .release-review {

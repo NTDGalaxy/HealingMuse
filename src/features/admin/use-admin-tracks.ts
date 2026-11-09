@@ -16,7 +16,10 @@ const pageUrl = ({ q, status, cursors }: View) =>
   `/api/admin/tracks?${new URLSearchParams({ q, status, cursor: cursors.at(-1)! })}`;
 
 export interface AdminTracks {
+  /** The page on screen, which may still be the previous one while `ready` is false. */
   page: CatalogPage;
+  /** Whether the page on screen is the one asked for; Next waits for it. */
+  ready: boolean;
   status: string;
   /** Whether Back leads to an earlier page. */
   hasPrevious: boolean;
@@ -36,7 +39,12 @@ export interface AdminTracks {
  */
 export function useAdminTracks(onLoad: (ok: boolean) => void): AdminTracks {
   const [view, setView] = useState<View>({ q: "", status: "", cursors: [""] });
-  const [page, setPage] = useState<CatalogPage>(emptyPage);
+  // Each page is kept with the address it was read from, so a page still on screen while another
+  // loads is never mistaken for it: its Next would follow the wrong cursor and skip a page.
+  const [loaded, setLoaded] = useState<{ url: string; page: CatalogPage }>({
+    url: "",
+    page: emptyPage,
+  });
   const report = useEffectEvent(onLoad);
   const url = pageUrl(view);
   useEffect(() => {
@@ -45,27 +53,31 @@ export function useAdminTracks(onLoad: (ok: boolean) => void): AdminTracks {
       .then((data) => {
         if (controller.signal.aborted) return;
         report(true);
-        setPage(data);
+        setLoaded({ url, page: data });
       })
       .catch(() => {
         if (!controller.signal.aborted) report(false);
       });
     return () => controller.abort();
   }, [url]);
-  const reload = useCallback(async () => setPage(await api<CatalogPage>(url)), [url]);
-  const nextCursor = page.nextCursor;
+  const reload = useCallback(
+    async () => setLoaded({ url, page: await api<CatalogPage>(url) }),
+    [url],
+  );
+  const ready = loaded.url === url;
+  const nextCursor = ready ? loaded.page.nextCursor : null;
   return {
-    page,
+    page: loaded.page,
+    ready,
     status: view.status,
     hasPrevious: view.cursors.length > 1,
     search: (q) => setView((current) => ({ ...current, q, cursors: [""] })),
     filter: (status) => setView((current) => ({ ...current, status, cursors: [""] })),
+    // Next follows only the page asked for, so a press while another page loads can neither
+    // open the same page twice nor skip one.
     next: () =>
       setView((current) =>
-        // A second press before the next page arrives would open the same page twice.
-        !nextCursor || current.cursors.at(-1) === nextCursor
-          ? current
-          : { ...current, cursors: [...current.cursors, nextCursor] },
+        nextCursor ? { ...current, cursors: [...current.cursors, nextCursor] } : current,
       ),
     back: () =>
       setView((current) =>

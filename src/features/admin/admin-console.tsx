@@ -156,7 +156,13 @@ export default function AdminConsole() {
       <Pagination
         label={t("catalog.pages")}
         back={recordings.hasPrevious && { label: t("common.back"), onClick: recordings.back }}
-        next={!!page.nextCursor && { label: t("catalog.next"), onClick: recordings.next }}
+        next={
+          !!page.nextCursor && {
+            label: t("catalog.next"),
+            onClick: recordings.next,
+            waiting: !recordings.ready,
+          }
+        }
       />
       {!edit && preview && (
         <div className="panel review-preview">

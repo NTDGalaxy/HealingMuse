@@ -1455,3 +1455,73 @@ test("a recovery link completes its sign-in even after navigating before the sig
   await expect(settings.account.getByText(email, { exact: true })).toBeVisible();
   expect(await ui.authCalls()).toEqual(["exchangeCodeForSession"]);
 });
+test("content studio Next waits for the page asked for, keeping focus, instead of skipping one", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const template = (await preparedCatalogue())[0];
+  const pages = [1, 2, 3].map((number) => ({
+    cursor: number === 1 ? "" : `synthetic-page-${number}`,
+    title: `Studio page ${number} recording`,
+  }));
+  const requested: string[] = [];
+  // The page whose answer is held back, and how to let it through.
+  let held: { cursor: string; arrived: Promise<void> } | null = null;
+  let release = () => {};
+  const hold = (cursor: string) => {
+    held = { cursor, arrived: new Promise<void>((resolve) => (release = resolve)) };
+  };
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: personalData({ isAdmin: true }) }),
+  );
+  await page.route("**/api/admin/collections", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/admin/tracks?*", async (route) => {
+    const cursor = new URL(route.request().url()).searchParams.get("cursor") ?? "";
+    requested.push(cursor);
+    const gate: { cursor: string; arrived: Promise<void> } | null = held;
+    if (gate?.cursor === cursor) await gate.arrived;
+    const index = pages.findIndex((entry) => entry.cursor === cursor);
+    await route.fulfill({
+      json: {
+        items: [
+          {
+            ...template,
+            id: `70000000-0000-4000-8000-00000000000${index + 1}`,
+            title: { vi: pages[index].title, en: pages[index].title },
+          },
+        ],
+        total: pages.length,
+        nextCursor: pages[index + 1]?.cursor ?? null,
+      },
+    });
+  });
+  const row = (number: number) =>
+    page.getByRole("button", {
+      name: composed.editRecording("en", pages[number - 1].title),
+      exact: true,
+    });
+  const next = ui.button("catalog.next");
+  await ui.open();
+  await ui.show("admin");
+  await expect(row(1)).toBeVisible();
+  // From the keyboard, Next waits for the page it opened without losing focus.
+  hold(pages[1].cursor);
+  await next.focus();
+  await page.keyboard.press("Enter");
+  await expect(next).toBeDisabled();
+  await expect(next).toBeFocused();
+  await page.keyboard.press("Enter");
+  release();
+  await expect(row(2)).toBeVisible();
+  await expect(next).toBeEnabled();
+  await expect(next).toBeFocused();
+  // Page two is still on screen while Back loads page one, but its Next no longer applies.
+  hold(pages[0].cursor);
+  await ui.button("common.back").click();
+  await expect(next).toBeDisabled();
+  release();
+  await expect(row(1)).toBeVisible();
+  await next.click();
+  await expect(row(2)).toBeVisible();
+  expect(requested).not.toContain(pages[2].cursor);
+});

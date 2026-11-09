@@ -143,6 +143,12 @@ describe("Pagination", () => {
       ),
     ).toBe('<div class="catalog-pagination"><button class="button secondary">Next</button></div>');
   });
+  it("keeps a waiting action focusable while it is announced as unavailable", () => {
+    const markup = html(h(Pagination, { next: { label: "Next", onClick: none, waiting: true } }));
+    expect(markup).toBe(
+      '<div class="catalog-pagination"><button class="button" aria-disabled="true">Next</button></div>',
+    );
+  });
 });
 
 describe("ReorderableList", () => {
