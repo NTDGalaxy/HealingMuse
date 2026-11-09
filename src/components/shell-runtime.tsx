@@ -1,16 +1,20 @@
 "use client";
 import { useEffect } from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { ArrowRight } from "lucide-react";
 import type { Locale } from "@/lib/types";
 import type { OnDemand } from "@/lib/on-demand";
 import { decorationMayStart } from "@/lib/perf/audio-first";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import {
   useAppActions,
+  useAuthLoading,
   useDownloadError,
   useDownloadProgress,
   useNotice,
   useTrack,
+  useUserId,
 } from "./app-state";
 
 // Runtime pieces of the persistent Shell. Each subscribes to its own state, so a notice or a
@@ -138,4 +142,31 @@ export function PreloadOnDemand({ modules }: { modules: readonly OnDemand<unknow
     };
   }, [modules]);
   return null;
+}
+
+/**
+ * The header's account control: Account for a signed-in listener, Sign in for a guest, and
+ * nothing while a returning account is being restored, so it never invites a signed-in listener
+ * to sign in.
+ */
+export function AccountButton() {
+  const t = useTranslations("nav");
+  const locale = useLocale();
+  const { openAuth } = useAppActions();
+  const signedIn = useUserId() !== null;
+  const restoring = useAuthLoading();
+  if (signedIn)
+    return (
+      <Link className="account-button" href={`/${locale}/settings`}>
+        {t("account")}
+        <ArrowRight size={17} aria-hidden="true" />
+      </Link>
+    );
+  if (restoring) return null;
+  return (
+    <button className="account-button" onClick={openAuth}>
+      {t("signIn")}
+      <ArrowRight size={17} aria-hidden="true" />
+    </button>
+  );
 }

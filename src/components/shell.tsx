@@ -10,12 +10,11 @@ import {
   Heart,
   Settings,
   Leaf,
-  ArrowRight,
   ShieldCheck,
   Headphones,
   MoreHorizontal,
 } from "lucide-react";
-import { useAppActions, useCalm, useIsAdmin, useOnline, useUserId } from "./app-state";
+import { useCalm, useIsAdmin, useOnline } from "./app-state";
 import { AuthDialogOnDemand, authDialogCode } from "@/features/account/auth-dialog-on-demand";
 import { Scenery } from "./scenery";
 import { isConfigured } from "@/lib/supabase/config";
@@ -24,6 +23,7 @@ import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
 import { Dialog, dialogCode } from "./dialog";
 import {
+  AccountButton,
   BottomOverlayFocus,
   DownloadStatus,
   LiveAnnouncer,
@@ -60,10 +60,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const locale = useLocale();
   const pathname = usePathname();
-  const { openAuth } = useAppActions();
   const calm = useCalm();
   const isAdmin = useIsAdmin();
-  const signedIn = useUserId() !== null;
   const online = useOnline();
   const [more, setMore] = useState(false);
   // Readiness contract: navigation is hydrated and usable from this commit on.
@@ -137,17 +135,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
             </nav>
-            {signedIn ? (
-              <Link className="account-button" href={`/${locale}/settings`}>
-                {t("nav.account")}
-                <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-            ) : (
-              <button className="account-button" onClick={openAuth}>
-                {t("nav.signIn")}
-                <ArrowRight size={17} aria-hidden="true" />
-              </button>
-            )}
+            <AccountButton />
           </div>
         </header>
         {!online && (

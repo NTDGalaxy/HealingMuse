@@ -1412,3 +1412,24 @@ test("a sign-in dialog opened while an account is being restored closes once it 
   release();
   await expect(ui.dialog).toHaveCount(0);
 });
+test("while a returning account is restored, Settings offers no guest sign-in", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const settings = new Settings(page);
+  await page.route("**/api/me", (route) => route.fulfill({ json: personalData() }));
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(`**/${harness.modules.authClient}*`, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await ui.open();
+  await ui.show("settings");
+  await expect(settings.account.getByRole("status")).toHaveText(ui.t("common.loading"));
+  await expect(settings.guestNote).toHaveCount(0);
+  await expect(settings.account.getByRole("button", { name: ui.t("nav.signIn") })).toHaveCount(0);
+  release();
+  await expect(settings.account.getByText(email, { exact: true })).toBeVisible();
+  await expect(settings.guestNote).toHaveCount(0);
+});

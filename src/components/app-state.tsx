@@ -38,8 +38,8 @@ export function useOnline() {
 type Translate = ReturnType<typeof useTranslations>;
 type I18n = { t: Translate; locale: Locale };
 
-function createAppStores(tracks: Track[], preferences: PreferencesStore) {
-  const session = createSession();
+function createAppStores(tracks: Track[], preferences: PreferencesStore, restoring: boolean) {
+  const session = createSession({ restoring });
   return {
     announcer: createAnnouncer(),
     tracks: createTrackCache(tracks),
@@ -97,10 +97,13 @@ const CollectionsContext = createContext<CuratedCollection[]>([]);
 export function AppProvider({
   tracks,
   collections,
+  restoringSession = true,
   children,
 }: {
   tracks: Track[];
   collections: CuratedCollection[];
+  /** Whether the request carried a session cookie (the root layout reads it on the server). */
+  restoringSession?: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations();
@@ -109,7 +112,7 @@ export function AppProvider({
   // One set of stores per provider instance (never module singletons: this module also runs
   // during server rendering). The initial tracks seed the cache once, as before.
   const [i18n] = useState(() => createStore<I18n>({ t, locale }));
-  const [stores] = useState(() => createAppStores(tracks, preferences));
+  const [stores] = useState(() => createAppStores(tracks, preferences, restoringSession));
   const value = useMemo(
     () => ({ stores, actions: createActions(stores, preferences, i18n) }),
     [stores, preferences, i18n],

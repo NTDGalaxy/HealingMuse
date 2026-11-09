@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
   useAppActions,
+  useAuthLoading,
   useMoodConsent,
   useOnline,
   usePersonalError,
@@ -26,6 +27,7 @@ export function SettingsView() {
   const consent = useMoodConsent();
   const error = usePersonalError();
   const pending = usePersonalPending();
+  const restoring = useAuthLoading();
   const online = useOnline();
   const [deleting, setDeleting] = useState(false);
   const [revoke, setRevoke] = useState(false);
@@ -71,6 +73,9 @@ export function SettingsView() {
                 </Button>
               </div>
             </>
+          ) : restoring ? (
+            // A returning account is still being restored: no guest invitation meanwhile.
+            <p role="status">{t("common.loading")}</p>
           ) : (
             <>
               <p>{t("settings.guestText")}</p>

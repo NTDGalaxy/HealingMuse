@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { monitor } from "@/lib/browser/monitor";
 import { isRoutePath } from "@/lib/routes";
-import { authStorageKey, isConfigured } from "@/lib/supabase/config";
+import { authStorageKey, isConfigured, isSessionCookie } from "@/lib/supabase/config";
 import {
   loadBrowserClient,
   preloadBrowserClient,
@@ -56,23 +56,35 @@ const callbackParameters = new Set([
   "error_description",
 ]);
 
+/** What a page start says about the account, before any Supabase code runs. */
+export interface StartSignals {
+  /** A session cookie (whole or chunked) may hold an account to restore. */
+  session: boolean;
+  /** The address carries an auth redirect to complete. */
+  callback: boolean;
+  /** The password page, where a recovery link lands. */
+  passwordPage: boolean;
+}
+
+export function startSignals(page: PageSignals, storageKey: string | null): StartSignals {
+  if (!storageKey) return { session: false, callback: false, passwordPage: false };
+  const session = page.cookie
+    .split(";")
+    .some((cookie) => isSessionCookie(cookie.trim().split("=")[0], storageKey));
+  const callback = [page.search, page.hash.replace(/^#/, "")].some((parameters) =>
+    [...new URLSearchParams(parameters).keys()].some((name) => callbackParameters.has(name)),
+  );
+  return { session, callback, passwordPage: isRoutePath(page.pathname, "resetPassword") };
+}
+
 /**
- * Whether the client must load as the page starts: a session cookie (whole or chunked) may hold
- * an account, an auth redirect must be completed, or the password page may be where a recovery
- * link landed. Any other page belongs to a guest until sign-in opens.
+ * Whether the client must load as the page starts: a session cookie may hold an account, an auth
+ * redirect must be completed, or the password page may be where a recovery link landed. Any other
+ * page belongs to a guest until sign-in opens.
  */
 export function needsClientAtStart(page: PageSignals, storageKey: string | null): boolean {
-  if (!storageKey) return false;
-  // Supabase splits a large session into numbered chunks: key.0, key.1 and so on.
-  const sessionCookie = (name: string) =>
-    name === storageKey ||
-    (name.startsWith(`${storageKey}.`) && /^\d+$/.test(name.slice(storageKey.length + 1)));
-  if (page.cookie.split(";").some((cookie) => sessionCookie(cookie.trim().split("=")[0])))
-    return true;
-  for (const parameters of [page.search, page.hash.replace(/^#/, "")])
-    for (const name of new URLSearchParams(parameters).keys())
-      if (callbackParameters.has(name)) return true;
-  return isRoutePath(page.pathname, "resetPassword");
+  const { session, callback, passwordPage } = startSignals(page, storageKey);
+  return session || callback || passwordPage;
 }
 
 function currentPage(): PageSignals {
@@ -88,15 +100,22 @@ if (typeof window !== "undefined" && needsClientAtStart(currentPage(), authStora
 export function createSession({
   page = currentPage,
   loadClient = loadBrowserClient,
+  restoring = true,
 }: {
   /** Reads the page the session starts on. */
   page?: () => PageSignals;
   loadClient?: () => Promise<BrowserClient | null>;
+  /**
+   * Whether the request carried a session cookie, as the server saw it. It decides the first
+   * render on the server and in the browser: a guest's controls render at once, and a returning
+   * account shows neither guest nor account controls until it is restored.
+   */
+  restoring?: boolean;
 } = {}): Session {
   const store = createStore<SessionSnapshot>({
     user: null,
     userId: null,
-    authLoading: isConfigured,
+    authLoading: isConfigured && restoring,
     authOpen: false,
   });
   const storageKey = authStorageKey();
@@ -120,6 +139,8 @@ export function createSession({
     );
   const settle = () =>
     store.set((current) => (current.authLoading ? { ...current, authLoading: false } : current));
+  const restore = () =>
+    store.set((current) => (current.authLoading ? current : { ...current, authLoading: true }));
   // Supabase replays the current session to a new subscriber as INITIAL_SESSION.
   const follow = () => {
     if (!client || !active || subscription) return;
@@ -175,9 +196,17 @@ export function createSession({
         return () => {
           active = false;
         };
+      const signals = startSignals(page(), storageKey);
       if (client) follow();
-      else if (needsClientAtStart(page(), storageKey)) void load();
-      else settle();
+      else if (signals.session || signals.callback) {
+        restore();
+        void load();
+      } else {
+        settle();
+        // The password page loads the client too, quietly: a visitor without a cookie or a
+        // redirect is almost always a guest, so the page does not wait for it.
+        if (signals.passwordPage) void load();
+      }
       // Until the client loads, another tab's sign-in arrives on the channel Supabase broadcasts
       // auth events on (named after its storage key), or as a session cookie when this tab
       // becomes visible again or the connection returns (a download that failed offline).

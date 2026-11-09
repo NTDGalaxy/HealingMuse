@@ -58,7 +58,8 @@ vi.mock("@/lib/supabase/client", () => ({
     return fake.client;
   },
 }));
-vi.mock("@/lib/supabase/config", () => ({
+vi.mock("@/lib/supabase/config", async (original) => ({
+  ...(await original<typeof import("@/lib/supabase/config")>()),
   isConfigured: true,
   authStorageKey: () => "sb-synthetic-auth-token",
 }));
@@ -259,6 +260,32 @@ describe("session", () => {
     expect(session.getSnapshot().userId).toBe("a");
     stop();
     expect(fake.state.auth.size).toBe(0);
+  });
+  it("renders a guest's controls at once when the server saw no session cookie", async () => {
+    const loadClient = async () => fake.client as never;
+    const guestPage = createSession({ page: guest, restoring: false, loadClient });
+    expect(guestPage.getServerSnapshot?.().authLoading).toBe(false);
+    guestPage.start();
+    expect(guestPage.getSnapshot().authLoading).toBe(false);
+    // A redirect the server could not see still restores before anything else renders.
+    const callback = createSession({
+      page: () => page({ search: "?code=x" }),
+      restoring: false,
+      loadClient,
+    });
+    callback.start();
+    expect(callback.getSnapshot().authLoading).toBe(true);
+    // The password page loads the client quietly, without waiting on it.
+    const password = createSession({
+      page: () => page({ pathname: "/vi/reset-password" }),
+      restoring: false,
+      loadClient,
+    });
+    password.start();
+    expect(password.getSnapshot().authLoading).toBe(false);
+    await settle();
+    expect(password.client()).toBe(fake.client);
+    expect(guestPage.client()).toBeNull();
   });
   it("settles a guest at once and loads the client only when sign-in opens", async () => {
     const session = createSession({ page: guest });
