@@ -7,6 +7,7 @@ import {
   useMoodConsent,
   useOnline,
   usePersonalError,
+  usePersonalPending,
   useUser,
 } from "@/components/app-state";
 import { AppearanceControls } from "@/components/appearance";
@@ -24,6 +25,7 @@ export function SettingsView() {
   const user = useUser();
   const consent = useMoodConsent();
   const error = usePersonalError();
+  const pending = usePersonalPending();
   const online = useOnline();
   const [deleting, setDeleting] = useState(false);
   const [revoke, setRevoke] = useState(false);
@@ -82,23 +84,30 @@ export function SettingsView() {
           <section className="panel settings-privacy">
             <h2>{t("settings.privacy")}</h2>
             <p>{t("mood.consentText")}</p>
-            <p className="muted">{t(consent ? "settings.enabled" : "settings.disabled")}</p>
-            <div className="settings-actions">
-              <Button
-                variant="secondary"
-                disabled={!online}
-                onClick={() =>
-                  consent
-                    ? setRevoke(true)
-                    : void actions.perform("/api/me", { moodConsent: true }, "PATCH")
-                }
-              >
-                {t(consent ? "mood.revoke" : "mood.enable")}
-              </Button>
-              <Link className="text-link" href={`/${locale}/mood`}>
-                {t("nav.mood")}
-              </Link>
-            </div>
+            {pending ? (
+              // Until personal data arrives the choice is unknown; never offer it again meanwhile.
+              <p role="status">{t("common.loading")}</p>
+            ) : (
+              <>
+                <p className="muted">{t(consent ? "settings.enabled" : "settings.disabled")}</p>
+                <div className="settings-actions">
+                  <Button
+                    variant="secondary"
+                    disabled={!online}
+                    onClick={() =>
+                      consent
+                        ? setRevoke(true)
+                        : void actions.perform("/api/me", { moodConsent: true }, "PATCH")
+                    }
+                  >
+                    {t(consent ? "mood.revoke" : "mood.enable")}
+                  </Button>
+                  <Link className="text-link" href={`/${locale}/mood`}>
+                    {t("nav.mood")}
+                  </Link>
+                </div>
+              </>
+            )}
           </section>
         )}
         <InstallSection />

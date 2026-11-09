@@ -1284,3 +1284,31 @@ test("signing in or out in one tab updates another open tab", async ({ page, con
   await expect(secondSettings.guestNote).toBeVisible();
   await expect(firstSettings.guestNote).toBeVisible();
 });
+test("Settings waits for personal data before showing the private check-in choice", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const settings = new Settings(page);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  let requested!: () => void;
+  const reached = new Promise<void>((resolve) => (requested = resolve));
+  await page.route("**/api/me", async (route) => {
+    requested();
+    await held;
+    await route.fulfill({ json: personalData({ consent: new Date().toISOString() }) });
+  });
+  await ui.open();
+  await ui.show("settings");
+  // The account is known once its personal data is requested; the response is still held.
+  await reached;
+  await expect(settings.privacy.getByRole("status")).toHaveText(ui.t("common.loading"));
+  await expect(settings.privacy.getByText(ui.t("settings.disabled"), { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(ui.button("mood.enable")).toHaveCount(0);
+  release();
+  await expect(settings.privacy.getByText(ui.t("settings.enabled"), { exact: true })).toBeVisible();
+  await expect(ui.button("mood.revoke")).toBeVisible();
+  await expect(ui.button("mood.enable")).toHaveCount(0);
+});
