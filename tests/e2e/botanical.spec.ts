@@ -200,6 +200,27 @@ test.describe("WebGL lifecycle", () => {
     await expectPlaying(page);
   });
 
+  test("the scene's drawing buffer follows a viewport resize", async ({ page }) => {
+    const shell = new Shell(page);
+    // The main-thread canvas exposes its drawing-buffer size; the worker's is transferred.
+    await page.addInitScript(() =>
+      Object.defineProperty(window, "Worker", { value: undefined, configurable: true }),
+    );
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/en");
+    await shell.expectGardenState("ready");
+    const buffer = () =>
+      shell.gardenHostCanvas.evaluate((canvas) => {
+        const { width, height } = canvas as HTMLCanvasElement;
+        return { width, height, scale: width / innerWidth };
+      });
+    const { scale } = await buffer();
+    await page.setViewportSize({ width: 800, height: 600 });
+    await expect
+      .poll(buffer)
+      .toEqual({ width: Math.floor(800 * scale), height: Math.floor(600 * scale), scale });
+  });
+
   test("main-thread fallback and context loss preserve active audio", async ({ page }) => {
     const shell = new Shell(page);
     await page.addInitScript(() =>

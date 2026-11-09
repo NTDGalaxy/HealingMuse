@@ -9,6 +9,7 @@ import {
 } from "@/lib/garden/controller";
 import type { SceneSpec } from "@/lib/garden/protocol";
 import { mainThreadRenderer, workerRenderer } from "@/lib/garden/renderers";
+import { readViewport, watchViewport } from "@/lib/garden/viewport";
 import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
 import { usePreference } from "./appearance";
 import { useMotionPolicy } from "./motion-policy";
@@ -68,7 +69,7 @@ export function Scenery({ pathname }: { pathname: string }) {
       decoration: (signal) => decorationMayStart({ signal }),
       mark: () => performance.mark(decorationMarks.scene),
       scene: scene.current,
-      viewport: { width: innerWidth, height: innerHeight },
+      viewport: readViewport(),
       visible: document.visibilityState === "visible",
     });
     controller.current = instance;
@@ -78,12 +79,11 @@ export function Scenery({ pathname }: { pathname: string }) {
       reflect(element, next, previous);
       previous = next;
     });
-    const resize = () => instance.resize({ width: innerWidth, height: innerHeight });
+    const unwatch = watchViewport((viewport) => instance.resize(viewport));
     const visibility = () => instance.setVisible(document.visibilityState === "visible");
-    window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", visibility);
     return () => {
-      window.removeEventListener("resize", resize);
+      unwatch();
       document.removeEventListener("visibilitychange", visibility);
       unsubscribe();
       instance.stop();
