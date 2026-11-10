@@ -8,7 +8,7 @@
     "A ceiling may only rise in a commit whose message states the metric, its old and new value and timed-gate evidence (the p95 report of scripts/perf/run.mjs), and the rise must be approved in the pull request.",
     "limits are product rules from CLAUDE.md: graphics JS (three.js, GSAP, garden worker and scenes) at most 220 KiB gzip and every mobile poster at most 80 KiB.",
     "ratchetModules lists forbidden startup modules that still ship on a route today; an entry may only be removed, and the check fails once its module no longer ships there so the removal is committed.",
-    "Catalogue-dependent bytes (artwork images, HTML) are reported in artifacts/budget-report.json and never gated."
+    "Catalogue-dependent bytes (HTML; covers are drawn in code and ship no images) are reported in artifacts/budget-report.json and never gated."
   ],
   "limits": { "graphicsJsGzip": 225280, "mobilePosterBytes": 81920 },
   "routes": {

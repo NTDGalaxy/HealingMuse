@@ -466,10 +466,6 @@ async function main() {
     };
   }
 
-  /** @type {Record<string, number>} */
-  const artwork = {};
-  for (const name of (await readdir("public/artwork")).sort())
-    artwork[name] = (await stat(join("public/artwork", name))).size;
   /** @type {Record<string, { bytes: number, gzipBytes: number }>} */
   const html = {};
   if (base)
@@ -553,7 +549,7 @@ async function main() {
         },
       ]),
     ),
-    reportedOnly: { artwork, html: base ? html : "pass --base=<url> to measure HTML" },
+    reportedOnly: { html: base ? html : "pass --base=<url> to measure HTML" },
   };
   await mkdir("artifacts", { recursive: true });
   await writeFile(REPORT, JSON.stringify(report, null, 2) + "\n");
