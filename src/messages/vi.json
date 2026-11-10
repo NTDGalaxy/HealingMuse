@@ -2,7 +2,7 @@
   "nav": {
     "home": "Trang chủ",
     "explore": "Khám phá",
-    "library": "Thư viện của tôi",
+    "library": "Thư viện",
     "downloads": "Đã tải xuống",
     "mood": "Nhật ký cảm xúc",
     "settings": "Cài đặt",
@@ -18,7 +18,7 @@
     "footer": "Âm nhạc để giải trí và hỗ trợ tinh thần. Không phải lời khuyên hay phương pháp điều trị y khoa.",
     "language": "Ngôn ngữ",
     "preview": "Bản xem trước cục bộ",
-    "credits": "Ảnh",
+    "credits": "Ghi công",
     "binaural": "Binaural"
   },
   "common": {

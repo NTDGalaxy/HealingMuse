@@ -181,6 +181,16 @@ describe("announcer", () => {
     vi.advanceTimersByTime(10000);
     expect(announcer.getSnapshot()).toBe("Second");
   });
+  it("shows a notice as a toast unless it is spoken only", () => {
+    const announcer = createAnnouncer();
+    announcer.announce("Saved");
+    expect(announcer.toast.getSnapshot()).toBe("Saved");
+    announcer.announce("Now playing", { visual: false });
+    expect([announcer.getSnapshot(), announcer.toast.getSnapshot()]).toEqual(["Now playing", ""]);
+    vi.advanceTimersByTime(6000);
+    expect([announcer.getSnapshot(), announcer.toast.getSnapshot()]).toEqual(["", ""]);
+    announcer.dispose();
+  });
 });
 
 describe("track cache", () => {

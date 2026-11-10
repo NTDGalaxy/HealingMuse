@@ -83,7 +83,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       online: () => navigator.onLine,
       announce: (key, track) => {
         const { t, locale } = i18n.current;
-        actions.announce(track ? t(key, { title: track.title[locale] }) : t(key));
+        // The player bar already shows what loads and plays; those notices are spoken only.
+        const visual = key !== "player.loadingStatus" && key !== "player.playingStatus";
+        actions.announce(track ? t(key, { title: track.title[locale] }) : t(key), { visual });
       },
       failed: () => monitor("playback_failed"),
       beginPlaybackStart,

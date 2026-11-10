@@ -54,6 +54,8 @@
     --scrim: #1c0f2799;
     /* How strongly the wash tints the top of the screen */
     --wash-strength: 0.55;
+    /* How present the 3D scene is behind content */
+    --scene-strength: 0.6;
     --wash-ground: var(--bg);
     /* Shape: cards 16, artwork and fields 12, controls are pills, Play is round */
     --radius-card: 16px;
@@ -103,6 +105,7 @@
     --shadow: #05020acc;
     --scrim: #05020ab3;
     --wash-strength: 0.5;
+    --scene-strength: 0.45;
   }
   @media (max-width: 1100px) {
     :root {

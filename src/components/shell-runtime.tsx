@@ -13,6 +13,7 @@ import {
   useDownloadError,
   useDownloadProgress,
   useNotice,
+  useToast,
   useTrack,
   useUserId,
 } from "./app-state";
@@ -63,17 +64,18 @@ export function ServiceWorkerRegistration() {
   return null;
 }
 
-/** Announces notices politely to assistive technology and shows them as a toast. */
+/** Announces notices politely to assistive technology and shows the visual ones as a toast. */
 export function LiveAnnouncer() {
   const notice = useNotice();
+  const toast = useToast();
   return (
     <>
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {notice}
       </div>
-      {notice && (
+      {toast && (
         <div className="toast" data-part="toast" aria-hidden="true">
-          {notice}
+          {toast}
         </div>
       )}
     </>

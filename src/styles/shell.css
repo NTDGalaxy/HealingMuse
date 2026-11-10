@@ -17,8 +17,10 @@
     z-index: -2;
     pointer-events: none;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+    /* The scene stays ambient behind text: a fixed strength and a fade well before the fold. */
+    opacity: var(--scene-strength);
+    -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 92%);
+    mask-image: linear-gradient(to bottom, #000 35%, transparent 92%);
   }
   .garden-poster,
   .garden-poster img {
@@ -394,7 +396,7 @@
       bottom: 0;
       z-index: 25;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       height: var(--mobile-nav);
       padding: 6px 4px env(safe-area-inset-bottom);
       background: var(--surface);
@@ -407,15 +409,18 @@
       align-items: center;
       justify-content: center;
       gap: 4px;
+      min-width: 0;
       min-height: 56px;
-      padding: 0 2px;
+      padding: 0;
       border: 0;
       background: none;
       color: var(--muted);
       font-size: var(--step--1);
       font-weight: 600;
       line-height: 1.2;
+      letter-spacing: -0.01em;
       text-align: center;
+      white-space: nowrap;
       text-decoration: none;
     }
     .mobile-nav svg {
@@ -444,6 +449,13 @@
     .mobile-brand {
       font-size: 0;
       gap: 0;
+    }
+  }
+  @media (max-width: 360px) {
+    /* The one exception to the 14 px floor: five tab labels on the narrowest phones. */
+    .mobile-nav a,
+    .mobile-nav button {
+      font-size: 0.8125rem;
     }
   }
 }

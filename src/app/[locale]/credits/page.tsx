@@ -3,7 +3,7 @@ export default async function Page() {
   const vi = (await getLocale()) === "vi";
   return (
     <div className="legal-page">
-      <h1>{vi ? "Nguồn hình ảnh" : "Artwork credits"}</h1>
+      <h1>{vi ? "Ghi công" : "Credits"}</h1>
       <p>
         {vi
           ? "Ảnh bìa của mỗi bản thu được vẽ bằng mã nguồn của HealingMuse từ mã và màu của bản thu. Ứng dụng không dùng ảnh chụp hay hình ảnh của bên thứ ba."

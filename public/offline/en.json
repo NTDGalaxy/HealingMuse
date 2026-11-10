@@ -2,7 +2,7 @@
   "nav": {
     "home": "Home",
     "explore": "Explore",
-    "library": "My library",
+    "library": "Library",
     "downloads": "Downloads",
     "mood": "Mood history",
     "settings": "Settings",
@@ -18,7 +18,7 @@
     "footer": "Music for recreation and emotional support. Not medical advice or treatment.",
     "language": "Language",
     "preview": "Local preview",
-    "credits": "Artwork",
+    "credits": "Credits",
     "binaural": "Binaural"
   },
   "common": {
