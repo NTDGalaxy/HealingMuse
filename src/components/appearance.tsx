@@ -1,118 +1,64 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Sparkles } from "lucide-react";
-import type { Appearance, GardenPreference, GardenTheme } from "@/lib/garden/config";
-import { useApp } from "./app-state";
+import type { Appearance, GardenPreference } from "@/lib/preferences";
+import {
+  createPreferencesStore,
+  type PreferencesSnapshot,
+  type PreferencesStore,
+} from "@/lib/preferences-store";
+import { useStore } from "@/lib/state/create-store";
 import { Dialog } from "./dialog";
+import { primaryControl } from "@/lib/perf/readiness";
 
-type Preferences = { appearance: Appearance; garden: GardenPreference; theme: GardenTheme };
-const Context = createContext<
-  | (Preferences & {
-      setAppearance: (value: Appearance) => void;
-      setGarden: (value: GardenPreference) => void;
-    })
-  | null
->(null);
-const key = "healingmuse-appearance-v1";
-export const appearanceBootstrap = `(function(){try{document.documentElement.dataset.calm=String(localStorage.getItem('healingmuse-calm')==='true');var p=JSON.parse(localStorage.getItem('${key}')||'{}');var a=['day','night'].includes(p.appearance)?p.appearance:'system';document.documentElement.dataset.theme=a==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'night':'day'):a;document.documentElement.dataset.garden=p.garden==='still'?'still':'auto';}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'night':'day';}})();`;
+export { appearanceBootstrap } from "@/lib/preferences";
+
+const Context = createContext<PreferencesStore | null>(null);
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
-  const [loaded, setLoaded] = useState(false);
-  const [preferences, setPreferences] = useState<Preferences>({
-    appearance: "system",
-    garden: "auto",
-    theme: "day",
-  });
-  useEffect(() => {
-    const system = matchMedia("(prefers-color-scheme: dark)");
-    const load = () => {
-      let appearance: Appearance = "system";
-      let garden: GardenPreference = "auto";
-      try {
-        const stored = JSON.parse(localStorage.getItem(key) || "{}");
-        if (["day", "night"].includes(stored.appearance)) appearance = stored.appearance;
-        if (stored.garden === "still") garden = "still";
-      } catch {
-        /* Preferences remain usable for this visit. */
-      }
-      setPreferences({
-        appearance,
-        garden,
-        theme: appearance === "system" ? (system.matches ? "night" : "day") : appearance,
-      });
-    };
-    let active = true;
-    queueMicrotask(() => {
-      if (active) {
-        load();
-        setLoaded(true);
-      }
-    });
-    const systemChanged = () =>
-      setPreferences((current) => ({
-        ...current,
-        theme:
-          current.appearance === "system" ? (system.matches ? "night" : "day") : current.appearance,
-      }));
-    system.addEventListener("change", systemChanged);
-    window.addEventListener("storage", load);
-    return () => {
-      active = false;
-      system.removeEventListener("change", systemChanged);
-      window.removeEventListener("storage", load);
-    };
-  }, []);
-  useEffect(() => {
-    if (!loaded) return;
-    document.documentElement.dataset.theme = preferences.theme;
-    document.documentElement.dataset.garden = preferences.garden;
-  }, [preferences, loaded]);
-  const update = (patch: Partial<Pick<Preferences, "appearance" | "garden">>) => {
-    const next = { ...preferences, ...patch };
-    next.theme =
-      next.appearance === "system"
-        ? matchMedia("(prefers-color-scheme: dark)").matches
-          ? "night"
-          : "day"
-        : next.appearance;
-    setPreferences(next);
-    try {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ appearance: next.appearance, garden: next.garden }),
-      );
-    } catch {
-      /* Session-only fallback. */
-    }
-  };
-  return (
-    <Context.Provider
-      value={{
-        ...preferences,
-        setAppearance: (appearance) => update({ appearance }),
-        setGarden: (garden) => update({ garden }),
-      }}
-    >
-      {children}
-    </Context.Provider>
-  );
+  // One store per provider instance; its first client snapshot comes from the bootstrap.
+  const [store] = useState(createPreferencesStore);
+  useEffect(() => store.start(), [store]);
+  return <Context.Provider value={store}>{children}</Context.Provider>;
+}
+export function usePreferencesStore() {
+  const store = useContext(Context);
+  if (!store) throw new Error("AppearanceProvider is required");
+  return store;
+}
+/** Subscribes to one preference; the selector must return a primitive. */
+export function usePreference<S>(selector: (preferences: PreferencesSnapshot) => S): S {
+  return useStore(usePreferencesStore(), selector);
 }
 export function useAppearance() {
-  const value = useContext(Context);
-  if (!value) throw new Error("AppearanceProvider is required");
-  return value;
+  const store = usePreferencesStore();
+  const appearance = usePreference((preferences) => preferences.appearance);
+  const garden = usePreference((preferences) => preferences.garden);
+  const theme = usePreference((preferences) => preferences.theme);
+  return useMemo(
+    () => ({
+      appearance,
+      garden,
+      theme,
+      setAppearance: store.setAppearance,
+      setGarden: store.setGarden,
+    }),
+    [appearance, garden, theme, store],
+  );
 }
-export function AppearanceControls() {
+export function AppearanceControls({ primary = false }: { primary?: boolean }) {
   const t = useTranslations("appearance");
   const preferences = useAppearance();
-  const app = useApp();
+  const store = usePreferencesStore();
+  const calm = usePreference((value) => value.calm);
   return (
     <div className="appearance-controls">
       <label>
         {t("theme")}
         <select
           aria-label={t("theme")}
+          {...primaryControl(primary)}
           value={preferences.appearance}
           onChange={(event) => preferences.setAppearance(event.target.value as Appearance)}
         >
@@ -135,15 +81,17 @@ export function AppearanceControls() {
         </select>
       </label>
       <label className="setting-row">
-        <span>
+        <span data-part="setting-text">
           <strong>{t("calm")}</strong>
-          <span className="muted">{t("calmHelp")}</span>
+          <span className="muted" data-part="setting-help">
+            {t("calmHelp")}
+          </span>
         </span>
         <input
           type="checkbox"
           className="switch"
-          checked={app.calm}
-          onChange={(event) => void app.setCalm(event.target.checked)}
+          checked={calm}
+          onChange={(event) => void store.setCalm(event.target.checked)}
         />
       </label>
       <p className="small muted">{t("help")}</p>

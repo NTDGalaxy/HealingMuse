@@ -1,39 +1,29 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, expectPlaying, registerServiceWorker, seedDownload } from "./support/test";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import type { Track } from "@/lib/types";
+import { preparedAudio, preparedCatalogue } from "./support/catalogue";
+import { Recordings } from "./support/pages";
+import { cachedPaths, serviceWorkerSource, shellAssets, shellFiles } from "./support/shell";
 
 test("a waiting shell update preserves downloaded playback and offline startup", async ({
   page,
   context,
 }) => {
-  let version = 1;
-  const template = await readFile("src/offline/service-worker.js", "utf8");
-  const track: Track = JSON.parse(await readFile("media/prepared/catalog.json", "utf8"))[0];
-  if (track.source.kind !== "hosted") throw new Error("Hosted fixture required");
-  const bytes = await readFile(`media/prepared/${track.source.path}`);
-  const files = new Map<string, Buffer>([["/fixture.mp3", bytes]]);
-  for (const path of [
-    "/offline/index.html",
-    "/offline/app.js",
-    "/offline/appearance.js",
-    "/gardens/cloister-day-480.avif",
-    "/gardens/cloister-night-480.avif",
-    "/offline/style.css",
-    "/offline/en.json",
-    "/offline/vi.json",
-    "/offline/be-vietnam-pro-latin.woff2",
-    "/offline/be-vietnam-pro-vietnamese.woff2",
-    "/icons/icon-192.png",
-    "/icons/icon-512.png",
-  ])
-    files.set(path, await readFile(`public${path}`));
+  const workers = [
+    await serviceWorkerSource("healingmuse-shell-test-1"),
+    await serviceWorkerSource("healingmuse-shell-test-2"),
+  ];
+  let worker = workers[0];
+  const track = (await preparedCatalogue())[0];
+  const bytes = await preparedAudio(track);
+  const recordings = new Recordings(page);
+  const files = await shellAssets();
+  files.set("/fixture.mp3", bytes);
   const server = createServer((request, response) => {
     const path = new URL(request.url!, "http://localhost").pathname;
     response.setHeader("Cache-Control", "no-store");
     if (path === "/sw.js") {
       response.setHeader("Content-Type", "application/javascript");
-      response.end(template.replace("__SHELL_VERSION__", `healingmuse-shell-test-${version}`));
+      response.end(worker);
     } else {
       const file = files.get(path.startsWith("/en") ? "/offline/index.html" : path);
       if (!file) {
@@ -68,37 +58,12 @@ test("a waiting shell update preserves downloaded playback and offline startup",
   const origin = `http://127.0.0.1:${address.port}`;
   try {
     await page.goto(`${origin}/en/downloads`);
-    await page.evaluate(async (track) => {
-      await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
-      const blob = await (await fetch("/fixture.mp3")).blob();
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open("healingmuse-downloads", 1);
-        request.onupgradeneeded = () =>
-          request.result.createObjectStore("recordings", { keyPath: "id" });
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-      });
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction("recordings", "readwrite");
-        tx.objectStore("recordings").put({
-          id: track.id,
-          track,
-          blob,
-          bytes: blob.size,
-          downloadedAt: new Date().toISOString(),
-        });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-      db.close();
-    }, track);
+    await registerServiceWorker(page, "/sw.js");
+    await seedDownload(page, track, "/fixture.mp3");
     await page.reload();
-    await page.getByRole("button", { name: `Listen to ${track.title.en}`, exact: true }).click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
-    version = 2;
+    await recordings.listen(track.title.en).click();
+    await expectPlaying(page);
+    worker = workers[1];
     await page.evaluate(async () => {
       await (await navigator.serviceWorker.getRegistration())!.update();
     });
@@ -107,9 +72,7 @@ test("a waiting shell update preserves downloaded playback and offline startup",
         page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting),
       )
       .toBe(true);
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
+    await expectPlaying(page);
     await page.evaluate(async () => {
       const registration = (await navigator.serviceWorker.getRegistration())!;
       await new Promise<void>((resolve) => {
@@ -124,12 +87,12 @@ test("a waiting shell update preserves downloaded playback and offline startup",
       .toEqual(["healingmuse-shell-test-2"]);
     await context.setOffline(true);
     await page.goto(`${origin}/en/downloads`);
-    await page.getByRole("button", { name: `Listen to ${track.title.en}`, exact: true }).click();
-    await expect
-      .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-      .toBe(true);
-    await page.getByText("Credits and recording rights", { exact: true }).click();
+    await recordings.listen(track.title.en).click();
+    await expectPlaying(page);
+    await page.getByText(recordings.t("catalog.credit"), { exact: true }).click();
     await expect(page.getByText(track.attribution, { exact: true })).toBeVisible();
+    // Cache Storage holds the public shell only: never the page, an API response or the audio.
+    expect(await cachedPaths(page)).toEqual([...shellFiles].sort());
   } finally {
     await context.setOffline(false);
     await new Promise<void>((done) => server.close(() => done()));

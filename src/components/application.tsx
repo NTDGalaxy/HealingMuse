@@ -11,10 +11,13 @@ import { AppearanceProvider } from "./appearance";
 export function Application({
   initialMessages,
   initialLocale,
+  restoringSession,
   children,
 }: {
   initialMessages: AbstractIntlMessages;
   initialLocale: string;
+  /** Whether the request carried a Supabase session cookie. */
+  restoringSession: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -49,7 +52,7 @@ export function Application({
       timeZone="Asia/Ho_Chi_Minh"
     >
       <AppearanceProvider>
-        <AppProvider tracks={[]} collections={[]}>
+        <AppProvider tracks={[]} collections={[]} restoringSession={restoringSession}>
           <PlayerProvider>
             <BinauralProvider>
               <Shell>{children}</Shell>

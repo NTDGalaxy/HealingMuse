@@ -1,39 +1,13 @@
-export type Locale = "vi" | "en";
+import type { z } from "zod";
+import type { trackRecord, trackSource } from "./validation";
+
+export type { Locale } from "./routes";
+import type { Locale } from "./routes";
 export type LocalizedText = Record<Locale, string>;
 export type Goal = "relax" | "rest" | "focus";
-export type TrackSource =
-  | { kind: "hosted"; path: string }
-  | { kind: "youtube"; videoId: string }
-  | { kind: "spotify_link"; url: string };
-
-export interface Track {
-  id: string;
-  title: LocalizedText;
-  description: LocalizedText;
-  artist: string;
-  category: "instrumental" | "nature";
-  goals: Goal[];
-  genres?: string[];
-  instruments?: string[];
-  traditions?: string[];
-  listeningReviewed?: boolean;
-  duration: number;
-  source: TrackSource;
-  downloadAllowed: boolean;
-  artwork: "forest" | "rain" | "sea" | "piano" | "river" | "night";
-  color: string;
-  attribution: string;
-  license: string;
-  licenseUrl: string;
-  provenanceUrl: string;
-  status: "draft" | "published" | "retired";
-  rightsVerified: boolean;
-  humanCreated: boolean;
-  position: number;
-  bytes?: number;
-  sha256?: string;
-  changes?: string;
-}
+/** Derived from the validation schema so the type and the runtime checks cannot drift. */
+export type TrackSource = z.output<typeof trackSource>;
+export type Track = z.output<typeof trackRecord>;
 
 export interface CatalogPage {
   items: Track[];

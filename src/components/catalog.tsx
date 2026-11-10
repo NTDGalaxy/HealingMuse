@@ -1,84 +1,73 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { memo, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { Play, Heart, Download, MoreHorizontal, ArrowUpRight, Check, Plus } from "lucide-react";
 import {
-  Play,
-  Heart,
-  Download,
-  MoreHorizontal,
-  ArrowUpRight,
-  Search,
-  Leaf,
-  Check,
-  Plus,
-} from "lucide-react";
-import { useApp } from "./app-state";
+  useAppActions,
+  useDownloadState,
+  useIsFavorite,
+  usePersonalData,
+  usePersonalError,
+  useUserId,
+} from "./app-state";
 import { usePlayer } from "./player";
 import { NatureArt } from "./art";
 import { Dialog } from "./dialog";
 import { clock } from "@/lib/audio";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Locale, Track } from "@/lib/types";
 import { CatalogControls } from "./catalog-controls";
+import { primaryControl } from "@/lib/perf/readiness";
+import { Button } from "./ui/button";
+import { EmptyState } from "./ui/empty-state";
+import { ErrorState } from "./ui/error-state";
+import { PageHeader } from "./ui/page-header";
+import { Pagination } from "./ui/pagination";
+import { SearchField } from "./ui/search-field";
 
-export function PageHeading({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="page-heading">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </div>
-  );
-}
-export function Empty({
-  title,
-  text,
-  children,
-}: {
-  title: string;
-  text?: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="empty-state">
-      <Leaf size={36} aria-hidden="true" />
-      <h2>{title}</h2>
-      {text && <p>{text}</p>}
-      {children}
-    </div>
-  );
-}
-export function TrackCard({
+/** The shared empty state under its earlier name, still imported by binaural-catalogue.tsx. */
+export { EmptyState as Empty };
+// Memoised: a card re-renders only for its own favourite, download and sign-in state, never for
+// download progress, notices or other recordings.
+export const TrackCard = memo(function TrackCard({
   track,
   compact = false,
   queue,
   continuation,
   selection,
+  primary = false,
 }: {
   track: Track;
   compact?: boolean;
   queue?: Track[];
   continuation?: CatalogQuery;
   selection?: { selected: boolean; choose: () => void; label: string; disabled?: boolean };
+  /** Marks this card's play control as the route's primary control (readiness contract). */
+  primary?: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const app = useApp();
+  const actions = useAppActions();
   const player = usePlayer();
   const [details, setDetails] = useState(false);
   const [add, setAdd] = useState(false);
-  const saved = app.personal?.favorites.includes(track.id) ?? false;
-  const downloaded = app.downloaded.some((item) => item.id === track.id);
+  const saved = useIsFavorite(track.id);
+  const { downloaded, busy } = useDownloadState(track.id);
+  const signedIn = useUserId() !== null;
   const title = track.title[locale];
   return (
     <article
       className={`track-card ${compact ? "track-compact" : ""} ${selection?.selected ? "track-selected" : ""}`}
+      data-part="track-card"
     >
-      <div className="track-art">
+      <div className="track-art" data-part="track-art">
         <NatureArt kind={track.artwork} color={track.color} />
         <span className="track-category">{t(`catalog.${track.category}`)}</span>
         <button
           className="card-play"
+          data-part="track-play"
+          {...primaryControl(primary && !selection)}
           aria-label={selection?.label ?? t("catalog.playTitle", { title })}
           aria-pressed={selection ? selection.selected : undefined}
           disabled={selection?.disabled}
@@ -93,7 +82,11 @@ export function TrackCard({
           ) : (
             <Play size={22} fill="currentColor" aria-hidden="true" />
           )}
-          {!selection && <span className="card-play-label">{t("common.play")}</span>}
+          {!selection && (
+            <span className="card-play-label" data-part="track-play-label">
+              {t("common.play")}
+            </span>
+          )}
         </button>
         {downloaded && (
           <span className="downloaded-badge" title={t("catalog.downloaded")}>
@@ -102,9 +95,10 @@ export function TrackCard({
           </span>
         )}
       </div>
-      <div className="track-description">
+      <div className="track-description" data-part="track-description">
         <button
           className="track-title"
+          data-part="track-title"
           aria-label={selection?.label}
           aria-pressed={selection ? selection.selected : undefined}
           disabled={selection?.disabled}
@@ -112,16 +106,16 @@ export function TrackCard({
         >
           {title}
         </button>
-        <p>{track.artist}</p>
+        <p data-part="track-artist">{track.artist}</p>
         <div className="track-bottom">
           <span className="duration">{clock(track.duration)}</span>
-          <div className="track-actions">
+          <div className="track-actions" data-part="track-actions">
             <button
               className="icon-button"
               aria-label={t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
               aria-pressed={saved}
               onClick={() =>
-                void app.perform("/api/favorites", { trackId: track.id, saved: !saved })
+                void actions.perform("/api/favorites", { trackId: track.id, saved: !saved })
               }
             >
               <Heart size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
@@ -130,8 +124,8 @@ export function TrackCard({
               <button
                 className="icon-button"
                 aria-label={t("catalog.download", { title })}
-                disabled={!!app.progress || downloaded}
-                onClick={() => void app.download(track)}
+                disabled={busy || downloaded}
+                onClick={() => void actions.download(track)}
               >
                 <Download size={18} aria-hidden="true" />
               </button>
@@ -172,7 +166,7 @@ export function TrackCard({
           className="button secondary"
           onClick={() => {
             setDetails(false);
-            if (!app.user) app.openAuth();
+            if (!signedIn) actions.openAuth();
             else setAdd(true);
           }}
         >
@@ -181,46 +175,57 @@ export function TrackCard({
         </button>
       </Dialog>
       <Dialog open={add} onOpenChange={setAdd} title={t("library.addTitle")}>
-        <div className="form-stack">
-          {app.personal?.playlists.map((playlist) => (
-            <button
-              className="button secondary"
-              key={playlist.id}
-              disabled={playlist.trackIds.includes(track.id)}
-              onClick={async () => {
-                if (
-                  await app.perform(
-                    `/api/playlists/${playlist.id}`,
-                    {
-                      title: playlist.title,
-                      revision: playlist.revision,
-                      trackIds: [...playlist.trackIds, track.id],
-                    },
-                    "PATCH",
-                  )
-                ) {
-                  setAdd(false);
-                  app.announce(t("library.added"));
-                }
-              }}
-            >
-              {playlist.title}
-              {playlist.trackIds.includes(track.id) && <Check size={16} />}
-            </button>
-          ))}
-          {!app.personal?.playlists.length && (
-            <Link className="button" href={`/${locale}/library`} onClick={() => setAdd(false)}>
-              {t("library.newPlaylist")}
-            </Link>
-          )}
-          {app.error && (
-            <p role="alert" className="error">
-              {app.error}
-            </p>
-          )}
-        </div>
+        <PlaylistChoices track={track} close={() => setAdd(false)} />
       </Dialog>
     </article>
+  );
+});
+/** Mounted only while the add-to-playlist dialog is shown, so closed cards ignore playlists. */
+function PlaylistChoices({ track, close }: { track: Track; close: () => void }) {
+  const t = useTranslations();
+  const locale = useLocale() as Locale;
+  const actions = useAppActions();
+  const playlists = usePersonalData()?.playlists;
+  const error = usePersonalError();
+  return (
+    <div className="form-stack">
+      {playlists?.map((playlist) => (
+        <button
+          className="button secondary"
+          key={playlist.id}
+          disabled={playlist.trackIds.includes(track.id)}
+          onClick={async () => {
+            if (
+              await actions.perform(
+                `/api/playlists/${playlist.id}`,
+                {
+                  title: playlist.title,
+                  revision: playlist.revision,
+                  trackIds: [...playlist.trackIds, track.id],
+                },
+                "PATCH",
+              )
+            ) {
+              close();
+              actions.announce(t("library.added"));
+            }
+          }}
+        >
+          {playlist.title}
+          {playlist.trackIds.includes(track.id) && <Check size={16} />}
+        </button>
+      ))}
+      {!playlists?.length && (
+        <Link className="button" href={`/${locale}/library`} onClick={close}>
+          {t("library.newPlaylist")}
+        </Link>
+      )}
+      {error && (
+        <p role="alert" className="error">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 const emptyCollections: CuratedCollection[] = [];
@@ -230,12 +235,14 @@ export function CatalogUnavailable() {
   const t = useTranslations();
   const router = useRouter();
   return (
-    <div className="info-panel" role="alert">
-      <p>{t("catalog.unavailable")}</p>
-      <button className="button secondary" onClick={() => router.refresh()}>
-        {t("common.retry")}
-      </button>
-    </div>
+    <ErrorState
+      message={t("catalog.unavailable")}
+      action={
+        <Button variant="secondary" onClick={() => router.refresh()}>
+          {t("common.retry")}
+        </Button>
+      }
+    />
   );
 }
 export function HomeIntro() {
@@ -259,24 +266,27 @@ export function HomeIntro() {
 function HomeDiscovery() {
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
   return (
     <div className="home-discovery">
-      <form className="search-box discovery-search" action={`/${locale}/explore`}>
-        <Search size={22} aria-hidden="true" />
-        <label className="sr-only" htmlFor="home-search">
-          {t("catalog.search")}
-        </label>
-        <input
-          id="home-search"
-          name="q"
-          type="search"
-          maxLength={120}
-          placeholder={t("catalog.searchPlaceholder")}
-        />
-        <button className="button" type="submit">
-          {t("catalog.search")}
-        </button>
-      </form>
+      <SearchField
+        id="home-search"
+        className="discovery-search"
+        iconSize={22}
+        label={t("catalog.search")}
+        placeholder={t("catalog.searchPlaceholder")}
+        submitType="submit"
+        action={`/${locale}/explore`}
+        // The action stays for submissions before hydration. After it, search navigates on the
+        // client: a document load would unmount the app and stop the persistent audio.
+        onSubmit={(event) => {
+          event.preventDefault();
+          const query = new URLSearchParams();
+          for (const [name, value] of new FormData(event.currentTarget))
+            if (typeof value === "string") query.append(name, value);
+          router.push(`/${locale}/explore?${query}`);
+        }}
+      />
       <nav className="discovery-categories" aria-label={t("catalog.genre")}>
         {["piano", "guitar", "strings"].map((value) => (
           <Link key={value} href={`/${locale}/explore?instrument=${value}`}>
@@ -307,7 +317,7 @@ export function HomeView({
 }) {
   const t = useTranslations();
   const locale = useLocale() as Locale;
-  const { registerTracks } = useApp();
+  const { registerTracks } = useAppActions();
   const tracks = initialPage.items;
   useEffect(() => {
     registerTracks([...tracks, ...collectionTracks]);
@@ -325,7 +335,7 @@ export function HomeView({
               <p>{t("home.featuredNote")}</p>
             </div>
           </div>
-          <div className="featured-recording">
+          <div className="featured-recording" data-part="featured-recording">
             {tracks.slice(0, 1).map((track) => (
               <TrackCard
                 key={track.id}
@@ -334,15 +344,16 @@ export function HomeView({
                 continuation={
                   initialPage.nextCursor ? { limit: 12, cursor: initialPage.nextCursor } : undefined
                 }
+                primary
               />
             ))}
           </div>
-          {!tracks.length && <Empty title={t("common.emptyCatalog")} />}
+          {!tracks.length && <EmptyState title={t("common.emptyCatalog")} />}
         </section>
       )}
       <HomeDiscovery />
       {tracks.length > 1 && (
-        <section className="home-more-recordings">
+        <section className="home-more-recordings" data-part="more-recordings">
           <div className="track-grid">
             {tracks.slice(1, 4).map((track) => (
               <TrackCard
@@ -406,7 +417,7 @@ export function ExploreView({
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const { registerTracks } = useApp();
+  const { registerTracks } = useAppActions();
   const [pending, transition] = useTransition();
   const tracks = initialPage.items;
   useEffect(() => registerTracks(tracks), [tracks, registerTracks]);
@@ -419,7 +430,7 @@ export function ExploreView({
   };
   return (
     <>
-      <PageHeading title={t("catalog.title")} subtitle={t("catalog.subtitle")} />
+      <PageHeader title={t("catalog.title")} subtitle={t("catalog.subtitle")} />
       <CatalogControls query={query} navigate={navigate} />
       {unavailable ? (
         <CatalogUnavailable />
@@ -429,7 +440,7 @@ export function ExploreView({
             {pending ? t("common.loading") : t("catalog.results", { count: initialPage.total })}
           </p>
           <div className="track-grid" data-result-key={JSON.stringify(query)}>
-            {tracks.map((track) => (
+            {tracks.map((track, index) => (
               <TrackCard
                 key={track.id}
                 track={track}
@@ -437,35 +448,33 @@ export function ExploreView({
                 continuation={
                   initialPage.nextCursor ? { ...query, cursor: initialPage.nextCursor } : undefined
                 }
+                primary={index === 0}
               />
             ))}
           </div>
           {!tracks.length && (
-            <Empty title={t("catalog.noResults")} text={t("catalog.noResultsText")}>
-              <button
-                className="button secondary"
+            <EmptyState title={t("catalog.noResults")} text={t("catalog.noResultsText")}>
+              <Button
+                variant="secondary"
                 onClick={() => transition(() => router.push(`/${locale}/explore`))}
               >
                 {t("catalog.clear")}
-              </button>
-            </Empty>
+              </Button>
+            </EmptyState>
           )}
-          <nav className="catalog-pagination" aria-label={t("catalog.pages")}>
-            {query.cursor && (
-              <button className="button secondary" onClick={() => router.back()}>
-                {t("common.back")}
-              </button>
-            )}
-            {initialPage.nextCursor && (
-              <button
-                className="button"
-                disabled={pending}
-                onClick={() => navigate({ cursor: initialPage.nextCursor! })}
-              >
-                {t("catalog.next")}
-              </button>
-            )}
-          </nav>
+          <Pagination
+            label={t("catalog.pages")}
+            back={!!query.cursor && { label: t("common.back"), onClick: () => router.back() }}
+            next={
+              !!initialPage.nextCursor && {
+                label: t("catalog.next"),
+                // Unavailable while the page it opened loads, but focusable, so a keyboard
+                // listener's focus stays on it instead of falling to the page.
+                waiting: pending,
+                onClick: () => navigate({ cursor: initialPage.nextCursor! }),
+              }
+            }
+          />
         </div>
       )}
     </>

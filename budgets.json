@@ -1,0 +1,112 @@
+{
+  "policy": [
+    "Deterministic budgets from the production build manifests, checked in CI by scripts/check-budgets.mjs (npm run budgets): no browser, no timing, no network.",
+    "The budget build uses placeholder public Supabase env (NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co and a dummy publishable key) so the bundle is production-shaped.",
+    "Startup JS is rootMainFiles without polyfillFiles plus the entryJSFiles of the route page client reference manifest; startup CSS is its entryCSSFiles; both are re-gzipped at level 9.",
+    "Fonts are the first url() source of every @font-face rule in the startup CSS whose unicode-range covers the Vietnamese or English message text.",
+    "Ceilings were recorded with node scripts/check-budgets.mjs --record: the measured value plus 4 percent, rounded up to the next KiB; counts carry no headroom.",
+    "A ceiling may only rise in a commit whose message states the metric, its old and new value and timed-gate evidence (the p95 report of scripts/perf/run.mjs), and the rise must be approved in the pull request.",
+    "limits are product rules from CLAUDE.md: graphics JS (three.js, GSAP, garden worker and scenes) at most 220 KiB gzip and every mobile poster at most 80 KiB.",
+    "ratchetModules lists forbidden startup modules that still ship on a route today; an entry may only be removed, and the check fails once its module no longer ships there so the removal is committed.",
+    "Catalogue-dependent bytes (artwork images, HTML) are reported in artifacts/budget-report.json and never gated."
+  ],
+  "limits": { "graphicsJsGzip": 225280, "mobilePosterBytes": 81920 },
+  "routes": {
+    "home": {
+      "startupJsGzip": 254976,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 9216,
+      "ratchetModules": []
+    },
+    "explore": {
+      "startupJsGzip": 254976,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 11264,
+      "ratchetModules": []
+    },
+    "binaural": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 9216,
+      "ratchetModules": []
+    },
+    "library": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 11264,
+      "ratchetModules": []
+    },
+    "downloads": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 8192,
+      "ratchetModules": []
+    },
+    "mood": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 7168,
+      "ratchetModules": []
+    },
+    "settings": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 7168,
+      "ratchetModules": []
+    },
+    "admin": {
+      "startupJsGzip": 296960,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 11264,
+      "ratchetModules": []
+    },
+    "resetPassword": {
+      "startupJsGzip": 256000,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 8192,
+      "ratchetModules": []
+    },
+    "privacy": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 12288,
+      "ratchetModules": []
+    },
+    "terms": {
+      "startupJsGzip": 259072,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 7168,
+      "ratchetModules": []
+    },
+    "credits": {
+      "startupJsGzip": 250880,
+      "startupCssGzip": 17408,
+      "fontBytes": 105472,
+      "fontRequests": 6,
+      "mobilePosterBytes": 8192,
+      "ratchetModules": []
+    }
+  }
+}

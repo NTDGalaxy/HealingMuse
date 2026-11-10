@@ -1,44 +1,69 @@
+// Synthetic Supabase browser client, substituted for @/lib/supabase/client by the fixture server.
+// Like the real client it keeps the session in a cookie and tells other tabs about sign-in and
+// sign-out on the storage-key channel. Like the real one (created with detectSessionInUrl: false)
+// it never reads an auth redirect from the address: the app exchanges the code it captured.
 import type { User } from "@supabase/supabase-js";
-const user = {
-  id: "10000000-0000-4000-8000-000000000001",
-  email: "synthetic@example.invalid",
-} as User;
+import { hasSessionCookie, setSessionCookie, storageKey, user } from "./synthetic-session";
+
 type Listener = (event: string, session: { user: User } | null) => void;
 const listeners = new Set<Listener>();
-declare global {
-  interface Window {
-    __syntheticAuthCalls: string[];
-    __syntheticRecoveryPath?: string;
-  }
-}
-window.__syntheticAuthCalls = [];
 function record(method: string) {
   window.__syntheticAuthCalls.push(method);
 }
+const session = () => (hasSessionCookie() ? { user } : null);
+function notify(event: string) {
+  for (const listener of listeners) listener(event, session());
+}
+const tabs = new BroadcastChannel(storageKey);
+tabs.onmessage = (message: MessageEvent<{ event: string }>) => notify(message.data.event);
+function change(event: "SIGNED_IN" | "SIGNED_OUT") {
+  setSessionCookie(event === "SIGNED_IN");
+  notify(event);
+  tabs.postMessage({ event });
+}
 function signedIn() {
-  for (const listener of listeners) listener("SIGNED_IN", { user });
+  change("SIGNED_IN");
   return { data: { session: { user } }, error: null };
 }
-const channel = {
-  on() {
-    return this;
-  },
-  subscribe(listener: (status: string) => void) {
-    queueMicrotask(() => listener("SUBSCRIBED"));
-    return this;
-  },
+
+type Channel = {
+  handlers: { event: string; handler: () => void }[];
+  on(type: string, filter: { event: string }, handler: () => void): Channel;
+  subscribe(listener: (status: string) => void): Channel;
 };
+const channels = new Set<Channel>();
+window.__syntheticBroadcast = (event) => {
+  for (const channel of channels)
+    for (const entry of channel.handlers) if (entry.event === event) entry.handler();
+};
+function createChannel(): Channel {
+  window.__syntheticSubscriptions.channels++;
+  const channel: Channel = {
+    handlers: [],
+    on(_type, filter, handler) {
+      channel.handlers.push({ event: filter.event, handler });
+      return channel;
+    },
+    subscribe(listener) {
+      channels.add(channel);
+      queueMicrotask(() => listener("SUBSCRIBED"));
+      return channel;
+    },
+  };
+  return channel;
+}
 const client = {
   auth: {
     onAuthStateChange(listener: Listener) {
+      window.__syntheticSubscriptions.auth++;
       listeners.add(listener);
-      queueMicrotask(() =>
-        listener("INITIAL_SESSION", location.search.includes("guest") ? null : { user }),
-      );
+      queueMicrotask(() => {
+        if (listeners.has(listener)) listener("INITIAL_SESSION", session());
+      });
       return { data: { subscription: { unsubscribe: () => listeners.delete(listener) } } };
     },
     async signOut() {
-      for (const listener of listeners) listener("SIGNED_OUT", null);
+      change("SIGNED_OUT");
       return { error: null };
     },
     async signInWithOtp() {
@@ -70,13 +95,21 @@ const client = {
         return { data: { user: null }, error: { status: 422, code: "weak_password" } };
       return { data: { user }, error: null };
     },
+    async exchangeCodeForSession(code: string) {
+      record("exchangeCodeForSession");
+      if (code.startsWith("used"))
+        return { data: { session: null }, error: { status: 404, code: "flow_state_not_found" } };
+      return signedIn();
+    },
     async verifyOtp({ token }: { token: string }) {
       record("verifyOtp");
       if (token !== "123456") return { data: { session: null }, error: { status: 400 } };
       return signedIn();
     },
   },
-  channel: () => channel,
-  removeChannel: async () => {},
+  channel: () => createChannel(),
+  removeChannel: async (channel: Channel) => {
+    channels.delete(channel);
+  },
 };
 export const browserClient = () => client;

@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Search } from "lucide-react";
 import { taxonomy } from "@/lib/catalog-taxonomy";
 import type { CatalogQuery } from "@/lib/types";
+import { SearchField } from "./ui/search-field";
 
 export function CatalogControls({
   query,
@@ -29,28 +29,18 @@ export function CatalogControls({
   );
   return (
     <>
-      <form
-        className="search-box"
+      <SearchField
+        id={`${id}-search`}
+        iconSize={21}
+        label={t("catalog.search")}
+        placeholder={t("catalog.searchPlaceholder")}
+        inputKey={query.q}
+        input={{ defaultValue: query.q || "" }}
         onSubmit={(event) => {
           event.preventDefault();
           navigate({ q: String(new FormData(event.currentTarget).get("q") || "").trim() });
         }}
-      >
-        <Search size={21} aria-hidden="true" />
-        <label htmlFor={`${id}-search`} className="sr-only">
-          {t("catalog.search")}
-        </label>
-        <input
-          key={query.q}
-          id={`${id}-search`}
-          name="q"
-          type="search"
-          defaultValue={query.q || ""}
-          maxLength={120}
-          placeholder={t("catalog.searchPlaceholder")}
-        />
-        <button className="button">{t("catalog.search")}</button>
-      </form>
+      />
       <div className="filter-row" role="group" aria-label={t("catalog.title")}>
         {["", "instrumental", "nature"].map((value) => (
           <button
@@ -89,7 +79,7 @@ export function CatalogControls({
         onToggle={(event) => setFiltersOpen(event.currentTarget.open)}
       >
         <summary>{t("catalog.filters")}</summary>
-        <div className="catalog-facets">
+        <div className="catalog-facets" data-part="catalog-facets">
           {(["goal", "genre", "instrument", "tradition"] as const).map((field) => {
             const fieldId = id === "catalog" ? `filter-${field}` : `${id}-filter-${field}`;
             return (

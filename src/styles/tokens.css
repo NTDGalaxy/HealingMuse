@@ -1,0 +1,79 @@
+/* Design tokens: the only place custom properties are set on the root element. */
+/* Each value is the one that won the cascade among the former competing :root blocks, per
+   theme, viewport range and transparency preference. Night overrides use the higher
+   specificity of :root[data-theme="night"], so their order relative to :root does not matter;
+   the media blocks below must stay after the blocks they refine. */
+@layer components {
+  :root {
+    /* Colour */
+    --bg: #f3eff7;
+    --surface: #fffcff;
+    --text: #382b44;
+    --muted: #665571;
+    --green: #236553;
+    --line: #d9cfe2;
+    --tint: #e8e0f0;
+    --jade-tint: #e4f0ea;
+    --forest: #382b44;
+    --mint: #e5f0eb;
+    --focus: #765297;
+    --on-green: #ffffff;
+    --danger: #963f34;
+    --danger-tint: #fae7e1;
+    --on-danger: #ffffff;
+    /* Glass */
+    --glass: #fffcffc7;
+    --panel-glass: #fffcffb8;
+    --reading-glass: #fffcffe6;
+    --glass-highlight: #ffffffb8;
+    --glass-shadow: #382b4414;
+    --glass-reflection: #ffffff54;
+    /* Layout */
+    --sidebar: 216px;
+    --player: 96px;
+    --radius: 16px;
+    /* Motion */
+    --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  :root[data-theme="night"] {
+    --bg: #191522;
+    --surface: #282232;
+    --text: #f5eff9;
+    --muted: #c4b6d0;
+    --green: #95d7b9;
+    --line: #57485f;
+    --tint: #382e45;
+    --jade-tint: #293f39;
+    --focus: #d8b6f5;
+    --on-green: #173b2e;
+    --danger: #ffb4a4;
+    --danger-tint: #482d31;
+    --on-danger: #482d31;
+    --glass: #282232c7;
+    --panel-glass: #282232b8;
+    --reading-glass: #282232e8;
+    --glass-highlight: #e8d9f52e;
+    --glass-shadow: #100c1a33;
+    --glass-reflection: #c1a6dd12;
+  }
+  @media (max-width: 1100px) and (min-width: 901px) {
+    :root {
+      --sidebar: 190px;
+    }
+  }
+  @media (max-width: 900px) {
+    :root {
+      --player: 72px;
+      --mobile-nav: calc(67px + env(safe-area-inset-bottom));
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    :root,
+    :root[data-theme="night"] {
+      --glass: var(--surface);
+      --panel-glass: var(--surface);
+      --reading-glass: var(--surface);
+      --glass-reflection: transparent;
+    }
+  }
+}

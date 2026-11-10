@@ -1,129 +1,87 @@
-import { test, expect } from "@playwright/test";
-import AxeBuilder from "@axe-core/playwright";
+import {
+  test,
+  expect,
+  countDownloads,
+  currentTime,
+  expectAccessible,
+  expectNoHorizontalOverflow,
+  expectPlaying,
+  serviceWorkerReady,
+} from "./support/test";
+import { recordings as prepared, uniqueSearchTerm } from "./support/contracts";
+import { Explore, Player, Recordings, Shell } from "./support/pages";
+const title = prepared.first.title.en;
 test("guest listens, navigates without losing playback, downloads, and starts offline", async ({
   page,
   context,
 }) => {
+  const shell = new Shell(page);
+  const player = new Player(page);
+  const recordings = new Recordings(page);
   await page.goto("/en");
-  await expect(page.getByRole("heading", { name: "Find a quieter moment." })).toBeVisible();
-  await page.locator(".featured-recording:visible .card-play").click();
-  await expect
-    .poll(() =>
-      page
-        .locator("audio")
-        .first()
-        .evaluate((audio: HTMLAudioElement) => !audio.paused && audio.currentTime > 0),
-    )
-    .toBe(true);
-  await page.getByRole("link", { name: "Explore", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: shell.t("home.title") })).toBeVisible();
+  await recordings.featuredPlay.click();
+  await expectPlaying(page, { beyond: 0 });
+  await shell.navLink("explore").first().click();
   await expect(page).toHaveURL(/\/en\/explore$/);
-  await expect
-    .poll(() =>
-      page
-        .locator("audio")
-        .first()
-        .evaluate((audio: HTMLAudioElement) => !audio.paused),
-    )
-    .toBe(true);
-  await page.getByRole("slider", { name: "Playback position" }).fill("20");
-  await expect
-    .poll(() =>
-      page
-        .locator("audio")
-        .first()
-        .evaluate((audio: HTMLAudioElement) => audio.currentTime),
-    )
-    .toBeGreaterThan(19);
-  await page.getByRole("button", { name: "Sleep timer", exact: true }).click();
-  await page.getByRole("button", { name: "5 min", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Timer: 5 min remaining" })).toBeVisible();
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Download A quiet beginning", exact: true }),
-  ).toBeDisabled();
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise<IDBDatabase>((resolve) => {
-          const request = indexedDB.open("healingmuse-downloads", 1);
-          request.onsuccess = () => resolve(request.result);
-        });
-        const n = await new Promise<number>((resolve) => {
-          const request = db.transaction("recordings").objectStore("recordings").count();
-          request.onsuccess = () => resolve(request.result);
-        });
-        db.close();
-        return n;
-      }),
-    )
-    .toBe(1);
-  await page.getByRole("link", { name: "Downloads", exact: true }).first().click();
+  await expectPlaying(page);
+  await player.seek.fill("20");
+  await expect.poll(() => currentTime(page)).toBeGreaterThan(19);
+  await player.button("timer").click();
+  await player.timerOption(5).click();
+  await expect(player.activeTimer(5)).toBeVisible();
+  await recordings.download(title).click();
+  await expect(recordings.download(title)).toBeDisabled();
+  await expect.poll(() => countDownloads(page)).toBe(1);
+  await shell.navLink("downloads").first().click();
   await expect(page).toHaveURL(/\/en\/downloads$/);
   await page.reload();
   // Streamed markup can retain a hidden copy before hydration completes.
   const downloadsHeading = page.getByRole("heading", {
     level: 1,
-    name: "Music to take with you",
+    name: shell.t("downloads.title"),
     exact: true,
   });
   await expect(downloadsHeading).toHaveCount(1);
   await expect(downloadsHeading).toBeVisible();
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
+  await serviceWorkerReady(page);
   await context.setOffline(true);
   await page.goto("/en/downloads");
-  await expect(page.getByRole("heading", { name: "Music to take with you" })).toBeVisible();
-  await page.getByRole("button", { name: "Listen to A quiet beginning", exact: true }).click();
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-    .toBe(true);
-  expect(
-    (
-      await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze()
-    ).violations,
-  ).toEqual([]);
-  await page.getByRole("button", { name: "Remove: A quiet beginning", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "A quiet beginning", exact: true })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole("heading", { name: shell.t("downloads.title") })).toBeVisible();
+  await recordings.listen(title).click();
+  await expectPlaying(page);
+  await expectAccessible(page);
+  await recordings.removeDownload(title).click();
+  await expect(recordings.heading(title)).toHaveCount(0);
 });
-for (const locale of ["en", "vi"])
+for (const locale of ["en", "vi"] as const)
   test(`accessible ${locale} screens at phone, tablet, and desktop sizes`, async ({ page }) => {
+    const shell = new Shell(page, locale);
     for (const width of [390, 820, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(`/${locale}`);
-      await expect(page.locator("html")).toHaveAttribute("lang", locale);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-        true,
-      );
-      const results = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze();
-      expect(results.violations).toEqual([]);
+      await shell.expectLang(locale);
+      await expectNoHorizontalOverflow(page);
+      await expectAccessible(page);
       await page.screenshot({ path: `test-results/home-${locale}-${width}.png`, fullPage: true });
     }
     await page.goto(`/${locale}/explore`);
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
-    expect(results.violations).toEqual([]);
+    await expectAccessible(page);
   });
 test("keyboard dialogs, guest privacy, search, and uncached responses", async ({
   page,
   request,
 }) => {
+  const shell = new Shell(page);
+  const explore = new Explore(page);
   await page.goto("/en/explore");
-  await page.getByRole("searchbox", { name: "Search recordings" }).fill("woodland");
-  await page.getByRole("searchbox", { name: "Search recordings" }).press("Enter");
-  await expect(page.locator(".track-card:visible")).toHaveCount(1);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await explore.searchFor(uniqueSearchTerm);
+  await expect(explore.recordings.visibleCards).toHaveCount(1);
+  await shell.signInButton.click();
+  await expect(shell.dialog).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeFocused();
+  await expect(shell.dialog).toHaveCount(0);
+  await expect(shell.signInButton).toBeFocused();
   for (const path of [
     "/api/me",
     "/api/admin/tracks",

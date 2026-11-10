@@ -1,0 +1,352 @@
+{
+  "tables": {
+    "public.audio_deliveries": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": { "authenticated": ["SELECT"], "service_role": ["SELECT"] }
+    },
+    "public.b2_audio_deliveries": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": { "authenticated": ["SELECT"], "service_role": ["SELECT"] }
+    },
+    "public.catalogue_publications": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": { "authenticated": ["SELECT"], "service_role": ["SELECT"] }
+    },
+    "public.catalogue_release_items": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": { "authenticated": ["SELECT"], "service_role": ["SELECT"] }
+    },
+    "public.catalogue_releases": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": { "authenticated": ["SELECT"], "service_role": ["SELECT"] }
+    },
+    "public.content_admins": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.curated_collection_items": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "anon": ["SELECT"],
+        "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.curated_collections": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "anon": ["SELECT"],
+        "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.deleted_accounts": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.favorites": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["DELETE", "INSERT", "SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.listening_sessions": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["DELETE", "SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.mood_checkins": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["DELETE", "SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.playlist_items": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.playlists": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["DELETE", "INSERT", "SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.profiles": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "authenticated": ["SELECT"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      },
+      "columnPrivileges": {
+        "calm_mode": { "authenticated": ["UPDATE"] },
+        "locale": { "authenticated": ["UPDATE"] }
+      }
+    },
+    "public.rate_limits": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    },
+    "public.tracks": {
+      "rowLevelSecurity": true,
+      "forceRowLevelSecurity": false,
+      "privileges": {
+        "anon": ["SELECT"],
+        "authenticated": ["INSERT", "SELECT", "UPDATE"],
+        "service_role": [
+          "DELETE",
+          "INSERT",
+          "MAINTAIN",
+          "REFERENCES",
+          "SELECT",
+          "TRIGGER",
+          "TRUNCATE",
+          "UPDATE"
+        ]
+      }
+    }
+  },
+  "functions": {
+    "public.audio_storage_locator(uuid)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.b2_delivery_metadata(public.b2_audio_deliveries)": {
+      "securityDefiner": false,
+      "config": ["search_path=\"\""],
+      "privileges": {}
+    },
+    "public.catalog_page(jsonb,boolean)": {
+      "securityDefiner": false,
+      "config": ["search_path=pg_catalog, public"],
+      "privileges": {
+        "anon": ["EXECUTE"],
+        "authenticated": ["EXECUTE"],
+        "service_role": ["EXECUTE"]
+      }
+    },
+    "public.catalogue_release_summary()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"] }
+    },
+    "public.consume_rate_limit(text,text,integer,integer)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.create_profile()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.end_listening(uuid,integer)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    },
+    "public.enforce_publish_lock()": {
+      "securityDefiner": false,
+      "config": ["search_path=\"\""],
+      "privileges": {}
+    },
+    "public.fold_catalog_text(text)": {
+      "securityDefiner": false,
+      "config": ["search_path=pg_catalog"],
+      "privileges": {
+        "anon": ["EXECUTE"],
+        "authenticated": ["EXECUTE"],
+        "service_role": ["EXECUTE"]
+      }
+    },
+    "public.is_content_admin()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    },
+    "public.notify_personal_change()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.notify_personal_change_statement()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": {}
+    },
+    "public.publish_catalogue_release(uuid,text,text,text)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"] }
+    },
+    "public.record_account_deletion()": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.record_audio_delivery(uuid,text,bigint)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.record_b2_audio_delivery(uuid,text,text,text,text,text,bigint,text)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "service_role": ["EXECUTE"] }
+    },
+    "public.release_track_metadata(public.tracks)": {
+      "securityDefiner": false,
+      "config": ["search_path=\"\""],
+      "privileges": {}
+    },
+    "public.save_collection(uuid,integer,jsonb,text,boolean,uuid[])": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    },
+    "public.save_playlist(uuid,integer,text,uuid[])": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    },
+    "public.set_mood_consent(boolean)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    },
+    "public.start_listening(uuid,integer)": {
+      "securityDefiner": true,
+      "config": ["search_path=\"\""],
+      "privileges": { "authenticated": ["EXECUTE"], "service_role": ["EXECUTE"] }
+    }
+  }
+}

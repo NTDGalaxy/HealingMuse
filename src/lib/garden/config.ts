@@ -1,6 +1,7 @@
-export type GardenTheme = "day" | "night";
-export type Appearance = "system" | GardenTheme;
-export type GardenPreference = "auto" | "still";
+import type { SceneId } from "../routes";
+
+export type { Appearance, GardenPreference, GardenTheme } from "../preferences";
+type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
 export const gardens = {
   lotus: { plant: "lotus", form: "court", seed: 1 },
   fern: { plant: "fern", form: "ravine", seed: 2 },
@@ -14,45 +15,18 @@ export const gardens = {
   cloister: { plant: "fern", form: "arbor", seed: 10 },
   cypress: { plant: "cypress", form: "court", seed: 11 },
   sculpture: { plant: "flower", form: "gallery", seed: 12 },
-} as const;
+} as const satisfies Record<SceneId, GardenDefinition>;
 export type GardenId = keyof typeof gardens;
-const routes: Record<string, GardenId> = {
-  "": "lotus",
-  explore: "fern",
-  "brainwave-entrainment": "moonflower",
-  library: "wisteria",
-  downloads: "seed",
-  mood: "lily",
-  settings: "bonsai",
-  admin: "propagation",
-  "reset-password": "orchid",
-  privacy: "cloister",
-  terms: "cypress",
-  credits: "sculpture",
-};
-export const gardenForPath = (pathname: string): GardenId =>
-  routes[pathname.split("/")[2] ?? ""] ?? "cloister";
-export type GardenQuality = { tier: number; fps: number; pixelRatio: number };
+/** Detail tiers: 2 is full detail; quality only ever steps down during a visit. */
+export type QualityTier = 0 | 1 | 2;
+export type GardenQuality = { tier: QualityTier; fps: number; pixelRatio: number };
 export function initialQuality(mobile: boolean): GardenQuality {
   return { tier: 2, fps: mobile ? 30 : 60, pixelRatio: mobile ? 1 : 1.5 };
 }
 // Downgrade only, with a six-second observation window. Never oscillate during a visit.
 export function lowerQuality(current: GardenQuality): GardenQuality | null {
   if (current.tier === 0) return null;
-  return { tier: current.tier - 1, fps: 24, pixelRatio: current.tier === 2 ? 0.8 : 0.6 };
+  return current.tier === 2
+    ? { tier: 1, fps: 24, pixelRatio: 0.8 }
+    : { tier: 0, fps: 24, pixelRatio: 0.6 };
 }
-export type GardenCommand =
-  | {
-      type: "init";
-      canvas: OffscreenCanvas;
-      width: number;
-      height: number;
-      theme: GardenTheme;
-      garden: GardenId;
-    }
-  | { type: "resize"; width: number; height: number }
-  | { type: "scene"; garden: GardenId; theme: GardenTheme }
-  | { type: "visible"; value: boolean }
-  | { type: "dispose" };
-export type GardenEvent =
-  { type: "ready" | "failed" | "still" } | { type: "quality"; tier: number };

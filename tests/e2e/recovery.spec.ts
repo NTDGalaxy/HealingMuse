@@ -1,7 +1,13 @@
-import { test, expect } from "@playwright/test";
-const A = "00000000-0000-4000-8000-000000000001",
-  B = "00000000-0000-4000-8000-000000000002";
+import { test, expect, audioSource, expectPaused, expectPlaying } from "./support/test";
+import { recordings as prepared, storage } from "./support/contracts";
+import { t } from "./support/i18n";
+import { Player, Recordings } from "./support/pages";
+const A = prepared.first.id,
+  B = prepared.second.id;
+const first = prepared.first.title.en,
+  second = prepared.second.title.en;
 test("a temporarily limited download explains waiting and supports retry", async ({ page }) => {
+  const recordings = new Recordings(page);
   let attempts = 0;
   await page.route(`**/api/grants/${A}?download=1`, (route) => {
     attempts++;
@@ -10,14 +16,13 @@ test("a temporarily limited download explains waiting and supports retry", async
       : route.continue();
   });
   await page.goto("/en");
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect(
-    page.getByText("Please wait a moment before trying again.", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect.poll(() => page.locator(".downloaded-badge").count()).toBe(1);
+  await recordings.download(first).click();
+  await expect(page.getByText(t("en", "errors.rate_limited"), { exact: true })).toBeVisible();
+  await recordings.download(first).click();
+  await expect.poll(() => recordings.downloadedBadges.count()).toBe(1);
 });
 test("an expired playback grant is renewed when the listener retries", async ({ page }) => {
+  const player = new Player(page);
   let grants = 0;
   await page.route(`**/api/grants/${A}`, (route) => {
     grants++;
@@ -31,24 +36,18 @@ test("an expired playback grant is renewed when the listener retries", async ({ 
     route.fulfill({ status: 403, body: "Expired playback grant" }),
   );
   await page.goto("/en");
-  await page.getByRole("button", { name: "Listen to A quiet beginning", exact: true }).click();
-  await expect(page.locator(".player-error")).toBeVisible();
-  await page.getByRole("button", { name: "Try again", exact: true }).click();
-  await expect
-    .poll(() =>
-      page
-        .locator("audio")
-        .evaluate((audio: HTMLAudioElement) => !audio.paused && audio.currentTime > 0),
-    )
-    .toBe(true);
+  await new Recordings(page).listen(first).click();
+  await expect(player.error).toBeVisible();
+  await player.retry.click();
+  await expectPlaying(page, { beyond: 0 });
   expect(grants).toBe(2);
 });
 test("failed recording transition retries the selected recording", async ({ page }) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
   await page.goto("/en");
-  await page.getByRole("button", { name: "Listen to A quiet beginning", exact: true }).click();
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-    .toBe(true);
+  await recordings.listen(first).click();
+  await expectPlaying(page);
   let attempts = 0;
   await page.route(`**/api/grants/${B}`, async (route) => {
     attempts++;
@@ -60,85 +59,69 @@ test("failed recording transition retries the selected recording", async ({ page
       });
     else await route.continue();
   });
-  await page.getByRole("button", { name: "Listen to Rain and forest birds", exact: true }).click();
-  await expect(page.locator(".player-error")).toContainText(
-    "This recording couldn't start. Try again or choose another one.",
-  );
-  await page.getByRole("button", { name: "Try again", exact: true }).click();
-  await expect.poll(() => page.locator("audio").getAttribute("src")).toContain(B);
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => !audio.paused))
-    .toBe(true);
+  await recordings.listen(second).click();
+  await expect(player.error).toContainText(player.t("player.playbackError"));
+  await player.retry.click();
+  await expect.poll(() => audioSource(page)).toContain(B);
+  await expectPlaying(page);
 });
 test("a failed home-screen download is visible and can be retried", async ({ page }) => {
+  const recordings = new Recordings(page);
   await page.goto("/en");
   await page.route(`**/api/local-audio/${A}`, (route) => route.abort("failed"));
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect(
-    page.getByText("The download was interrupted. Reconnect and try again.", { exact: true }),
-  ).toBeVisible();
+  await recordings.download(first).click();
+  await expect(page.getByText(t("en", "downloads.interrupted"), { exact: true })).toBeVisible();
   await page.unroute(`**/api/local-audio/${A}`);
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect.poll(() => page.locator(".downloaded-badge").count()).toBe(1);
+  await recordings.download(first).click();
+  await expect.poll(() => recordings.downloadedBadges.count()).toBe(1);
 });
 test("latest player transition wins and the local timer stops playback", async ({ page }) => {
+  const player = new Player(page);
+  const recordings = new Recordings(page);
   await page.goto("/en");
   await page.route(`**/api/grants/${A}`, async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     await route.continue();
   });
-  await page.getByRole("button", { name: "Listen to A quiet beginning", exact: true }).click();
-  await page.getByRole("button", { name: "Listen to Rain and forest birds", exact: true }).click();
-  await expect.poll(() => page.locator("audio").getAttribute("src")).toContain(B);
-  await expect
-    .poll(() =>
-      page
-        .locator("audio")
-        .evaluate((audio: HTMLAudioElement) => !audio.paused && audio.currentTime > 1),
-    )
-    .toBe(true);
-  expect(await page.locator("audio").getAttribute("src")).toContain(B);
+  await recordings.listen(first).click();
+  await recordings.listen(second).click();
+  await expect.poll(() => audioSource(page)).toContain(B);
+  await expectPlaying(page, { beyond: 1 });
+  expect(await audioSource(page)).toContain(B);
   await page.clock.install();
-  await page.getByRole("button", { name: "Sleep timer", exact: true }).click();
-  await page.getByRole("button", { name: "5 min", exact: true }).click();
+  await player.button("timer").click();
+  await player.timerOption(5).click();
   await page.clock.fastForward(300001);
-  await expect
-    .poll(() => page.locator("audio").evaluate((audio: HTMLAudioElement) => audio.paused))
-    .toBe(true);
-  await expect(
-    page.locator('[role="status"]').filter({ hasText: "Your timer has ended. Take your time." }),
-  ).toBeVisible();
+  await expectPaused(page);
+  await expect(player.timerEnded).toBeVisible();
 });
 test("quota denial never commits a partial offline recording", async ({ page }) => {
+  const recordings = new Recordings(page);
   await page.goto("/en/explore");
-  await page.evaluate(() => {
+  await page.evaluate((store) => {
     const prototype = IDBObjectStore.prototype;
     const original = prototype.put;
     (window as unknown as { restorePut: () => void }).restorePut = () => {
       prototype.put = original;
     };
     prototype.put = function (...args: Parameters<IDBObjectStore["put"]>) {
-      if (this.name === "recordings")
+      if (this.name === store)
         throw new DOMException("Storage quota exceeded", "QuotaExceededError");
       return original.apply(this, args);
     };
-  });
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect(
-    page.getByText(
-      "There isn't enough device storage. Remove a download or free space, then try again.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  }, storage.downloads.store);
+  await recordings.download(first).click();
+  await expect(page.getByText(t("en", "downloads.storageFull"), { exact: true })).toBeVisible();
   await page.evaluate(() => (window as unknown as { restorePut: () => void }).restorePut());
-  await page.getByRole("button", { name: "Download A quiet beginning", exact: true }).click();
-  await expect.poll(() => page.locator(".downloaded-badge").count()).toBe(1);
+  await recordings.download(first).click();
+  await expect.poll(() => recordings.downloadedBadges.count()).toBe(1);
 });
 
-for (const locale of ["en", "vi"])
+for (const locale of ["en", "vi"] as const)
   test(`B2 quota failure announces recovery in ${locale} and retries with a fresh grant`, async ({
     page,
   }) => {
+    const player = new Player(page, locale);
     let grants = 0;
     await page.route(`**/api/grants/${A}`, (route) => {
       grants++;
@@ -155,20 +138,11 @@ for (const locale of ["en", "vi"])
       route.fulfill({ status: 403, body: "Synthetic download cap" }),
     );
     await page.goto(`/${locale}`);
-    await page.locator(".card-play").first().click();
-    await expect(page.locator('.player-error[role="alert"]')).toBeVisible();
-    const retry = page.getByRole("button", {
-      name: locale === "en" ? "Try again" : "Thử lại",
-      exact: true,
-    });
+    await new Recordings(page, locale).plays.first().click();
+    await expect(player.error).toBeVisible();
+    const retry = player.retry;
     await retry.focus();
     await retry.press("Enter");
-    await expect
-      .poll(() =>
-        page
-          .locator("audio")
-          .evaluate((audio: HTMLAudioElement) => !audio.paused && audio.currentTime > 0),
-      )
-      .toBe(true);
+    await expectPlaying(page, { beyond: 0 });
     expect(grants).toBe(2);
   });

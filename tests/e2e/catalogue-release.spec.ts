@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
+import { test, expect } from "./support/test";
+import { preparedCatalogue } from "./support/catalogue";
 import type { CatalogPage, Track } from "@/lib/types";
 
 test("release requests preserve same-origin authentication and reject cross-site submissions", async ({
@@ -49,7 +49,7 @@ test("release requests preserve same-origin authentication and reject cross-site
 test("the prepared release is discoverable through every bounded page and ID lookup", async ({
   request,
 }) => {
-  const prepared: Track[] = JSON.parse(await readFile("media/prepared/catalog.json", "utf8"));
+  const prepared = await preparedCatalogue();
   const eligible = prepared.filter((track) => track.status !== "retired");
   let cursor: string | null = null;
   const seen = new Set<string>();

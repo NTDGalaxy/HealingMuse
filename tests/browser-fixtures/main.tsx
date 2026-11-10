@@ -1,3 +1,5 @@
+// First, so the session cookie is in place before the app decides whether to load the client.
+import "./synthetic-session";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
@@ -5,23 +7,16 @@ import en from "@/messages/en.json";
 import vi from "@/messages/vi.json";
 import { AppProvider, useApp } from "@/components/app-state";
 import { PlayerProvider } from "@/components/player";
-import { LibraryView, MoodView, SettingsView } from "@/components/personal";
-import { AdminView } from "@/components/admin";
-import { AuthDialog } from "@/components/auth-dialog";
-import { PasswordResetView } from "@/components/password-reset";
+import { LibraryView } from "@/features/library/library-view";
+import { MoodView } from "@/features/mood/mood-view";
+import { SettingsView } from "@/features/settings/settings-view";
+import { AdminView } from "@/features/admin/admin-view";
+import { AuthDialogOnDemand } from "@/features/account/auth-dialog-on-demand";
+import { PasswordResetView } from "@/features/account/password-reset";
 import { AppearanceProvider } from "@/components/appearance";
 import { TrackCard, ExploreView } from "@/components/catalog";
 import type { Track, CatalogPage, CatalogQuery } from "@/lib/types";
-import "@/app/globals.css";
-import "@/app/sanctuary.css";
-import "@/app/botanical.css";
-import "@/app/interaction.css";
-import "@fontsource/be-vietnam-pro/vietnamese-400.css";
-import "@fontsource/be-vietnam-pro/vietnamese-500.css";
-import "@fontsource/be-vietnam-pro/vietnamese-600.css";
-import "@fontsource/be-vietnam-pro/latin-400.css";
-import "@fontsource/be-vietnam-pro/latin-500.css";
-import "@fontsource/be-vietnam-pro/latin-600.css";
+import "@/styles";
 
 const track: Track = {
   id: "00000000-0000-4000-8000-000000000001",
@@ -30,6 +25,10 @@ const track: Track = {
   artist: "Synthetic fixture",
   category: "nature",
   goals: ["relax"],
+  genres: [],
+  instruments: [],
+  traditions: [],
+  listeningReviewed: true,
   duration: 60,
   source: { kind: "hosted", path: "synthetic.mp3" },
   downloadAllowed: true,
@@ -97,7 +96,7 @@ function CatalogueFixture() {
   }, []);
   return <ExploreView query={query} initialPage={page} unavailable={unavailable} />;
 }
-function Views() {
+function Views({ switchLocale }: { switchLocale: () => void }) {
   const [view, setView] = useState("library");
   const app = useApp();
   return (
@@ -120,6 +119,9 @@ function Views() {
           ))}
           <button className="button" onClick={app.openAuth}>
             Sign in
+          </button>
+          <button className="button secondary" onClick={switchLocale}>
+            Switch language
           </button>
         </nav>
       </header>
@@ -150,24 +152,32 @@ function Views() {
           </div>
         )}
       </main>
-      <AuthDialog />
+      <AuthDialogOnDemand />
     </>
   );
 }
-const locale = new URL(location.href).searchParams.get("locale") === "vi" ? "vi" : "en";
-document.documentElement.lang = locale;
-createRoot(document.getElementById("root")!).render(
-  <NextIntlClientProvider
-    locale={locale}
-    messages={locale === "vi" ? vi : en}
-    timeZone="Asia/Ho_Chi_Minh"
-  >
-    <AppearanceProvider>
-      <AppProvider tracks={tracks} collections={[]}>
-        <PlayerProvider>
-          <Views />
-        </PlayerProvider>
-      </AppProvider>
-    </AppearanceProvider>
-  </NextIntlClientProvider>,
-);
+const initialLocale = new URL(location.href).searchParams.get("locale") === "vi" ? "vi" : "en";
+// Mirrors Application: a language switch swaps messages without remounting the providers.
+function Root() {
+  const [locale, setLocale] = useState<"vi" | "en">(initialLocale);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+  return (
+    <NextIntlClientProvider
+      locale={locale}
+      messages={locale === "vi" ? vi : en}
+      timeZone="Asia/Ho_Chi_Minh"
+    >
+      <AppearanceProvider>
+        <AppProvider tracks={tracks} collections={[]}>
+          <PlayerProvider>
+            <Views switchLocale={() => setLocale(locale === "vi" ? "en" : "vi")} />
+          </PlayerProvider>
+        </AppProvider>
+      </AppearanceProvider>
+    </NextIntlClientProvider>
+  );
+}
+document.documentElement.lang = initialLocale;
+createRoot(document.getElementById("root")!).render(<Root />);

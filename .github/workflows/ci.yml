@@ -1,16 +1,21 @@
 name: HealingMuse validation
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A new push supersedes a pull request run; every main commit keeps its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -25,16 +30,56 @@ jobs:
       - run: npm run db:test:catalog
       - run: npm run db:test:release
       - run: npm run db:test:b2
+      - run: npm run db:lint
       - run: npm run security:repository
       - run: npm run build
-      - run: node scripts/check-garden-budget.mjs
+        env:
+          # A production-shaped bundle for the budgets; nothing contacts this host.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci-placeholder
+          NEXT_TELEMETRY_DISABLED: "1"
+          # Synthetic sentinels, never real secrets: if server code leaked one of these into the
+          # client bundle, the client secret scan below would find it.
+          SUPABASE_SECRET_KEY: ci-sentinel-not-a-secret-SUPABASE_SECRET_KEY
+          SUPABASE_DB_URL: ci-sentinel-not-a-secret-SUPABASE_DB_URL
+          RATE_LIMIT_SALT: ci-sentinel-not-a-secret-RATE_LIMIT_SALT
+          B2_READ_KEY_ID: ci-sentinel-not-a-secret-B2_READ_KEY_ID
+          B2_READ_APPLICATION_KEY: ci-sentinel-not-a-secret-B2_READ_APPLICATION_KEY
+          B2_UPLOAD_KEY_ID: ci-sentinel-not-a-secret-B2_UPLOAD_KEY_ID
+          B2_UPLOAD_APPLICATION_KEY: ci-sentinel-not-a-secret-B2_UPLOAD_APPLICATION_KEY
+      - run: npm run budgets
       - run: npm run security:client
+        env:
+          # The same sentinels as the build step. Never set them before security:repository,
+          # which would find them in this file.
+          SUPABASE_SECRET_KEY: ci-sentinel-not-a-secret-SUPABASE_SECRET_KEY
+          SUPABASE_DB_URL: ci-sentinel-not-a-secret-SUPABASE_DB_URL
+          RATE_LIMIT_SALT: ci-sentinel-not-a-secret-RATE_LIMIT_SALT
+          B2_READ_KEY_ID: ci-sentinel-not-a-secret-B2_READ_KEY_ID
+          B2_READ_APPLICATION_KEY: ci-sentinel-not-a-secret-B2_READ_APPLICATION_KEY
+          B2_UPLOAD_KEY_ID: ci-sentinel-not-a-secret-B2_UPLOAD_KEY_ID
+          B2_UPLOAD_APPLICATION_KEY: ci-sentinel-not-a-secret-B2_UPLOAD_APPLICATION_KEY
       - run: node scripts/test-fixtures.mjs
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # On a cache hit this skips the browser download and still installs the system packages.
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - run: npm run test:e2e -- --reporter=dot,html
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: browser-evidence
           path: test-results/
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: failure-reports
+          path: |
+            playwright-report/
+            artifacts/
           retention-days: 7

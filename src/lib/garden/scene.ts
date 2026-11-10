@@ -1,12 +1,7 @@
 import * as THREE from "three";
-import {
-  gardens,
-  initialQuality,
-  lowerQuality,
-  type GardenId,
-  type GardenTheme,
-  type GardenEvent,
-} from "./config";
+import { gardens, initialQuality, lowerQuality, type GardenId, type GardenTheme } from "./config";
+import type { GraphicsMarker } from "./budget-markers";
+import type { SceneEvent, SceneSpec, Viewport } from "./protocol";
 
 // Original parametric botanical geometry. No remote models, textures or requests.
 function petalGeometry(cup = false) {
@@ -247,16 +242,24 @@ function compose(id: GardenId, theme: GardenTheme) {
   };
 }
 
+export type GardenOptions = {
+  viewport: Viewport;
+  scene: SceneSpec;
+  /** Runtime reports; the caller announces readiness once createGarden returns. */
+  onEvent?: (event: SceneEvent) => void;
+  /** Draw single frames on demand (poster rendering) instead of animating. */
+  poster?: boolean;
+  /** Start one quality tier lower (the main-thread fallback). */
+  lowPower?: boolean;
+};
+export type Garden = ReturnType<typeof createGarden>;
+
+/** Builds the renderer and draws the first frame; throws when WebGL is unavailable. */
 export function createGarden(
   canvas: HTMLCanvasElement | OffscreenCanvas,
-  width: number,
-  height: number,
-  theme: GardenTheme,
-  id: GardenId,
-  onEvent: (event: GardenEvent) => void = () => {},
-  poster = false,
-  lowPower = false,
+  { viewport, scene: spec, onEvent = () => {}, poster = false, lowPower = false }: GardenOptions,
 ) {
+  let { width, height } = viewport;
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -269,7 +272,7 @@ export function createGarden(
   renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene(),
     camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
-  scene.name = "HealingMuse botanical world";
+  scene.name = "healingmuse-graphics:scene" satisfies GraphicsMarker<"scene">;
   const hemisphere = new THREE.HemisphereLight("#fff1fb", "#466c62", 2.5);
   const sun = new THREE.DirectionalLight("#fff2dd", 3.5);
   sun.position.set(-3, 8, 5);
@@ -291,7 +294,7 @@ export function createGarden(
     camera.lookAt(w < 700 ? 3 : 1, w < 700 ? 2.6 : 0.5, -2);
     camera.updateProjectionMatrix();
   };
-  const change = (garden: GardenId, nextTheme: GardenTheme) => {
+  const change = ({ garden, theme: nextTheme }: SceneSpec) => {
     if (composition) {
       scene.remove(composition.group);
       composition.dispose();
@@ -309,8 +312,7 @@ export function createGarden(
     renderer.render(scene, camera);
   };
   resize(width, height);
-  change(id, theme);
-  onEvent({ type: "ready" });
+  change(spec);
   const tick = (now: number) => {
     if (disposed || !visible) return;
     frame = requestAnimationFrame(tick);
@@ -327,7 +329,7 @@ export function createGarden(
       if (slowWindows >= 2) {
         const next = lowerQuality(quality);
         if (!next) {
-          onEvent({ type: "still" });
+          onEvent({ type: "exhausted" });
           cancelAnimationFrame(frame);
           return;
         }
@@ -348,15 +350,15 @@ export function createGarden(
   if (!poster) frame = requestAnimationFrame(tick);
   const lost = (event: Event) => {
     event.preventDefault();
-    onEvent({ type: "failed" });
+    onEvent({ type: "lost" });
   };
   canvas.addEventListener("webglcontextlost", lost);
   return {
     change,
-    resize: (w: number, h: number) => {
-      width = w;
-      height = h;
-      resize(w, h);
+    resize: (next: Viewport) => {
+      width = next.width;
+      height = next.height;
+      resize(width, height);
       if (poster) renderer.render(scene, camera);
     },
     visible: (value: boolean) => {

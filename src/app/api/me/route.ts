@@ -1,11 +1,14 @@
 import { z } from "zod";
-import { body, json, safeHandler, requireUser, assertDb, rateLimit } from "@/lib/server/http";
+import { assertDb, json } from "@/lib/server/http";
+import { defineRoute } from "@/lib/server/route";
 import { profileInput } from "@/lib/validation";
 import { privilegedClient } from "@/lib/supabase/admin";
 
-export function GET(request: Request) {
-  return safeHandler(async () => {
-    const { db, user } = await requireUser(request);
+export const GET = defineRoute({
+  name: "me",
+  auth: "user",
+  rateLimit: { exempt: "reads only the verified caller's own rows" },
+  handler: async ({ db, user }) => {
     const results = await Promise.all([
       db
         .from("profiles")
@@ -40,32 +43,35 @@ export function GET(request: Request) {
       checkins: results[3].data ?? [],
       isAdmin: results[4].data === true,
     });
-  });
-}
-export function PATCH(request: Request) {
-  return safeHandler(async () => {
-    const input = await body(request, profileInput);
-    const { db, user } = await requireUser(request);
-    await rateLimit(request, "personal", 60, user.id);
-    if (input.moodConsent !== undefined)
-      assertDb((await db.rpc("set_mood_consent", { p_consent: input.moodConsent })).error);
+  },
+});
+export const PATCH = defineRoute({
+  name: "me",
+  auth: "user",
+  body: profileInput,
+  rateLimit: { bucket: "personal", limit: 60, per: "user" },
+  handler: async ({ body, db, user }) => {
+    if (body.moodConsent !== undefined)
+      assertDb((await db.rpc("set_mood_consent", { p_consent: body.moodConsent })).error);
     const changes = {
-      ...(input.locale ? { locale: input.locale } : {}),
-      ...(input.calmMode !== undefined ? { calm_mode: input.calmMode } : {}),
+      ...(body.locale ? { locale: body.locale } : {}),
+      ...(body.calmMode !== undefined ? { calm_mode: body.calmMode } : {}),
     };
     if (Object.keys(changes).length)
       assertDb((await db.from("profiles").update(changes).eq("id", user.id)).error);
     return json({ ok: true });
-  });
-}
-export function DELETE(request: Request) {
-  return safeHandler(async () => {
-    await body(request, z.object({ confirmation: z.literal("DELETE") }).strict());
-    const { db, user } = await requireUser(request);
+  },
+});
+export const DELETE = defineRoute({
+  name: "me",
+  auth: "user",
+  body: z.object({ confirmation: z.literal("DELETE") }).strict(),
+  rateLimit: { bucket: "account_delete", limit: 5, per: "user" },
+  handler: async ({ db, user }) => {
     // The privileged deletion target is always the freshly verified caller.
     const { error } = await privilegedClient().auth.admin.deleteUser(user.id);
     assertDb(error);
     await db.auth.signOut({ scope: "local" });
     return json({ ok: true });
-  });
-}
+  },
+});

@@ -6,28 +6,31 @@ import { Headphones, Heart, Pause, Play, Square, Waves } from "lucide-react";
 import { modes, frequencies, presetId, type BinauralMode } from "@/lib/binaural/config";
 import { clock } from "@/lib/audio";
 import type { CatalogPage } from "@/lib/types";
-import { useBinaural } from "./binaural-provider";
+import { useBinaural, useBinauralSnapshot } from "./binaural-provider";
 import { BinauralCatalogue } from "./binaural-catalogue";
+import { primaryControl } from "@/lib/perf/readiness";
 
 export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPage }) {
   const t = useTranslations("binaural");
   const locale = useLocale();
   const session = useBinaural();
   const { initialize } = session;
+  // The page renders for status changes only; the progress below follows the ticks.
+  const status = useBinauralSnapshot((snapshot) => snapshot.status);
   const [customDuration, setCustomDuration] = useState(false);
   const [durationError, setDurationError] = useState(false);
   useEffect(() => {
     void initialize();
   }, [initialize]);
-  const { config, state } = session;
+  const { config } = session;
   const hz = frequencies(config);
   const mode = modes[config.mode];
   const isPreset = (mode.presets as readonly number[]).includes(config.beatHz);
   const selectedPreset = presetId(config.mode, config.beatHz);
   const durationOptions = [5, 10, 15, 20, 30, 45, 60];
-  const playing = state.status === "playing";
-  const paused = state.status === "paused" || state.status === "interrupted";
-  const busy = ["starting", "pausing", "stopping"].includes(state.status);
+  const playing = status === "playing";
+  const paused = status === "paused" || status === "interrupted";
+  const busy = ["starting", "pausing", "stopping"].includes(status);
   const [durationDraft, setDurationDraft] = useState<{ seconds: number; text: string } | null>(
     null,
   );
@@ -54,7 +57,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
   );
   return (
     <div className={`binaural-page binaural-${config.mode}`}>
-      <header className="page-heading binaural-heading">
+      <header className="page-heading binaural-heading" data-part="page-heading">
         <h1>{t("title")}</h1>
         <p>{t("intro")}</p>
       </header>
@@ -89,22 +92,23 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
       </fieldset>
       <section
         className="binaural-player reading-surface"
+        data-part="binaural-player"
         aria-labelledby="binaural-player-heading"
-        data-state={state.status}
+        data-state={status}
       >
         <div className="binaural-player-top">
           <div>
             <h2 id="binaural-player-heading">{t(`modes.${config.mode}.purpose`)}</h2>
           </div>
           <div className="binaural-visualizer" aria-hidden="true">
-            <i />
-            <i />
-            <i />
+            <i data-part="binaural-visualizer-bar" />
+            <i data-part="binaural-visualizer-bar" />
+            <i data-part="binaural-visualizer-bar" />
             <Waves size={32} />
           </div>
         </div>
         <p className="binaural-state" role="status">
-          {t(`states.${state.status}`)}
+          {t(`states.${status}`)}
         </p>
         <div className="binaural-session-options">
           <label htmlFor="binaural-duration">
@@ -159,10 +163,11 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
             </label>
           )}
         </div>
-        <div className="binaural-buttons">
+        <div className="binaural-buttons" data-part="binaural-session-controls">
           <button
             type="button"
             className="button"
+            {...primaryControl()}
             disabled={
               !session.ready || busy || (!playing && (session.backgroundLoading || durationError))
             }
@@ -178,9 +183,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           <button
             type="button"
             className="button secondary"
-            disabled={
-              !["playing", "paused", "interrupted", "starting", "pausing"].includes(state.status)
-            }
+            disabled={!["playing", "paused", "interrupted", "starting", "pausing"].includes(status)}
             onClick={session.stop}
           >
             <Square size={18} aria-hidden="true" />
@@ -226,14 +229,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
             />
           </button>
         </div>
-        <div className="binaural-progress">
-          <progress
-            aria-label={t("progress")}
-            max={config.durationSeconds}
-            value={Math.min(config.durationSeconds, state.elapsedSeconds)}
-          />
-          <span>{t("remaining", { time: clock(Math.ceil(state.remainingSeconds)) })}</span>
-        </div>
+        <BinauralProgress durationSeconds={config.durationSeconds} />
         {!session.ready && !session.engineUnavailable && <p role="status">{t("loadingEngine")}</p>}
         {session.engineUnavailable && (
           <div className="info-panel">
@@ -257,7 +253,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           </div>
         )}
         {durationError && <p role="alert">{t("durationHint")}</p>}
-        {state.status === "unsupported" && (
+        {status === "unsupported" && (
           <p className="error" role="alert">
             {t("unsupported")} <Link href={`/${locale}/explore`}>{t("ordinaryMusic")}</Link>
           </p>
@@ -282,9 +278,9 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           {volume("toneVolume", t("toneVolume"))}
           {volume("backgroundVolume", t("backgroundVolume"))}
         </div>
-        <details className="binaural-advanced">
+        <details className="binaural-advanced" data-part="binaural-advanced">
           <summary>{t("advanced")}</summary>
-          <dl className="binaural-frequencies">
+          <dl className="binaural-frequencies" data-part="binaural-frequencies">
             <div>
               <dt>{t("leftEar")}</dt>
               <dd>
@@ -422,6 +418,23 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           </a>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Session progress: the only part of the page that renders on every engine tick. */
+function BinauralProgress({ durationSeconds }: { durationSeconds: number }) {
+  const t = useTranslations("binaural");
+  const elapsed = useBinauralSnapshot((snapshot) => snapshot.elapsedSeconds);
+  const remaining = useBinauralSnapshot((snapshot) => snapshot.remainingSeconds);
+  return (
+    <div className="binaural-progress">
+      <progress
+        aria-label={t("progress")}
+        max={durationSeconds}
+        value={Math.min(durationSeconds, elapsed)}
+      />
+      <span>{t("remaining", { time: clock(Math.ceil(remaining)) })}</span>
     </div>
   );
 }

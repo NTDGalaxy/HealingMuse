@@ -104,6 +104,8 @@ The PWA provides an installable shell, local fonts and an offline library view.
 Installation prompts and instructions depend on the browser.
 The service worker caches the public shell and decorative assets, while authenticated responses, playback grants and streamed music stay outside its caches.
 Only an explicit download retains music for offline listening.
+Once a route is usable and any first sound has started, the app fetches its dialog code while idle, so the queue, sleep timer and recording details still open after the connection drops.
+Interface code that cannot download never stops the page or the music: a dialog stays closed with a short notice, the content studio offers Try again, and the next attempt downloads it again.
 
 ### Optional mood check-ins
 
@@ -149,6 +151,10 @@ A lightweight main-thread renderer and matching responsive posters provide fallb
 Mobile rendering starts at 30 fps with capped resolution.
 Sustained slow rendering reduces quality, then switches to a still without repeatedly oscillating between tiers.
 Hidden tabs suspend rendering, and renderer failures do not block the audio player.
+A pure state machine in [src/lib/garden/controller.ts](src/lib/garden/controller.ts) owns that lifecycle, and both renderers sit behind one port interface.
+That runtime and the GSAP layer are loaded on demand, so they add nothing to a route's startup JavaScript, and a chunk that fails to load leaves the poster.
+The scene and the GSAP layer start only once the route's primary control is usable and any recording that is starting has played or failed, so decoration never competes with the first sound.
+A renderer that has not drawn its first frame eight seconds after the scene starts is replaced by the poster.
 
 Short page entrances introduce the heading and listening surfaces.
 New catalogue results use a capped stagger, including results that reuse existing recording cards.
@@ -173,6 +179,8 @@ A passwordless user can authenticate by code, then choose Set or change password
 Forgot or need to set a password requests a recovery email and opens a localized password page.
 Supabase Auth handles password storage and authenticated password changes.
 Application tables do not store passwords.
+The Supabase browser client downloads only when it is needed: at page start when a session cookie, an auth redirect or the password page is present, and otherwise when sign-in opens.
+Guests browsing and listening never download it, and another tab's sign-in or sign-out still reaches every open tab.
 
 Production email onboarding and recovery depend on an approved sender.
 Supabase's built-in sender is intended for development and restricts delivery to authorized organization-team addresses.
@@ -296,9 +304,11 @@ Appearance and graphics preferences require no database migration.
 
 ```text
 src/app/                 Localized routes, API handlers and interface styles
-src/components/          Shell, players, discovery, forms and personal features
+src/components/          Shell, players, discovery and shared components
+src/components/ui/       Interface primitives: buttons, fields, states, pagers, lists, confirmations
+src/features/            Account, library, downloads, mood, settings, legal and admin screens
 src/lib/binaural/        Validated session configuration and stereo audio engine
-src/lib/garden/          Procedural scenes, route configuration and worker protocol
+src/lib/garden/          Procedural scenes, lifecycle controller, renderers and worker protocol
 src/lib/browser/         Downloads, API client and client-side utilities
 src/lib/server/          Catalogue, storage resolver and API boundaries
 src/lib/storage/         Optional B2 signing and integrity checks
@@ -342,7 +352,8 @@ Never delete cloud objects or change storage providers as a side effect of a des
 Migrations are applied through the trusted `db:migrate` tool after a separate schema and backup review.
 It verifies connection identity and TLS certificates, tracks migration hashes and refuses edits to already-applied migrations.
 Add a new migration for schema changes instead of rewriting migration history.
-This interface refinement needs no migration, audio upload or publication action.
+Migrations `202611090001` to `202611090004` are additive and work with the previous application version; apply them through that reviewed `db:migrate` step.
+Once they are applied, API roles can no longer publish a recording directly; only the reviewed release workflow can.
 
 ## Validation and performance
 
@@ -358,15 +369,19 @@ npm run db:test
 npm run db:test:catalog
 npm run db:test:release
 npm run db:test:b2
+npm run db:lint
 npm run security:repository
 npm run build
-npm run garden:budget
+npm run budgets
 npm run security:client
 ```
 
 Database suites use isolated portable PostgreSQL fixtures and exercise the real migration SQL.
 They cover ownership, administrator boundaries, consent, playlist revisions, discovery, publication and delivery requirements.
 They do not establish that a live Supabase project has applied the same schema.
+The catalog suite also runs a matrix of `catalog_page` queries against the previous definition of the function and requires identical results.
+`db:lint` checks migration names, `begin;`/`commit;` framing, `search_path` on security definer functions, a revoke after every created function and the extension allowlist.
+It also compares the migrated RLS flags and table, column and function privileges with [scripts/fixtures/db-privileges.json](scripts/fixtures/db-privileges.json); after an intended change, run `node scripts/lint-migrations.mjs --update-snapshot` and review the diff.
 Cloud database, recovery, load and delivery commands are separate operator checks and can access or mutate cloud state.
 
 For browser checks against an optimized preview running on port 3127:
@@ -388,21 +403,50 @@ Those tests verify generated audio signals, without claiming brainwave synchroni
 Graphics tests cover renderer failure, context loss, unsupported workers, slow rendering, preference changes and cleanup.
 Motion checks cover reused results, repeated dialog focus restoration and reduced-motion/Calm paths.
 
-### Graphics budgets and asset generation
+### Visual equivalence oracle
+
+Refactors that must not change what users see are checked locally, never in CI, against an optimized preview:
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:3127 npm run visual:baseline   # on the unchanged code
+E2E_BASE_URL=http://127.0.0.1:3127 npm run visual:check      # after each change
+```
+
+The `visual` Playwright project takes screenshots of every route in both themes at 390, 820 and 1440 px, plus dialogs, a paused player, keyboard focus, Calm, reduced transparency and the signed-in fixture screens, and allows no differing pixel.
+[scripts/visual/snapshot.mjs](scripts/visual/snapshot.mjs) records the normalized DOM and every computed style (including generated pseudo-elements and custom properties on `:root` and `body`) for the same states plus extra widths that reach every media-query range, and prints exact differences.
+Both read their states from [scripts/visual/states.mjs](scripts/visual/states.mjs) and store results in the gitignored `artifacts/visual/`.
+The `visual` project launches Chromium with `--disable-gpu` and `--disable-partial-raster`, so every tile is rasterized and composited the same way, whole; otherwise a rare tile rasterized another way, or only partly, changed the anti-aliasing of rounded corners.
+A baseline and its check must therefore come from the same configuration.
+`npm run test:e2e` runs only the `chromium` project.
+
+### Stylesheets
+
+[src/styles/index.ts](src/styles/index.ts) is the single style entry, imported by the root layout and the Vite component fixture.
+It loads Tailwind first (which declares the cascade layer order), then [src/styles/tokens.css](src/styles/tokens.css), the only place custom properties are set on the root element, then the bespoke stylesheets in `src/app/`, whose rules all live in `@layer components`.
+`npm run css:analyze` reports duplicated selectors, shadowed declarations, never-referenced classes and tokens declared outside `tokens.css`; `npm run css:analyze -- --fix` removes shadowed declarations while keeping `!important` ones and fallbacks for browsers below the Next.js support floor.
+Check any stylesheet change with the visual equivalence oracle.
+
+### Budgets and asset generation
 
 ```bash
 npm run garden:posters
-npm run build
-npm run garden:budget
+NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_ci-placeholder npm run build
+npm run budgets
 ```
 
 Poster generation renders the actual runtime scenes through installed Playwright Chromium and creates responsive AVIF/WebP assets.
 It does not access cloud audio or use a paid generation service.
 Prompts, provenance and licenses are recorded in [content/garden-assets.json](content/garden-assets.json).
-The budget check measures emitted graphics chunks, including dependencies and workers, against **220 KiB gzip**.
-Each selected mobile poster must remain **80 KiB or less**.
+`npm run budgets` (also `npm run garden:budget`) runs [scripts/check-budgets.mjs](scripts/check-budgets.mjs) against the build manifests, with no browser, timing or network.
+For every route in `src/lib/routes.ts` it gates startup JS and CSS (re-gzipped at level 9), the fonts resolved from the startup `@font-face` rules, and the mobile poster against the ceilings in [budgets.json](budgets.json).
+It fails when a forbidden module (Radix dialog, three.js, GSAP, the binaural engine, Zod, supabase-js or the YouTube embed) ships in a route's startup JS without a `ratchetModules` allowance, and when a detector marker no longer matches any emitted chunk.
+The emitted graphics chunks, including dependencies and workers, must stay within **220 KiB gzip**, and each mobile poster must remain **80 KiB or less**.
+Graphics chunks are found by marker strings: three.js and GSAP by text their builds contain, and the garden scenes, worker, host runtime and GSAP layer by the literals listed in [src/lib/garden/budget-markers.ts](src/lib/garden/budget-markers.ts).
+A ceiling may only rise in a commit that states the metric, its old and new value and timed-gate evidence, approved in the pull request.
+Catalogue-dependent bytes (artwork images and, with `--base=<url>`, HTML) are reported in `artifacts/budget-report.json` and never gated.
 Generated shell assets are rebuilt through `scripts/build-shell.mjs`, which also runs before normal builds.
 Edit source translations or service-worker code and regenerate their outputs instead of editing generated files directly.
+The offline shell is listed once, in [src/offline/shell.mjs](src/offline/shell.mjs): the build writes that list into `public/sw.js`, hashes every listed file (icons included) into the cache version, and the service-worker spec serves the same list.
 
 ### Mobile listening measurements
 
@@ -417,6 +461,7 @@ Repeat with `--theme=night` and a distinct report label.
 The target is **p95 usable listening controls and click-to-audio at or below three seconds**, using at least 30 fresh samples per principal scenario.
 The agreed profile is 390 × 844, 150 ms latency, 1.6 Mbps download and 4× CPU slowdown.
 Live-scene readiness is reported separately because decorative 3D must not gate listening.
+For tapped recordings the report also shows, without gating, whether the scene started before the tap, after the first sound, or in between.
 Reports also include LCP, CLS, sampled interaction timing and transferred resources.
 Sampled interaction timing is not field INP, and page-target network accounting can omit worker transfers.
 Cloud audio samples must stay within verified free egress and operation allowances.
@@ -475,5 +520,5 @@ Write full sentences on separate lines in long Markdown files.
 
 Application source is distributed under the [MIT license](LICENSE).
 Music and third-party artwork retain their individual licenses and attribution requirements.
-See recording details, the Credits page, [audio source metadata](content/audio-sources.json), [artwork credits](content/artwork-credits.json), [scenery credits](content/scenery-credits.json) and [garden provenance](content/garden-assets.json).
+See recording details, the Credits page, [audio source metadata](content/audio-sources.json), [artwork credits](content/artwork-credits.json) and [garden provenance](content/garden-assets.json).
 Development-generated decorative concepts are distinct from the human-created music catalogue.

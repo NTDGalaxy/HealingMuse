@@ -1,46 +1,44 @@
-import {
-  assertSameOrigin,
-  body,
-  json,
-  safeHandler,
-  requireUser,
-  assertDb,
-  rateLimit,
-} from "@/lib/server/http";
+import { assertDb, json } from "@/lib/server/http";
+import { defineRoute } from "@/lib/server/route";
 import { sessionInput, sessionEnd } from "@/lib/validation";
-export function POST(request: Request) {
-  return safeHandler(async () => {
-    const input = await body(request, sessionInput);
-    const { db, user } = await requireUser(request);
-    await rateLimit(request, "sessions", 30, user.id);
+export const POST = defineRoute({
+  name: "sessions",
+  auth: "user",
+  body: sessionInput,
+  rateLimit: { bucket: "sessions", limit: 30, per: "user" },
+  handler: async ({ body, db }) => {
     const { data, error } = await db.rpc("start_listening", {
-      p_track: input.trackId,
-      p_score: input.beforeScore ?? null,
+      p_track: body.trackId,
+      p_score: body.beforeScore ?? null,
     });
     assertDb(error);
     return json({ id: data }, 201);
-  });
-}
-export function PATCH(request: Request) {
-  return safeHandler(async () => {
-    const input = await body(request, sessionEnd);
-    const { db } = await requireUser(request);
+  },
+});
+export const PATCH = defineRoute({
+  name: "sessions",
+  auth: "user",
+  body: sessionEnd,
+  // Own bucket so listeners who skip quickly (start plus end per skip) never share one budget.
+  rateLimit: { bucket: "session_end", limit: 60, per: "user" },
+  handler: async ({ body, db }) => {
     assertDb(
       (
         await db.rpc("end_listening", {
-          p_session: input.sessionId,
-          p_score: input.afterScore ?? null,
+          p_session: body.sessionId,
+          p_score: body.afterScore ?? null,
         })
       ).error,
     );
     return json({ ok: true });
-  });
-}
-export function DELETE(request: Request) {
-  return safeHandler(async () => {
-    assertSameOrigin(request);
-    const { db, user } = await requireUser(request);
+  },
+});
+export const DELETE = defineRoute({
+  name: "sessions",
+  auth: "user",
+  rateLimit: { bucket: "personal", limit: 60, per: "user" },
+  handler: async ({ db, user }) => {
     assertDb((await db.from("listening_sessions").delete().eq("owner_id", user.id)).error);
     return json({ ok: true });
-  });
-}
+  },
+});
