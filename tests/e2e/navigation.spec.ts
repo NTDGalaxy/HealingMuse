@@ -58,10 +58,12 @@ test("Home search opens results on the same listening session", async ({ page })
 
 test("Explore Next keeps keyboard focus while the next page loads", async ({ page }) => {
   const explore = new Explore(page);
-  await page.goto("/en/explore");
+  // Small pages give every catalogue a next page (CI's synthetic one has 20 recordings, one
+  // default page), and Explore keeps the page size when it moves on.
+  await page.goto("/en/explore?limit=6");
   await expectPrimaryReady(page);
   // Hold the next page so the navigation stays pending, as it does on a slow connection.
-  const held = await holdRequests(page, "**/en/explore?cursor=*");
+  const held = await holdRequests(page, "**/en/explore?*cursor=*");
   await explore.nextPage.focus();
   await page.keyboard.press("Enter");
   await held.reached;
