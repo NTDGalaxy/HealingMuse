@@ -135,7 +135,13 @@
 
   /* Reduced transparency: every translucent or blurred surface becomes a solid fill. */
   @media (prefers-reduced-transparency: reduce) {
+    /* The bar is solid at once, at the top and once scrolled, so no fade runs through glass. */
     .topbar,
+    .topbar[data-scrolled] {
+      transition: none;
+    }
+    .topbar,
+    .topbar[data-scrolled],
     .dialog-content,
     .player-bar,
     .mobile-nav {
