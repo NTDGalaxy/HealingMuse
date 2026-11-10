@@ -30,7 +30,6 @@ import {
 } from "./support/motion";
 import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 import { graphicsMarkers } from "../../src/lib/garden/budget-markers";
-test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
   await page.goto("/en");

@@ -23,12 +23,13 @@ export default defineConfig({
       name: "visual",
       testMatch: /\.visual\.ts$/,
       fullyParallel: true,
-      // One deterministic raster path. On the default GPU path (SwiftShader) Chromium
-      // occasionally rasterizes some tiles of a long page another way, and partial raster
-      // re-rasterizes only the invalidated part of a tile; both change the anti-aliasing of rounded
-      // corners by a few levels. Measured under load: GPU path 2 of 912 runs differed, software
-      // path with partial raster 2 of 72 (dialog states), software path without partial raster
-      // 216 of 216 and two full matrices identical.
+      // One deterministic raster path. With the default launch Chromium occasionally rasterizes
+      // some tiles of a long page another way, and partial raster re-rasterizes only the
+      // invalidated part of a tile; both change the anti-aliasing of rounded corners by a few
+      // levels. Measured under load: the default launch 2 of 912 runs differed, --disable-gpu with
+      // partial raster 2 of 72 (dialog states), --disable-gpu without partial raster 216 of 216
+      // and two full matrices identical. Both launches draw pages in software (SystemInfo reports
+      // gpu_compositing disabled_software); the default keeps SwiftShader for WebGL only.
       use: {
         ...devices["Desktop Chrome"],
         launchOptions: { args: ["--disable-gpu", "--disable-partial-raster"] },

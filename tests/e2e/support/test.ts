@@ -1,4 +1,4 @@
-import { test as base, expect, type Locator, type Page } from "@playwright/test";
+import { test as base, expect, type Browser, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Track } from "@/lib/types";
 import {
@@ -40,13 +40,63 @@ export async function storeCalm(page: Page) {
   await page.evaluate((key) => localStorage.setItem(key, "true"), storage.calm);
 }
 
-export const test = base.extend<{
-  /** Stores appearance preferences with an init script; call it before navigating. */
-  appearance: (options: AppearanceOptions) => Promise<void>;
-}>({
+/** GPU renderers that are software rasterizers: Chromium's SwiftShader, Mesa's and Windows WARP. */
+const softwareRenderer = /swiftshader|llvmpipe|lavapipe|softpipe|swrast|microsoft basic render/i;
+/** The two GPU features that move page drawing onto the GPU process. */
+const pageDrawingFeatures = ["gpu_compositing", "rasterization"];
+
+/**
+ * Fails when the browser composites or rasterizes pages on a software rasterizer posing as a GPU,
+ * such as SwiftShader or llvmpipe. With page drawing there, the deferred teardown of the previous
+ * document's compositor, a second after every navigation, waits synchronously on the GPU process:
+ * it took 6 to 8 s on 2 cores (0.1 ms in software compositing) and froze pages for up to 11 s on a
+ * loaded CI runner, with the scene and every check waiting behind it. Headless Chromium composites
+ * pages in software and keeps SwiftShader for WebGL alone, which is all the scenes need; a launch
+ * flag such as --use-angle=swiftshader moves page drawing onto it. A real GPU passes, because its
+ * renderer is not a software one, and so does a headed run that falls back to software compositing.
+ */
+async function expectNoEmulatedCompositing(browser: Browser) {
+  const session = await browser.newBrowserCDPSession();
+  try {
+    const { gpu } = await session.send("SystemInfo.getInfo");
+    const status = gpu.featureStatus ?? {};
+    // A renamed feature would otherwise make this check pass without looking at anything.
+    expect(Object.keys(status), "Chromium's GPU feature names").toEqual(
+      expect.arrayContaining(pageDrawingFeatures),
+    );
+    const renderer = gpu.auxAttributes?.glRenderer ?? "";
+    const accelerated = pageDrawingFeatures.filter((feature) =>
+      status[feature].startsWith("enabled"),
+    );
+    expect(
+      softwareRenderer.test(renderer) ? accelerated : [],
+      `page drawing accelerated on a software rasterizer (${renderer})`,
+    ).toEqual([]);
+  } finally {
+    await session.detach();
+  }
+}
+
+export const test = base.extend<
+  {
+    /** Stores appearance preferences with an init script; call it before navigating. */
+    appearance: (options: AppearanceOptions) => Promise<void>;
+  },
+  {
+    /** Checks once per worker that its browser draws pages in software or on a real GPU. */
+    compositing: void;
+  }
+>({
   appearance: async ({ page }, use) => {
     await use((options) => setAppearance(page, options));
   },
+  compositing: [
+    async ({ browser }, use) => {
+      await expectNoEmulatedCompositing(browser);
+      await use();
+    },
+    { scope: "worker", auto: true },
+  ],
 });
 
 /** The WCAG tags every accessibility scan enforces. */
