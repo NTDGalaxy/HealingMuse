@@ -14,11 +14,6 @@
   inherits: true;
   initial-value: #8d6bdc;
 }
-@property --wash-deep {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #2a1744;
-}
 @property --wash-light {
   syntax: "<color>";
   inherits: true;
@@ -55,7 +50,7 @@
     --shadow: #2a144026;
     --scrim: #1c0f2799;
     /* How strongly the wash tints the top of the screen */
-    --wash-strength: 0.55;
+    --wash-strength: 0.8;
     /* How present the 3D scene is behind content */
     --scene-strength: 0.6;
     --wash-ground: var(--bg);

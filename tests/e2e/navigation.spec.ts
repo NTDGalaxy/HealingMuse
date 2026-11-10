@@ -6,10 +6,11 @@ import {
   expectPlaying,
   expectPrimaryReady,
   expectSameListeningSession,
+  expectNoHorizontalOverflow,
   holdRequests,
   markListeningSession,
 } from "./support/test";
-import { recordings as prepared, uniqueSearchTerm } from "./support/contracts";
+import { recordings as prepared, size, uniqueSearchTerm } from "./support/contracts";
 import { Explore, Recordings, Shell } from "./support/pages";
 test("switching language preserves the native listening session", async ({ page }) => {
   await page.goto("/en");
@@ -78,3 +79,30 @@ test("Explore Next keeps keyboard focus while the next page loads", async ({ pag
   // search parameters), so focus restarts at the top as on a page load; keeping the controls
   // mounted across pages is redesign work.
 });
+
+for (const viewport of [
+  { width: 320, height: 740 },
+  { width: 1440, height: 900 },
+]) {
+  test(`language and legal links are full-size targets at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    const shell = new Shell(page, "vi");
+    await page.setViewportSize(viewport);
+    await page.goto("/vi");
+    // The narrowest top bar offers only the other language; wider ones offer both.
+    const offered = viewport.width <= 380 ? (["en"] as const) : (["vi", "en"] as const);
+    for (const locale of offered) {
+      const box = (await shell.languageLink(locale).boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(size.touchTarget);
+      expect(box.height).toBeGreaterThanOrEqual(size.touchTarget);
+    }
+    if (viewport.width <= 380) await expect(shell.languageLink("vi")).toBeHidden();
+    if (await shell.sidebar.isVisible())
+      for (const key of ["privacy", "terms", "credits"] as const)
+        expect((await shell.sidebarLegalLink(key).boundingBox())!.height).toBeGreaterThanOrEqual(
+          size.touchTarget,
+        );
+    await expectNoHorizontalOverflow(page);
+  });
+}

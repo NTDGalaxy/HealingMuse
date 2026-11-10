@@ -36,7 +36,6 @@ function Wash({ preview }: { preview: Preview }) {
         {
           "--wash-glow": palette.glow,
           "--wash-mid": palette.mid,
-          "--wash-deep": palette.deep,
           "--wash-light": palette.light,
         } as CSSProperties
       }
