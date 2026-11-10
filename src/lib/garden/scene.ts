@@ -30,7 +30,8 @@ type Composition = {
   dispose(): void;
 };
 
-function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Composition {
+/** One route's scene as plain Three.js objects; exported for the structural unit tests. */
+export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint): Composition {
   const { form, seed } = gardens[id];
   const random = seeded(seed);
   const night = theme === "night";
@@ -212,10 +213,15 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
         scale = new THREE.Vector3(),
         position = new THREE.Vector3(),
         rotation = new THREE.Quaternion();
+      // The seed sets where the swells cross and which blocks carry the accent.
+      const across = 0.35 + random() * 0.3,
+        along = 0.4 + random() * 0.35,
+        phaseA = random() * Math.PI * 2,
+        phaseB = random() * Math.PI * 2;
       for (let index = 0; index < count; index++)
         cubes.setColorAt(
           index,
-          color.copy((index * 7) % 11 === 0 ? accent : glow).lerp(mid, ((index * 3) % 5) / 6),
+          color.copy(random() < 0.09 ? accent : glow).lerp(mid, Math.floor(random() * 5) / 6),
         );
       const draw = (seconds: number) => {
         for (let index = 0; index < count; index++) {
@@ -223,8 +229,8 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
             row = Math.floor(index / columns);
           const height =
             0.5 +
-            Math.sin(column * 0.5 + seconds * 0.15) * 0.4 +
-            Math.cos(row * 0.6 - seconds * 0.11) * 0.4;
+            Math.sin(column * across + phaseA + seconds * 0.15) * 0.4 +
+            Math.cos(row * along + phaseB - seconds * 0.11) * 0.4;
           position.set(-6 + column * 0.9, height, -12 + row * 0.9);
           scale.set(1, Math.max(0.2, height * 2), 1);
           cubes.setMatrixAt(index, matrix.compose(position, rotation, scale));
@@ -238,21 +244,27 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
     }
     case "ripples": {
       // Rings spreading slowly across still water and fading as they widen.
+      // The seed sets where the drop fell, how far apart the rings travel and how fast.
       const rings: THREE.LineLoop[] = [];
+      const spacing = 0.9 + random() * 0.6,
+        speed = 0.2 + random() * 0.1,
+        squash = 0.75 + random() * 0.25,
+        dropX = center.x + (random() - 0.5) * 3,
+        dropZ = center.z + (random() - 0.5) * 2;
       for (let index = 0; index < 10; index++) {
-        const curve = new THREE.EllipseCurve(0, 0, 1, 1, 0, Math.PI * 2);
+        const curve = new THREE.EllipseCurve(0, 0, 1, squash, 0, Math.PI * 2);
         const loop = new THREE.LineLoop(
           keep(new THREE.BufferGeometry().setFromPoints(curve.getPoints(160))),
           stroke(index % 3 === 0 ? accent : glow, 0.6),
         );
         loop.rotation.x = -Math.PI / 2;
-        loop.position.set(center.x, 0.2, center.z);
+        loop.position.set(dropX, 0.2, dropZ);
         add(loop, index < 6 ? 0 : 1);
         rings.push(loop);
       }
       const draw = (seconds: number) =>
         rings.forEach((loop, index) => {
-          const radius = 1 + ((index * 1.2 + seconds * 0.25) % 12);
+          const radius = 1 + ((index * spacing + seconds * speed) % 12);
           loop.scale.set(radius, radius, 1);
           (loop.material as THREE.LineBasicMaterial).opacity = 0.7 * (1 - radius / 13);
         });
@@ -359,7 +371,7 @@ export function createGarden(
       scene.remove(composition.group);
       composition.dispose();
     }
-    composition = compose(garden, theme, tint);
+    composition = composeScene(garden, theme, tint);
     composition.detail(quality.tier);
     // Place moving parts at their start, so the first frame and the posters show them.
     composition.animate(0);
