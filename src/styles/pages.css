@@ -34,8 +34,10 @@
       border-color 160ms var(--ease-press),
       background-color 160ms var(--ease-press);
   }
-  .binaural-mode:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .binaural-mode:hover {
+      background: var(--surface-2);
+    }
   }
   /* The native radio covers its whole card, so every point of the card selects the mode. */
   .binaural-mode input {
@@ -229,9 +231,6 @@
   }
   .binaural-tracks[disabled] {
     opacity: 0.6;
-  }
-  .binaural-recording .track-card {
-    width: 100%;
   }
   .binaural-favorites > div {
     display: grid;

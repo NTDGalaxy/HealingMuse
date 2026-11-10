@@ -154,13 +154,12 @@
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
-    .track-row:focus-within,
-    .track-row .card-play {
+    .track-row:focus-within {
       background: var(--surface-2);
     }
   }
-  @media (prefers-reduced-transparency: reduce) and (max-width: 600px) {
-    .track-grid > .track-tile .card-play {
+  @media (prefers-reduced-transparency: reduce) and (hover: hover) {
+    .track-row:hover {
       background: var(--surface-2);
     }
   }

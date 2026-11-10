@@ -45,6 +45,8 @@ export const shell = {
   /** The help line under a setting's name (body copy is found by role). */
   settingHelp: part("setting-help"),
   focused: ":focus",
+  /** Focus a keyboard user can see, the state the focus ring belongs to. */
+  focusVisible: ":focus-visible",
   children: ":scope > *",
   /** Every element of the page, to name what reaches past the viewport. */
   everyElement: "*",
@@ -81,6 +83,10 @@ export const garden = {
 
 /** Local recordings served by the preview, for holding a recording while it starts. */
 export const localAudioRoute = "**/api/local-audio/*";
+/** Catalogue page requests, routed when a test needs a catalogue of its own. */
+export const catalogRoute = "**/api/catalog?*";
+/** The local catalogue's audio for one recording (preview mode, Range-capable). */
+export const localAudioPath = (id: string) => `/api/local-audio/${id}`;
 
 /** Every emitted JavaScript chunk, for failing one that contains a given marker. */
 export const chunkRoute = "**/_next/static/chunks/*.js";
@@ -99,7 +105,13 @@ export const chunkMarkers = {
 export const card = {
   root: part("track-card"),
   play: part("track-play"),
+  /** The glyph inside Play; on a touch row cover it is the opaque jade badge. */
+  playIcon: part("track-play-icon"),
   playLabel: part("track-play-label"),
+  /** The check on the cover of a recording saved on this device. */
+  downloaded: part("track-downloaded"),
+  /** A card's own favourite button; a narrow line folds it into the details sheet. */
+  favorite: '[data-action="favorite"]',
   title: part("track-title"),
   /** The text column: title, artist and the actions row. */
   description: part("track-description"),
@@ -201,6 +213,10 @@ export const style = {
   /** A colour with an alpha below one, in legacy (rgba) or modern (oklab, color) serialization. */
   translucent: /^(rgba\(.+, 0?\.\d+\)|[a-z]+\(.+ \/ 0?\.\d+\))$/,
   opaque: /^rgb\(/,
+  /** A fully transparent fill: nothing painted over what lies beneath. */
+  transparent: "rgba(0, 0, 0, 0)",
+  /** The opacity of a control that is shown but cannot be used. */
+  dimmed: "0.5",
   reducedTransparency: { name: "prefers-reduced-transparency", value: "reduce" },
 } as const;
 
@@ -209,10 +225,16 @@ export const size = {
   touchTarget: 44,
   readableFont: 16,
   compactLabel: 24,
+  /** The cover of a recording line: a phone list row or a row on Home. */
+  lineCover: 56,
+  /** The least room a recording line gives its name, however narrow the line. */
+  lineTitleMin: 140,
 } as const;
 
 /** Settings layout: panels sit side by side from `twoColumnMinWidth`, separated by `panelGap`. */
 export const layout = {
+  /** Phone layouts, such as a grid of recordings read as lines, apply up to this width. */
+  phoneMaxWidth: 600,
   twoColumnMinWidth: 1100,
   panelGap: 24,
   /** The minimum space between the two buttons of a settings action group. */

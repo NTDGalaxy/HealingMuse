@@ -54,10 +54,12 @@
     outline-offset: 3px;
     border-radius: 6px;
   }
-  .track-title:hover {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
-    text-underline-offset: 0.2em;
+  @media (hover: hover) {
+    .track-title:hover {
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 0.2em;
+    }
   }
   .track-card[data-current] .track-title {
     color: var(--jade-ink);
@@ -161,7 +163,9 @@
   .track-feature .artwork[data-family="piano"] .artwork-lines {
     stroke-width: 6px;
   }
+  /* The featured text is a container, so its actions fit the column it is given (see below). */
   .track-feature .track-description {
+    container: feature / inline-size;
     display: grid;
     gap: 6px;
   }
@@ -191,9 +195,11 @@
     background: currentColor;
     vertical-align: middle;
   }
+  /* Listen and the actions share a line; if text is enlarged past what the line holds, the actions
+     wrap below rather than reach past the page. */
   .track-feature .track-bottom {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
     margin-top: 16px;
@@ -218,8 +224,10 @@
     border-radius: 50%;
     background: color-mix(in oklab, var(--on-jade) 14%, transparent);
   }
-  .track-feature .card-play:hover {
-    box-shadow: 0 18px 40px -12px var(--jade-glow);
+  @media (hover: hover) {
+    .track-feature .card-play:hover {
+      box-shadow: 0 18px 40px -12px var(--jade-glow);
+    }
   }
   .track-feature .track-actions {
     margin-left: auto;
@@ -233,7 +241,9 @@
     display: grid;
     gap: 2px;
   }
+  /* Each line is a container, so it lays itself out by its own width wherever it is placed. */
   .track-row {
+    container: line / inline-size;
     display: grid;
     grid-template-columns: 56px minmax(0, 1fr);
     align-items: center;
@@ -244,9 +254,13 @@
     border-radius: var(--radius-art);
     transition: background-color 160ms var(--ease-press);
   }
-  .track-row:hover,
   .track-row:focus-within {
     background: color-mix(in oklab, var(--surface-2) 80%, transparent);
+  }
+  @media (hover: hover) {
+    .track-row:hover {
+      background: color-mix(in oklab, var(--surface-2) 80%, transparent);
+    }
   }
   .track-row .track-art {
     width: 56px;
@@ -262,10 +276,36 @@
     opacity: 0;
     transition: opacity 160ms var(--ease-press);
   }
-  .track-row .card-play:focus-visible,
-  .track-row:hover .card-play,
   .track-row[data-current] .card-play {
     opacity: 1;
+  }
+  /* Play fills the cover, which clips anything drawn outside it, so its ring is drawn inside,
+     two-tone (a --bg halo, then the focus colour) to read over any cover, above the check. */
+  .track-row .card-play:focus-visible {
+    z-index: 1;
+    outline-offset: -5px;
+    box-shadow: inset 0 0 0 2px var(--bg);
+    opacity: 1;
+  }
+  @media (hover: hover) {
+    .track-row:hover .card-play {
+      opacity: 1;
+    }
+    .track-row:hover .card-play:disabled {
+      opacity: 0.5;
+    }
+  }
+  /* On a small cover the downloaded check is a corner mark clear of Play. */
+  .track-row .downloaded-badge {
+    left: 3px;
+    top: 3px;
+    width: 20px;
+    height: 20px;
+    box-shadow: 0 0 0 2px var(--bg);
+  }
+  .track-row .downloaded-badge svg {
+    width: 12px;
+    height: 12px;
   }
   .track-row .card-play-label,
   .track-tile .card-play-label {
@@ -335,8 +375,10 @@
     border-radius: 50%;
     box-shadow: 0 10px 24px -10px var(--shadow);
   }
-  .track-tile .card-play:hover {
-    box-shadow: 0 12px 28px -10px var(--jade-glow);
+  @media (hover: hover) {
+    .track-tile .card-play:hover {
+      box-shadow: 0 12px 28px -10px var(--jade-glow);
+    }
   }
   .track-tile .track-description {
     display: grid;
@@ -387,8 +429,10 @@
     font-weight: 600;
     text-decoration: none;
   }
-  .discovery-categories a:hover {
-    background: var(--surface-3);
+  @media (hover: hover) {
+    .discovery-categories a:hover {
+      background: var(--surface-3);
+    }
   }
   .listening-paths h2 {
     margin-bottom: 16px;
@@ -579,8 +623,10 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 2px;
     }
-    /* On a phone a grid of recordings reads as a list: the native shape for single tracks. */
-    .track-grid > .track-tile {
+    /* On a phone a grid of recordings reads as a list: the native shape for single tracks. Cards
+       a view wraps (Downloads with its Remove link, the Binaural picker) read the same way. */
+    .track-grid .track-tile {
+      container: line / inline-size;
       grid-template-columns: 56px minmax(0, 1fr);
       align-items: center;
       gap: 14px;
@@ -589,13 +635,13 @@
       margin: 0 -8px;
       border-radius: var(--radius-art);
     }
-    .track-grid > .track-tile .track-art {
+    .track-grid .track-tile .track-art {
       width: 56px;
       height: 56px;
       aspect-ratio: auto;
       border-radius: 10px;
     }
-    .track-grid > .track-tile .card-play {
+    .track-grid .track-tile .card-play {
       inset: 0;
       width: auto;
       height: auto;
@@ -605,11 +651,27 @@
       box-shadow: none;
       opacity: 0;
     }
-    .track-grid > .track-tile .card-play:focus-visible,
-    .track-grid > .track-tile[data-current] .card-play {
+    .track-grid .track-tile[data-current] .card-play {
       opacity: 1;
     }
-    .track-grid > .track-tile .track-description {
+    .track-grid .track-tile .card-play:focus-visible {
+      z-index: 1;
+      outline-offset: -5px;
+      box-shadow: inset 0 0 0 2px var(--bg);
+      opacity: 1;
+    }
+    .track-grid .track-tile .downloaded-badge {
+      left: 3px;
+      top: 3px;
+      width: 20px;
+      height: 20px;
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+    .track-grid .track-tile .downloaded-badge svg {
+      width: 12px;
+      height: 12px;
+    }
+    .track-grid .track-tile .track-description {
       grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
         "title bottom"
@@ -617,7 +679,7 @@
       column-gap: 12px;
       align-items: center;
     }
-    .track-grid > .track-tile .track-title {
+    .track-grid .track-tile .track-title {
       grid-area: title;
       line-height: 1.3;
       display: -webkit-box;
@@ -626,23 +688,23 @@
       line-clamp: 2;
       overflow: hidden;
     }
-    .track-grid > .track-tile [data-part="track-artist"] {
+    .track-grid .track-tile [data-part="track-artist"] {
       grid-area: artist;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .track-grid > .track-tile .track-bottom {
+    .track-grid .track-tile .track-bottom {
       grid-area: bottom;
       margin: 0;
       flex-wrap: nowrap;
     }
-    .track-grid > .track-tile .track-actions,
+    .track-grid .track-tile .track-actions,
     .track-row .track-actions {
       margin-right: 0;
     }
     /* On a phone a line keeps favourite and details; download lives in the details sheet. */
-    .track-grid > .track-tile .track-actions [data-action="download"],
+    .track-grid .track-tile .track-actions [data-action="download"],
     .track-row .track-actions [data-action="download"] {
       display: none;
     }
@@ -686,10 +748,6 @@
     .track-feature .card-play {
       padding: 0 20px 0 8px;
       font-size: var(--step-0);
-    }
-    .track-feature .card-play-icon {
-      width: 44px;
-      height: 44px;
     }
     .track-feature .track-actions [data-action="download"] {
       display: none;
@@ -743,6 +801,142 @@
     }
     .track-feature .track-bottom {
       margin-top: 10px;
+    }
+  }
+  /* A pointer reveals a phone line's Play by hovering it, as it does a row's. */
+  @media (hover: hover) and (max-width: 600px) {
+    .track-grid .track-tile:hover .card-play {
+      opacity: 1;
+    }
+    .track-grid .track-tile:hover .card-play:disabled {
+      opacity: 0.5;
+    }
+  }
+  /* Under reduced transparency the scrim that hover, focus or playing reveals is solid. These
+     come before the touch rules below, which keep a touch cover clear. */
+  @media (prefers-reduced-transparency: reduce) {
+    .track-row .card-play {
+      background: var(--surface-2);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) and (max-width: 600px) {
+    .track-grid .track-tile .card-play {
+      background: var(--surface-2);
+    }
+  }
+  /* Touch has no hover to reveal Play, so a small cover always carries an opaque jade Play badge
+     in its bottom corner: the desktop tile's composition (check top-left, Play bottom-right),
+     legible over any cover and solid under reduced transparency. The whole cover stays the target.
+     (any-pointer: coarse) also reaches touch laptops whose main pointer can hover. */
+  @media (hover: none), (any-pointer: coarse) {
+    .track-row .card-play {
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 3px;
+      background: transparent;
+      opacity: 1;
+    }
+    .track-row .card-play:disabled {
+      opacity: 0.5;
+    }
+    /* A tap on the check still plays; a pointer keeps the check's tooltip instead. */
+    .track-row .downloaded-badge {
+      pointer-events: none;
+    }
+    .track-row .card-play-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--jade);
+      color: var(--on-jade);
+      box-shadow:
+        0 0 0 2px var(--bg),
+        0 4px 10px -6px var(--shadow);
+    }
+    .track-row .card-play-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  @media (hover: none) and (max-width: 600px), (any-pointer: coarse) and (max-width: 600px) {
+    .track-grid .track-tile .card-play {
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 3px;
+      background: transparent;
+      opacity: 1;
+    }
+    .track-grid .track-tile .card-play:disabled {
+      opacity: 0.5;
+    }
+    .track-grid .track-tile .downloaded-badge {
+      pointer-events: none;
+    }
+    .track-grid .track-tile .card-play-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--jade);
+      color: var(--on-jade);
+      box-shadow:
+        0 0 0 2px var(--bg),
+        0 4px 10px -6px var(--shadow);
+    }
+    .track-grid .track-tile .card-play-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+  /* A featured column too narrow for the full row (about 343 px: the large Listen pill and three
+     actions), such as Home beside its large cover on a small desktop, takes the phone's compact
+     pill and leaves Download in the details sheet, so Listen, Favourite and Details keep one line. */
+  @container feature (max-width: 349px) {
+    .track-feature .track-bottom {
+      gap: 8px;
+    }
+    .track-feature .card-play {
+      gap: 10px;
+      min-height: 56px;
+      padding: 0 16px 0 8px;
+      font-size: var(--step-0);
+    }
+    .track-feature .card-play-icon {
+      width: 40px;
+      height: 40px;
+    }
+    .track-feature .track-actions [data-action="download"] {
+      display: none;
+    }
+  }
+  /* A narrow line (a small phone, a list inside a card, Home's up next beside a large cover) folds
+     download and favourite into the details sheet and sets the duration beside the artist, so the
+     name keeps its room. A saved recording keeps its filled heart, so its state still shows. */
+  @container line (max-width: 339px) {
+    .track-row .track-description,
+    .track-grid .track-tile .track-description {
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "title title actions"
+        "artist duration actions";
+      column-gap: 8px;
+    }
+    .track-row .track-bottom,
+    .track-grid .track-tile .track-bottom {
+      display: contents;
+    }
+    .track-row .track-bottom > .duration,
+    .track-grid .track-tile .track-bottom > .duration {
+      grid-area: duration;
+    }
+    .track-row .track-actions,
+    .track-grid .track-tile .track-actions {
+      grid-area: actions;
+    }
+    .track-row .track-actions [data-action="download"],
+    .track-grid .track-tile .track-actions [data-action="download"],
+    .track-row .track-actions [data-action="favorite"]:not([aria-pressed="true"]),
+    .track-grid .track-tile .track-actions [data-action="favorite"]:not([aria-pressed="true"]) {
+      display: none;
     }
   }
   @media (max-width: 380px) {

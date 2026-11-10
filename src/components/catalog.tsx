@@ -88,7 +88,7 @@ export const TrackCard = memo(function TrackCard({
       disabled={selection?.disabled}
       onClick={play}
     >
-      <span className="card-play-icon" aria-hidden="true">
+      <span className="card-play-icon" data-part="track-play-icon" aria-hidden="true">
         {selection ? (
           selection.selected ? (
             <Check size={22} />
@@ -136,7 +136,11 @@ export const TrackCard = memo(function TrackCard({
         <Artwork track={track} />
         {layout !== "feature" && playButton}
         {downloaded && (
-          <span className="downloaded-badge" title={t("catalog.downloaded")}>
+          <span
+            className="downloaded-badge"
+            data-part="track-downloaded"
+            title={t("catalog.downloaded")}
+          >
             <Check size={16} aria-hidden="true" />
             <span className="sr-only">{t("catalog.downloaded")}</span>
           </span>
@@ -156,6 +160,7 @@ export const TrackCard = memo(function TrackCard({
           <div className="track-actions" data-part="track-actions">
             <button
               className="icon-button"
+              data-action="favorite"
               aria-label={t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
               aria-pressed={saved}
               onClick={() =>

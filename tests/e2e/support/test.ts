@@ -104,6 +104,74 @@ export async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow, "elements reaching past the viewport").toEqual([]);
 }
 
+/** Whether a person can see the element (rendered, CSS-visible, no fully transparent ancestor). */
+function seen(locator: Locator) {
+  return locator.evaluate((element) =>
+    element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }),
+  );
+}
+
+/**
+ * A person can see the element: it is rendered, not hidden by CSS and neither it nor an ancestor
+ * is fully transparent. Playwright's visibility ignores opacity; the timed gate does not.
+ */
+export async function expectSeen(locator: Locator) {
+  await test.step(
+    `${locator} can be seen`,
+    async () => {
+      await expect
+        .poll(() => seen(locator), {
+          message: "rendered, not hidden by CSS and not fully transparent",
+        })
+        .toBe(true);
+    },
+    { box: true },
+  );
+}
+
+/** The element is present but a person cannot see it (for example, transparent until hover). */
+export async function expectUnseen(locator: Locator) {
+  await test.step(
+    `${locator} cannot be seen`,
+    async () => {
+      await expect(locator).toBeAttached();
+      await expect
+        .poll(() => seen(locator), { message: "hidden by CSS or fully transparent" })
+        .toBe(false);
+    },
+    { box: true },
+  );
+}
+
+/**
+ * A tap on the centre of `at` reaches `target`: nothing painted above it takes the tap. Covers
+ * overlap, which neither Playwright's visibility nor checkVisibility() detects.
+ */
+export async function expectTapLandsOn(at: Locator, target: Locator) {
+  await test.step(
+    `a tap on ${at} reaches ${target}`,
+    async () => {
+      // Centred, so the fixed top bar and bottom navigation are not the topmost element there.
+      await at.evaluate((element) =>
+        element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }),
+      );
+      const box = (await at.boundingBox())!;
+      const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      await expect
+        .poll(
+          () =>
+            target.evaluate(
+              (element, { x, y }) => element.contains(document.elementFromPoint(x, y)),
+              point,
+            ),
+          { message: "the topmost element at that point is the target or inside it" },
+        )
+        .toBe(true);
+    },
+    { box: true },
+  );
+}
+
 /** The single native media element owned by the persistent player. Strict: it must be unique. */
 export function audioElement(page: Page): Locator {
   return page.locator(player.audio);
