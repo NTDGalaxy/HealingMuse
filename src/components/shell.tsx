@@ -20,7 +20,7 @@ import { AuthDialogOnDemand, authDialogCode } from "@/features/account/auth-dial
 import { Scenery } from "./scenery";
 import { WashProvider } from "./wash";
 import { isConfigured } from "@/lib/supabase/config";
-import { Fragment, useLayoutEffect, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
 import { Dialog, dialogCode } from "./dialog";
@@ -68,6 +68,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [more, setMore] = useState(false);
   // Readiness contract: navigation is hydrated and usable from this commit on.
   useLayoutEffect(() => markOnce(readinessMarks.shell), []);
+  // The top bar stays clear over the wash at the top of a page and becomes glass once content
+  // scrolls under it.
+  const topbar = useRef<HTMLElement>(null);
+  useEffect(() => {
+    let queued = 0;
+    const update = () => {
+      queued = 0;
+      topbar.current?.toggleAttribute("data-scrolled", window.scrollY > 4);
+    };
+    const onScroll = () => {
+      queued ||= requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(queued);
+    };
+  }, []);
   const active = (key: RouteKey) => isRouteActive(pathname, locale as Locale, key);
   const href = (key: RouteKey) => routeHref(locale as Locale, key);
   return (
@@ -118,7 +137,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
         <div className="main-column">
-          <header className="topbar">
+          <header className="topbar" ref={topbar}>
             <Link href={`/${locale}`} className="mobile-brand">
               <Leaf size={22} aria-hidden="true" />
               HealingMuse

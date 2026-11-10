@@ -27,6 +27,10 @@ type Composition = {
   detail(tier: number): void;
   /** Places every moving part at a time in seconds. */
   animate(seconds: number): void;
+  /** The tint colours the scene's light shows now. */
+  tint(): { glow: THREE.Color; mid: THREE.Color };
+  /** Recolours the light in place, without rebuilding or restarting anything. */
+  retint(glow: THREE.Color, mid: THREE.Color): void;
   dispose(): void;
 };
 
@@ -44,6 +48,12 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
   const materials: THREE.Material[] = [];
   const tiers: THREE.Object3D[][] = [[], [], []];
   const animators: ((seconds: number) => void)[] = [];
+  // Materials keep the role colour they were made from, so a new tint repaints them in place.
+  const painted: {
+    material: THREE.MeshStandardMaterial | THREE.LineBasicMaterial;
+    role: THREE.Color;
+  }[] = [];
+  const repainters: (() => void)[] = [];
   const keep = <T extends THREE.BufferGeometry>(geometry: T) => {
     geometries.push(geometry);
     return geometry;
@@ -57,6 +67,7 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
       metalness: 0.15,
     });
     materials.push(material);
+    painted.push({ material, role: color });
     return material;
   };
   const stroke = (color: THREE.Color, opacity = 0.8) => {
@@ -67,6 +78,7 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
       opacity: Math.min(1, night ? opacity : opacity * 1.7),
     });
     materials.push(material);
+    painted.push({ material, role: color });
     return material;
   };
   const add = (object: THREE.Object3D, tier = 0) => {
@@ -119,11 +131,17 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
           new THREE.Vector3(1, height, 1),
         );
         bars.setMatrixAt(index, matrix);
-        bars.setColorAt(
-          index,
-          color.copy(index % 7 === 3 ? accent : glow).lerp(mid, (index % 5) / 8),
-        );
       }
+      const paint = () => {
+        for (let index = 0; index < count; index++)
+          bars.setColorAt(
+            index,
+            color.copy(index % 7 === 3 ? accent : glow).lerp(mid, (index % 5) / 8),
+          );
+        if (bars.instanceColor) bars.instanceColor.needsUpdate = true;
+      };
+      paint();
+      repainters.push(paint);
       add(bars);
       animators.push((seconds) => {
         bars.rotation.y = Math.sin(seconds * 0.04) * 0.06;
@@ -218,11 +236,18 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
         along = 0.4 + random() * 0.35,
         phaseA = random() * Math.PI * 2,
         phaseB = random() * Math.PI * 2;
-      for (let index = 0; index < count; index++)
-        cubes.setColorAt(
-          index,
-          color.copy(random() < 0.09 ? accent : glow).lerp(mid, Math.floor(random() * 5) / 6),
+      const picks = Array.from({ length: count }, () => ({
+        accented: random() < 0.09,
+        blend: Math.floor(random() * 5) / 6,
+      }));
+      const paint = () => {
+        picks.forEach(({ accented, blend }, index) =>
+          cubes.setColorAt(index, color.copy(accented ? accent : glow).lerp(mid, blend)),
         );
+        if (cubes.instanceColor) cubes.instanceColor.needsUpdate = true;
+      };
+      paint();
+      repainters.push(paint);
       const draw = (seconds: number) => {
         for (let index = 0; index < count; index++) {
           const column = index % columns,
@@ -305,6 +330,17 @@ export function composeScene(id: GardenId, theme: GardenTheme, tint?: SceneTint)
     animate(seconds) {
       for (const animate of animators) animate(seconds);
     },
+    tint: () => ({ glow: glow.clone(), mid: mid.clone() }),
+    retint(nextGlow, nextMid) {
+      glow.copy(nextGlow);
+      mid.copy(nextMid);
+      for (const { material, role } of painted) {
+        if (role !== glow && role !== mid) continue;
+        material.color.copy(role);
+        if (material instanceof THREE.MeshStandardMaterial) material.emissive.copy(role);
+      }
+      for (const repaint of repainters) repaint();
+    },
     dispose() {
       group.traverse((object) => {
         if (object instanceof THREE.InstancedMesh) object.dispose();
@@ -366,7 +402,42 @@ export function createGarden(
     camera.lookAt(w < 700 ? 3 : 1, w < 700 ? 2.6 : 0.5, -2);
     camera.updateProjectionMatrix();
   };
-  const change = ({ garden, theme, tint }: SceneSpec) => {
+  // A new tint on the same scene eases over the wash's 600 ms, ease-out, instead of rebuilding.
+  const tintTime = 600;
+  let shown: SceneSpec | null = null;
+  let easing: {
+    from: { glow: THREE.Color; mid: THREE.Color };
+    to: { glow: THREE.Color; mid: THREE.Color };
+    start: number;
+  } | null = null;
+  const tintOf = ({ theme, tint }: SceneSpec) => ({
+    glow: new THREE.Color(tint?.glow ?? defaults[theme].glow),
+    mid: new THREE.Color(tint?.mid ?? defaults[theme].mid),
+  });
+  const ease = (now: number) => {
+    if (!easing) return;
+    const progress = Math.min(1, (now - easing.start) / tintTime);
+    const eased = 1 - (1 - progress) ** 3;
+    composition.retint(
+      easing.from.glow.clone().lerp(easing.to.glow, eased),
+      easing.from.mid.clone().lerp(easing.to.mid, eased),
+    );
+    if (progress === 1) easing = null;
+  };
+  const change = (next: SceneSpec) => {
+    const { garden, theme, tint } = next;
+    if (composition && shown && shown.garden === garden && shown.theme === theme) {
+      shown = next;
+      easing = { from: composition.tint(), to: tintOf(next), start: performance.now() };
+      // Without a running loop (posters, hidden tabs) the new light applies at once.
+      if (poster || !visible) {
+        ease(Number.POSITIVE_INFINITY);
+        renderer.render(scene, camera);
+      }
+      return;
+    }
+    shown = next;
+    easing = null;
     if (composition) {
       scene.remove(composition.group);
       composition.dispose();
@@ -390,6 +461,7 @@ export function createGarden(
     frame = requestAnimationFrame(tick);
     if (now - last < 1000 / quality.fps - 1) return;
     last = now;
+    ease(now);
     composition.animate(now / 1000);
     composition.group.position.y = Math.sin(now * 0.00022) * 0.035;
     renderer.render(scene, camera);

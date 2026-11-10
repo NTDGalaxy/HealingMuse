@@ -27,6 +27,7 @@ const Context = createContext<{
   playing: boolean;
   controlsHidden: boolean;
   play: (track: Track, queue?: readonly Track[], continuation?: CatalogQuery) => void;
+  toggle: () => Promise<void>;
   pauseForOtherAudio: () => void;
   registerOtherAudio: (pause: () => void) => () => void;
   setControlsHidden: (hidden: boolean) => void;
@@ -115,6 +116,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       playing,
       controlsHidden,
       play: engine.play,
+      /** Pauses the loaded recording, or resumes (or retries) it. */
+      toggle: engine.toggle,
       pauseForOtherAudio: engine.pauseForOtherAudio,
       registerOtherAudio: engine.registerOtherAudio,
       setControlsHidden: engine.setControlsHidden,

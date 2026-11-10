@@ -166,7 +166,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
         <div className="binaural-buttons" data-part="binaural-session-controls">
           <button
             type="button"
-            className="button"
+            className="button listen"
             {...primaryControl()}
             disabled={
               !session.ready || busy || (!playing && (session.backgroundLoading || durationError))

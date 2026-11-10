@@ -80,6 +80,17 @@
     stroke-width: 1.4px;
     opacity: 0.72;
   }
+  /* Piano covers are a row of levels; they read as a meter only with weight. */
+  .artwork[data-family="piano"] .artwork-lines {
+    stroke-width: 3px;
+    opacity: 0.9;
+  }
+  /* The playing recording glows wherever it is listed: the one job neon does here. */
+  .track-card[data-current] .track-art {
+    box-shadow:
+      0 0 0 2px var(--jade),
+      0 0 28px -6px var(--jade);
+  }
   .duration {
     display: inline-flex;
     align-items: center;
@@ -129,7 +140,7 @@
     place-items: center;
   }
   .track-selected .track-art {
-    outline: 3px solid var(--jade);
+    outline: 3px solid var(--lav);
     outline-offset: 2px;
   }
 
@@ -146,6 +157,9 @@
   }
   .track-feature .artwork-lines {
     stroke-width: 2px;
+  }
+  .track-feature .artwork[data-family="piano"] .artwork-lines {
+    stroke-width: 6px;
   }
   .track-feature .track-description {
     display: grid;
@@ -179,13 +193,10 @@
   }
   .track-feature .track-bottom {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 10px;
     margin-top: 16px;
-  }
-  .track-feature .track-bottom {
-    flex-wrap: nowrap;
   }
   .track-feature .track-actions {
     gap: 0;
@@ -274,12 +285,16 @@
     column-gap: 12px;
     align-items: center;
   }
+  /* A recording's name is what this audience listens by: up to two lines before it truncates. */
   .track-row .track-title {
     grid-area: title;
     font-size: var(--step-0);
-    white-space: nowrap;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
   }
   .track-row [data-part="track-artist"] {
     grid-area: artist;
@@ -604,9 +619,12 @@
     }
     .track-grid > .track-tile .track-title {
       grid-area: title;
-      white-space: nowrap;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
       overflow: hidden;
-      text-overflow: ellipsis;
     }
     .track-grid > .track-tile [data-part="track-artist"] {
       grid-area: artist;
@@ -675,6 +693,42 @@
     }
     .track-feature .track-actions [data-action="download"] {
       display: none;
+    }
+  }
+  @media (max-width: 600px) {
+    /* The phone hero stays compact so the next recording shows in the first view: the page line
+       is a quiet label, the artist and time share a line and Play is 56 px. */
+    .discovery-intro h1 {
+      font-size: var(--step-0);
+      font-weight: 600;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+    .track-feature .track-description {
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 10px;
+      align-items: baseline;
+    }
+    .track-feature .track-description > .track-heading,
+    .track-feature .track-bottom {
+      grid-column: 1 / -1;
+    }
+    .track-feature [data-part="track-artist"] {
+      font-size: var(--step-0);
+    }
+    .track-feature .track-meta::before {
+      content: "·";
+      color: var(--muted);
+    }
+    .track-feature .card-play {
+      min-height: 56px;
+    }
+    .track-feature .card-play-icon {
+      width: 40px;
+      height: 40px;
+    }
+    .track-feature .track-bottom {
+      margin-top: 10px;
     }
   }
 }

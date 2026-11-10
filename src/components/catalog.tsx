@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Play,
+  Pause,
   Heart,
   Download,
   MoreHorizontal,
@@ -68,15 +69,21 @@ export const TrackCard = memo(function TrackCard({
   const { downloaded, busy } = useDownloadState(track.id);
   const signedIn = useUserId() !== null;
   const title = track.title[locale];
-  // The loaded recording wears the listening colour wherever it is listed.
+  // The loaded recording wears the listening colour wherever it is listed, and its Play control
+  // becomes Pause while it plays (and resumes it, not restarts it, while it is paused).
   const current = player.current?.id === track.id;
-  const play = selection?.choose ?? (() => player.play(track, queue, continuation));
+  const sounding = current && player.playing && !selection;
+  const play =
+    selection?.choose ??
+    (() => (current ? void player.toggle() : player.play(track, queue, continuation)));
   const playButton = (
     <button
       className="card-play"
       data-part="track-play"
       {...primaryControl(primary && !selection)}
-      aria-label={selection?.label ?? t("catalog.playTitle", { title })}
+      aria-label={
+        selection?.label ?? t(sounding ? "catalog.pauseTitle" : "catalog.playTitle", { title })
+      }
       aria-pressed={selection ? selection.selected : undefined}
       disabled={selection?.disabled}
       onClick={play}
@@ -88,13 +95,15 @@ export const TrackCard = memo(function TrackCard({
           ) : (
             <Plus size={22} />
           )
+        ) : sounding ? (
+          <Pause size={layout === "row" ? 18 : 22} fill="currentColor" />
         ) : (
           <Play size={layout === "row" ? 18 : 22} fill="currentColor" />
         )}
       </span>
       {!selection && (
         <span className="card-play-label" data-part="track-play-label">
-          {t("common.play")}
+          {t(sounding ? "player.pause" : "common.play")}
         </span>
       )}
     </button>

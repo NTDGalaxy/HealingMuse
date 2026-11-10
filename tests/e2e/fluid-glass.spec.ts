@@ -135,12 +135,15 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
     await appearance({ theme, garden: "still" });
     await page.goto("/en/settings");
     await shell.expectTheme(theme);
-    // Glass is kept for the bounded fixed navigation; content panels are solid in every mode.
+    // Glass is kept for the bounded fixed navigation, once content scrolls under it; content
+    // panels are solid in every mode.
     const glass = shell.topbar;
+    await page.evaluate(() => window.scrollTo(0, 320));
+    await expect(glass).toHaveAttribute(chrome.scrolled, "");
+    await expectMotionSettled(page);
     expect(await glass.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.translucent,
     );
-    await expectMotionSettled(page);
     await expectAccessible(page, chrome.main, { allRules: true });
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setEmulatedMedia", {

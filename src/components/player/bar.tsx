@@ -91,6 +91,7 @@ export function PlayerBar({
       className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
       data-part="player-bar"
       data-playing={playing || undefined}
+      data-shown={(!controlsHidden && !!current) || undefined}
       data-bottom-overlay=""
       aria-label={t("player.nowPlaying")}
     >

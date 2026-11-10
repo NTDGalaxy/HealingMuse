@@ -38,6 +38,8 @@ export const shell = {
   /** The visual notice; aria-hidden, because the live region announces the same text. */
   toast: part("toast"),
   scenery: part("scenery"),
+  /** Set on the top bar while content is scrolled under it (the bar is glass only then). */
+  scrolled: "data-scrolled",
   pageHeading: part("page-heading"),
   emptyState: part("empty-state"),
   /** The help line under a setting's name (body copy is found by role). */

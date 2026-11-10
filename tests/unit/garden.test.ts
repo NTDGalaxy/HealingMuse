@@ -109,6 +109,36 @@ describe("light scenes", () => {
     expect(new Set(ids.map((id) => gardens[id].seed)).size).toBe(ids.length);
   });
 
+  it("recolours its light in place for a new tint, keeping every part where it was", () => {
+    for (const id of ids) {
+      const scene = composeScene(id, "night");
+      scene.animate(0);
+      scene.group.updateMatrixWorld(true);
+      const placement = () => {
+        const parts: string[] = [];
+        scene.group.traverse((object) => parts.push(object.matrixWorld.elements.join(",")));
+        return parts.join("|");
+      };
+      const colours = () => {
+        const found: string[] = [];
+        scene.group.traverse((object) => {
+          const material = (object as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+          if (material?.color) found.push(material.color.getHexString());
+        });
+        return found.join(",");
+      };
+      const before = { placement: placement(), colours: colours() };
+      const glow = new THREE.Color("#ff9cc4");
+      const mid = new THREE.Color("#d6649a");
+      scene.retint(glow, mid);
+      expect(placement()).toBe(before.placement);
+      expect(colours()).not.toBe(before.colours);
+      expect(scene.tint().glow.getHexString()).toBe(glow.getHexString());
+      expect(scene.tint().mid.getHexString()).toBe(mid.getHexString());
+      scene.dispose();
+    }
+  });
+
   it("shows no more parts at a lower detail tier, and keeps something at the lowest", () => {
     for (const id of ids) {
       const [full, middle, lowest] = structure(id).tiers;

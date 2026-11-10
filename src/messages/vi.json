@@ -97,6 +97,7 @@
     "playlistAdd": "Thêm vào danh sách phát",
     "human": "Bản thu được tạo bởi con người",
     "playTitle": "Nghe {title}",
+    "pauseTitle": "Tạm dừng {title}",
     "youtubeLoading": "Đang tải trình phát YouTube…",
     "chooseAnother": "Chọn một bản thu khác",
     "genre": "Dòng nhạc",
@@ -460,7 +461,7 @@
   },
   "binaural": {
     "title": "Lắng nghe âm binaural",
-    "intro": "Khám phá hai âm thanh stereo nhẹ nhàng, riêng lẻ hoặc cùng âm nhạc. Chọn ý định lắng nghe và bắt đầu ở âm lượng nhỏ.",
+    "intro": "Hai âm stereo nhẹ, nghe riêng hoặc cùng âm nhạc. Hãy bắt đầu ở âm lượng nhỏ.",
     "chooseMode": "Chọn chế độ lắng nghe",
     "preset": "Thiết lập có sẵn",
     "favoritePreset": "Yêu thích thiết lập này",

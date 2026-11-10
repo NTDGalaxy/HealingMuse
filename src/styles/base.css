@@ -11,8 +11,8 @@
     text-size-adjust: 100%;
     scroll-padding-top: calc(var(--topbar) + 12px);
     scroll-padding-bottom: calc(var(--player) + var(--mobile-nav) + 16px);
-    accent-color: var(--jade);
-    caret-color: var(--jade);
+    accent-color: var(--lav);
+    caret-color: var(--lav);
     scrollbar-color: var(--surface-3) transparent;
   }
   body {
@@ -141,7 +141,8 @@
     margin: 24px 0;
   }
 
-  /* Buttons: one filled pill per view, outlined pills for the rest. */
+  /* Buttons: one filled pill per view, outlined pills for the rest. The filled pill is lavender;
+     jade is spent only on listening (.button.listen, Play, progress). */
   .button {
     display: inline-flex;
     align-items: center;
@@ -150,9 +151,9 @@
     min-height: 48px;
     padding: 0 22px;
     border-radius: var(--radius-pill);
-    border: 2px solid var(--jade);
-    background: var(--jade);
-    color: var(--on-jade);
+    border: 2px solid var(--lav);
+    background: var(--lav);
+    color: var(--on-lav);
     font-weight: 700;
     font-size: var(--step-0);
     line-height: 1.2;
@@ -164,6 +165,14 @@
       box-shadow 200ms var(--ease-out);
   }
   .button:hover {
+    box-shadow: 0 8px 24px -10px var(--lav-glow);
+  }
+  .button.listen {
+    border-color: var(--jade);
+    background: var(--jade);
+    color: var(--on-jade);
+  }
+  .button.listen:hover {
     box-shadow: 0 8px 24px -10px var(--jade-glow);
   }
   .button.secondary {
@@ -380,12 +389,12 @@
     transition: transform 200ms var(--ease-out);
   }
   .switch:checked {
-    background: var(--jade);
-    border-color: var(--jade);
+    background: var(--lav);
+    border-color: var(--lav);
   }
   .switch:checked::after {
     transform: translateX(22px);
-    background: var(--on-jade);
+    background: var(--on-lav);
   }
   .setting-row {
     display: flex;

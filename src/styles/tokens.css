@@ -40,6 +40,8 @@
     --muted: #5a4a6c;
     /* Lavender carries structure: links, selection, focus */
     --lav: #6a4db2;
+    --on-lav: #ffffff;
+    --lav-glow: #6a4db22e;
     --lav-tint: #e7defa;
     /* Jade is listening: Play, the playing state, progress */
     --jade: #0b7f63;
@@ -93,6 +95,8 @@
     --text: #f4eefb;
     --muted: #bcafd0;
     --lav: #cbb8f2;
+    --on-lav: #1c0f27;
+    --lav-glow: #cbb8f240;
     --lav-tint: #2e2045;
     --jade: #3fe0b5;
     --on-jade: #052a20;

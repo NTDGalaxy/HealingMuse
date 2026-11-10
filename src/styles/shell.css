@@ -114,7 +114,7 @@
   /* Sidebar: the desktop navigation, a solid surface beside the wash. */
   .sidebar {
     position: fixed;
-    inset: 0 auto var(--player) 0;
+    inset: 0 auto 0 0;
     width: var(--sidebar);
     z-index: 20;
     display: flex;
@@ -222,7 +222,7 @@
   .main-column {
     margin-left: var(--sidebar);
     min-height: 100dvh;
-    padding-bottom: calc(var(--player) + var(--mobile-nav));
+    padding-bottom: var(--mobile-nav);
     display: flex;
     flex-direction: column;
   }
@@ -235,6 +235,11 @@
     gap: 16px;
     height: var(--topbar);
     padding: 0 var(--gutter);
+    background: transparent;
+    transition: background-color 200ms var(--ease-out);
+  }
+  /* Glass only once content scrolls under the bar; at the top the wash runs to the edge. */
+  .topbar[data-scrolled] {
     background: color-mix(in oklab, var(--bg) 78%, transparent);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
     backdrop-filter: blur(18px) saturate(140%);
@@ -457,5 +462,12 @@
     .mobile-nav button {
       font-size: 0.8125rem;
     }
+  }
+  /* Room for the player only while it is shown. */
+  .app-shell:has(.player-bar[data-shown]) .sidebar {
+    bottom: var(--player);
+  }
+  .app-shell:has(.player-bar[data-shown]) .main-column {
+    padding-bottom: calc(var(--player) + var(--mobile-nav));
   }
 }

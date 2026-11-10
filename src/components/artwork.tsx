@@ -24,6 +24,7 @@ export const Artwork = memo(function Artwork({
     <svg
       className={`artwork ${className}`}
       data-part="artwork"
+      data-family={track.artwork}
       viewBox="0 0 100 100"
       preserveAspectRatio="xMidYMid slice"
       role={label ? "img" : undefined}
