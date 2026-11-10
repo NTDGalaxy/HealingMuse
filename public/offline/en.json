@@ -561,31 +561,31 @@
     "modes": {
       "beta": {
         "title": "Beta",
-        "purpose": "Focus & clarity",
-        "preset0": "Focus",
-        "preset1": "Concentration",
-        "preset2": "Active mind"
+        "purpose": "A quick, bright pulse",
+        "preset0": "Brisk",
+        "preset1": "Quick",
+        "preset2": "Very quick"
       },
       "alpha": {
         "title": "Alpha",
-        "purpose": "Calm & creativity",
-        "preset0": "Gentle relaxation",
-        "preset1": "Calm awareness",
-        "preset2": "Creative flow"
+        "purpose": "A steady, moderate pulse",
+        "preset0": "Slower",
+        "preset1": "Moderate",
+        "preset2": "Faster"
       },
       "theta": {
         "title": "Theta",
-        "purpose": "Deep meditation",
-        "preset0": "Mindful stillness",
-        "preset1": "Deep meditation",
-        "preset2": "Inner reflection"
+        "purpose": "A slow, soft pulse",
+        "preset0": "Very slow",
+        "preset1": "Slow",
+        "preset2": "Gently slow"
       },
       "delta": {
         "title": "Delta",
-        "purpose": "Sleep preparation",
-        "preset0": "Sleep preparation",
-        "preset1": "Night calm",
-        "preset2": "Deep rest"
+        "purpose": "A very slow, low pulse",
+        "preset0": "Slowest",
+        "preset1": "Very slow",
+        "preset2": "Slow"
       }
     },
     "engineError": "The listening controls could not load. Reconnect and try again, or browse ordinary music.",

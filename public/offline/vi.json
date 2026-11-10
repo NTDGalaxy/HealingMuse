@@ -561,31 +561,31 @@
     "modes": {
       "beta": {
         "title": "Beta",
-        "purpose": "Tập trung và rõ ràng",
-        "preset0": "Tập trung",
-        "preset1": "Chú tâm",
-        "preset2": "Tâm trí chủ động"
+        "purpose": "Nhịp đập nhanh và sáng",
+        "preset0": "Nhanh vừa",
+        "preset1": "Nhanh",
+        "preset2": "Rất nhanh"
       },
       "alpha": {
         "title": "Alpha",
-        "purpose": "Thư thái và sáng tạo",
-        "preset0": "Thư giãn nhẹ nhàng",
-        "preset1": "Nhận biết bình yên",
-        "preset2": "Dòng chảy sáng tạo"
+        "purpose": "Nhịp đập vừa và đều",
+        "preset0": "Chậm hơn",
+        "preset1": "Vừa",
+        "preset2": "Nhanh hơn"
       },
       "theta": {
         "title": "Theta",
-        "purpose": "Thiền sâu",
-        "preset0": "Tĩnh lặng chánh niệm",
-        "preset1": "Thiền sâu",
-        "preset2": "Chiêm nghiệm"
+        "purpose": "Nhịp đập chậm và mềm",
+        "preset0": "Rất chậm",
+        "preset1": "Chậm",
+        "preset2": "Chậm vừa"
       },
       "delta": {
         "title": "Delta",
-        "purpose": "Chuẩn bị nghỉ ngơi",
-        "preset0": "Chuẩn bị ngủ",
-        "preset1": "Đêm yên tĩnh",
-        "preset2": "Nghỉ ngơi sâu"
+        "purpose": "Nhịp đập rất chậm và trầm",
+        "preset0": "Chậm nhất",
+        "preset1": "Rất chậm",
+        "preset2": "Chậm"
       }
     },
     "engineError": "Không tải được bộ điều khiển nghe. Hãy kết nối lại và thử lần nữa, hoặc nghe nhạc thông thường.",

@@ -78,7 +78,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
                 clearProps: "transform,opacity",
                 overwrite: "auto",
               });
-              const art = element.querySelector(".track-art .nature-art");
+              const art = element.querySelector(".track-art .artwork");
               if (art)
                 gsap.from(art, {
                   opacity: 0.7,
@@ -122,7 +122,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
               observed.add(section);
               changed = true;
               if (condition.conditions?.desktop) {
-                const art = section.querySelectorAll(".nature-art");
+                const art = section.querySelectorAll(".artwork");
                 if (art.length)
                   gsap.from(art, {
                     scale: 0.95,
@@ -167,7 +167,7 @@ export default function GardenMotion({ pathname }: { pathname: string }) {
               entrance.unobserve(card);
               gsap.killTweensOf(card);
               gsap.set(card, { clearProps: "transform,opacity" });
-              const art = card.querySelector(".nature-art");
+              const art = card.querySelector(".artwork");
               if (art) {
                 gsap.killTweensOf(art, "opacity");
                 gsap.set(art, { clearProps: "opacity" });
