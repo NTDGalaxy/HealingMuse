@@ -1,4 +1,5 @@
 import { revealTargets } from "../../../src/lib/garden/reveal-targets";
+import { decorationMarks } from "../../../src/lib/perf/audio-first";
 import { readinessMarks } from "../../../src/lib/perf/readiness";
 import type { Locale } from "./i18n";
 
@@ -80,9 +81,11 @@ export const garden = {
   quality: "data-quality",
   renderer: "data-renderer",
   /** Performance marks of the audio-first start (src/lib/perf/audio-first.ts). */
-  sceneStartMark: "hm:scene-start",
-  motionStartMark: "hm:motion-start",
-  motionLoadedMark: "hm:motion-loaded",
+  sceneStartMark: decorationMarks.scene,
+  motionStartMark: decorationMarks.motion,
+  motionLoadedMark: decorationMarks.motionLoaded,
+  /** The GSAP layer's code failed to load for good, the chunk loader's own retry included. */
+  motionUnavailableMark: decorationMarks.motionUnavailable,
 } as const;
 
 /** Local recordings served by the preview, for holding a recording while it starts. */

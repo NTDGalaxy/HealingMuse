@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "rea
 import { gardenForPath } from "@/lib/garden/route";
 import type { SceneSpec } from "@/lib/garden/protocol";
 import type { GardenRuntime } from "@/lib/garden/runtime";
-import { decorationMayStart } from "@/lib/perf/audio-first";
+import { decorationMarks, decorationMayStart } from "@/lib/perf/audio-first";
 import { usePreference } from "./appearance";
 import { usePlayer } from "./player";
 import { artworkPalette } from "@/lib/artwork";
@@ -28,7 +28,13 @@ function AfterDecoration({ children }: { children: ReactNode }) {
 }
 
 // A failed import resolves to a layer that renders nothing, so it never reaches an error boundary.
-const GardenMotion = lazy(() => import("./garden-motion").catch(() => ({ default: () => null })));
+// It rejects only once the chunk loader has given up, its own retry included.
+const GardenMotion = lazy(() =>
+  import("./garden-motion").catch(() => {
+    performance.mark(decorationMarks.motionUnavailable);
+    return { default: () => null };
+  }),
+);
 
 export function Scenery({ pathname }: { pathname: string }) {
   const policy = useMotionPolicy();

@@ -21,6 +21,7 @@ import {
   decorationWaitedForSound,
   expectMotionLoaded,
   expectMotionStarted,
+  expectMotionUnavailable,
   firstSound,
   motionPassTimes,
   pageTime,
@@ -274,17 +275,23 @@ test.describe("WebGL lifecycle", () => {
     // The scene runtime and the GSAP layer load on demand; offline, or after a newer deploy, the
     // request fails. Decoration is optional, so the page must carry on with the poster.
     const lazy = [graphicsMarkers.host.marker, graphicsMarkers.motion.marker];
-    let refused = 0;
+    const refused = new Set<string>();
     await page.route(chunkRoute, async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      if (!lazy.some((marker) => body.includes(marker))) return route.fulfill({ response, body });
-      refused++;
+      const marker = lazy.find((candidate) => body.includes(candidate));
+      if (!marker) return route.fulfill({ response, body });
+      refused.add(marker);
       return route.abort("failed");
     });
     await page.goto("/en");
-    await expect.poll(() => refused).toBe(lazy.length);
+    // Both were attempted. Next's chunk loader retries a failed chunk once after a short random
+    // delay, so the number of refused requests says nothing; which modules were refused does.
+    await expect.poll(() => lazy.filter((marker) => refused.has(marker))).toEqual(lazy);
+    // Then both gave up for good, retries included, so no load is still pending when the checks
+    // below run or when the test closes the page.
     await shell.expectGardenState("still");
+    await expectMotionUnavailable(page);
     await expect(shell.gardenCanvas).toHaveCount(0);
     await new Recordings(page).featuredPlay.click();
     await expectPlaying(page);
