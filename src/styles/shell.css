@@ -207,11 +207,12 @@
     flex: none;
     color: var(--jade-ink);
   }
+  /* Spaced links with no separators, so a line break never strands one. */
   .sidebar-footer {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2px 8px;
+    gap: 2px 16px;
     padding: 0 8px;
     color: var(--muted);
     font-size: var(--step--1);

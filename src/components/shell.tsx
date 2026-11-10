@@ -20,7 +20,7 @@ import { AuthDialogOnDemand, authDialogCode } from "@/features/account/auth-dial
 import { Scenery } from "./scenery";
 import { WashProvider } from "./wash";
 import { isConfigured } from "@/lib/supabase/config";
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { markOnce, readinessMarks } from "@/lib/perf/readiness";
 import { AppearanceButton } from "./appearance";
 import { Dialog, dialogCode } from "./dialog";
@@ -127,12 +127,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Music size={22} aria-hidden="true" />
             <p>{t("home.gentleNote")}</p>
           </div>
-          <div className="sidebar-footer">
-            {legalRoutes.map(({ key }, index) => (
-              <Fragment key={key}>
-                {index === 1 && <span>·</span>}
-                <Link href={href(key)}>{t(`nav.${key}`)}</Link>
-              </Fragment>
+          <div className="sidebar-footer" data-part="sidebar-legal">
+            {legalRoutes.map(({ key }) => (
+              <Link key={key} href={href(key)}>
+                {t(`nav.${key}`)}
+              </Link>
             ))}
           </div>
         </aside>

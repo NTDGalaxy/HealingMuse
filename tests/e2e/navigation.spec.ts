@@ -119,7 +119,7 @@ const sideNavRoutes = [
 // 1024 and 1100 px take the narrower 216 px sidebar; 1440 px the full one.
 for (const width of [1024, 1100, 1440])
   for (const locale of ["vi", "en"] as const)
-    test(`the sidebar's destinations keep one line at ${width}px in ${locale}`, async ({
+    test(`the sidebar's destinations and legal links read cleanly at ${width}px in ${locale}`, async ({
       page,
     }) => {
       const shell = new Shell(page, locale);
@@ -130,6 +130,10 @@ for (const width of [1024, 1100, 1440])
           (await shell.sideNavLink(key).boundingBox())!.height,
           `${key} keeps its name on one line`,
         ).toBeLessThanOrEqual(size.sideNavItem);
+      // Only the three links: no separator a line break could leave stranded at a line's end.
+      await expect(shell.sidebarLegalItems).toHaveText(
+        (["privacy", "terms", "credits"] as const).map((key) => shell.t(`nav.${key}`)),
+      );
     });
 
 // 320 px is the narrowest supported phone; at 360 px and below the labels drop to 13 px.

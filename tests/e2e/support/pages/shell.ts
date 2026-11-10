@@ -46,6 +46,10 @@ export class Shell {
   get sidebar() {
     return this.page.locator(shell.sidebar);
   }
+  /** Everything at the foot of the desktop sidebar, in order: its legal links and nothing else. */
+  get sidebarLegalItems() {
+    return this.page.locator(shell.sidebarLegal).locator(shell.children);
+  }
   /** A legal link at the foot of the desktop sidebar, by its message key under `nav`. */
   sidebarLegalLink(key: "privacy" | "terms" | "credits") {
     return this.sidebar.getByRole("link", { name: this.t(`nav.${key}`), exact: true });

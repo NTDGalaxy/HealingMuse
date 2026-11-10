@@ -29,6 +29,8 @@ export const shell = {
   calmClass: "calm-mode",
   main,
   sidebar: part("sidebar"),
+  /** The legal links at the foot of the desktop sidebar. */
+  sidebarLegal: part("sidebar-legal"),
   mobileNav: part("mobile-nav"),
   /** The text label under each phone tab's icon. */
   navLabel: part("nav-label"),
