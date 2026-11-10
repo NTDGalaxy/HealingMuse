@@ -5,6 +5,8 @@ import type { SceneSpec } from "@/lib/garden/protocol";
 import type { GardenRuntime } from "@/lib/garden/runtime";
 import { decorationMayStart } from "@/lib/perf/audio-first";
 import { usePreference } from "./appearance";
+import { usePlayer } from "./player";
+import { artworkPalette } from "@/lib/artwork";
 import { useMotionPolicy } from "./motion-policy";
 
 // Startup keeps only the markup, the motion policy and the audio-first wait. The scene runtime
@@ -34,11 +36,17 @@ export function Scenery({ pathname }: { pathname: string }) {
   const garden = gardenForPath(pathname);
   const host = useRef<HTMLDivElement>(null);
   const runtime = useRef<GardenRuntime | null>(null);
+  // The scene's light takes on the playing recording's artwork colours, as the wash does.
+  const playing = usePlayer().current;
+  const tintColor = playing?.color;
   const scene = useRef<SceneSpec>({ garden, theme });
   useEffect(() => {
-    scene.current = { garden, theme };
+    const palette = tintColor ? artworkPalette(tintColor) : null;
+    scene.current = palette
+      ? { garden, theme, tint: { glow: palette.glow, mid: palette.mid } }
+      : { garden, theme };
     runtime.current?.setScene(scene.current);
-  }, [garden, theme]);
+  }, [garden, theme, tintColor]);
   useEffect(() => {
     const element = host.current;
     if (!element) return;

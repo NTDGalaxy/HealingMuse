@@ -1,20 +1,24 @@
 import type { SceneId } from "../routes";
 
 export type { Appearance, GardenPreference, GardenTheme } from "../preferences";
-type GardenDefinition = { readonly plant: string; readonly form: string; readonly seed: number };
+/** The light forms one shared interpreter draws (src/lib/garden/scene.ts). */
+export type SceneForm = "rings" | "meter" | "waves" | "orbits" | "grid" | "ripples" | "prisms";
+type GardenDefinition = { readonly form: SceneForm; readonly seed: number };
+// Scene ids stay the route keys the posters, service worker and routes already use; each names
+// a light form and the seed that makes it its own.
 export const gardens = {
-  lotus: { plant: "lotus", form: "court", seed: 1 },
-  fern: { plant: "fern", form: "ravine", seed: 2 },
-  moonflower: { plant: "flower", form: "bowl", seed: 3 },
-  wisteria: { plant: "wisteria", form: "arbor", seed: 4 },
-  seed: { plant: "seed", form: "glasshouse", seed: 5 },
-  lily: { plant: "lotus", form: "pool", seed: 6 },
-  bonsai: { plant: "bonsai", form: "court", seed: 7 },
-  propagation: { plant: "fern", form: "glasshouse", seed: 8 },
-  orchid: { plant: "flower", form: "arbor", seed: 9 },
-  cloister: { plant: "fern", form: "arbor", seed: 10 },
-  cypress: { plant: "cypress", form: "court", seed: 11 },
-  sculpture: { plant: "flower", form: "gallery", seed: 12 },
+  lotus: { form: "rings", seed: 1 },
+  fern: { form: "meter", seed: 2 },
+  moonflower: { form: "waves", seed: 3 },
+  wisteria: { form: "orbits", seed: 4 },
+  seed: { form: "grid", seed: 5 },
+  lily: { form: "ripples", seed: 6 },
+  bonsai: { form: "prisms", seed: 7 },
+  propagation: { form: "grid", seed: 8 },
+  orchid: { form: "rings", seed: 9 },
+  cloister: { form: "ripples", seed: 10 },
+  cypress: { form: "meter", seed: 11 },
+  sculpture: { form: "orbits", seed: 12 },
 } as const satisfies Record<SceneId, GardenDefinition>;
 export type GardenId = keyof typeof gardens;
 /** Detail tiers: 2 is full detail; quality only ever steps down during a visit. */
