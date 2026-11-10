@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Headphones,
   MoreHorizontal,
+  Music,
 } from "lucide-react";
 import { useCalm, useIsAdmin, useOnline } from "./app-state";
 import { AuthDialogOnDemand, authDialogCode } from "@/features/account/auth-dialog-on-demand";
@@ -104,7 +105,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="sidebar-note">
-            <Leaf size={22} aria-hidden="true" />
+            <Music size={22} aria-hidden="true" />
             <p>{t("home.gentleNote")}</p>
           </div>
           <div className="sidebar-footer">

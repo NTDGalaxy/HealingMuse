@@ -110,9 +110,10 @@ for (const locale of ["en", "vi"] as const)
       await expect(first.playLabel).toBeVisible();
       const label = await first.playLabel.boundingBox();
       expect(label!.height).toBeLessThanOrEqual(size.compactLabel);
+      // The artwork leads; the name, artist and Play sit beneath it.
       const art = await first.art.boundingBox();
       const description = await first.description.boundingBox();
-      expect(art!.x + art!.width).toBeLessThan(description!.x);
+      expect(art!.y + art!.height).toBeLessThanOrEqual(description!.y);
       await expectNoHorizontalOverflow(page);
       await expect(shell.gardenCanvas).toHaveCount(0);
     });

@@ -248,7 +248,7 @@ export function AuthDialog() {
                 />
               </>
             ) : (
-              <p className="muted small">{t("auth.codeSetup")}</p>
+              <p className="muted">{t("auth.codeSetup")}</p>
             ))}
           {method !== "recovery" && (
             <CheckboxField
@@ -324,7 +324,7 @@ export function AuthDialog() {
               </button>
             </>
           )}
-          <p className="muted small">{t("auth.guestNote")}</p>
+          <p className="muted">{t("auth.guestNote")}</p>
         </form>
       )}
     </Dialog>

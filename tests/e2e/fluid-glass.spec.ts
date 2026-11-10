@@ -135,8 +135,9 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
     await appearance({ theme, garden: "still" });
     await page.goto("/en/settings");
     await shell.expectTheme(theme);
-    const panel = new Settings(page).appearance;
-    expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
+    // Glass is kept for the bounded fixed navigation; content panels are solid in every mode.
+    const glass = shell.topbar;
+    expect(await glass.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.translucent,
     );
     await expectMotionSettled(page);
@@ -145,12 +146,12 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
     await cdp.send("Emulation.setEmulatedMedia", {
       features: [{ ...style.reducedTransparency }],
     });
-    expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
+    expect(await glass.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.opaque,
     );
-    expect(
-      await shell.sidebar.evaluate((element) => getComputedStyle(element).backdropFilter),
-    ).toBe(style.none);
+    expect(await glass.evaluate((element) => getComputedStyle(element).backdropFilter)).toBe(
+      style.none,
+    );
     await cdp.send("Emulation.setEmulatedMedia", { features: [] });
     await cdp.detach();
   }

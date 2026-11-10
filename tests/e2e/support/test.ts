@@ -8,6 +8,7 @@ import {
   personalDataPath,
   playbackGrantPath,
   player,
+  shell,
   storage,
 } from "./contracts";
 
@@ -78,14 +79,29 @@ export async function expectAccessible(page: Page, scope?: string, options?: Axe
   await test.step(
     `axe finds no violations${scope ? ` in ${scope}` : ""}`,
     async () => {
+      // Contrast is a property of the settled page, not of a frame inside an entrance.
+      await expectMotionSettled(page);
       expect((await axe(page, scope, options).analyze()).violations).toEqual([]);
     },
     { box: true },
   );
 }
 
+/** No horizontal page scroll; a failure names the first elements that reach past the viewport. */
 export async function expectNoHorizontalOverflow(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const overflow = await page.evaluate(
+    (every) =>
+      document.documentElement.scrollWidth <= innerWidth
+        ? []
+        : [...document.querySelectorAll(every)]
+            .filter((element) => element.getBoundingClientRect().right > innerWidth + 0.5)
+            .slice(0, 6)
+            .map(
+              (element) => `${element.tagName.toLowerCase()}.${[...element.classList].join(".")}`,
+            ),
+    shell.everyElement,
+  );
+  expect(overflow, "elements reaching past the viewport").toEqual([]);
 }
 
 /** The single native media element owned by the persistent player. Strict: it must be unique. */

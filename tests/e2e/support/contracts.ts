@@ -44,6 +44,8 @@ export const shell = {
   settingHelp: part("setting-help"),
   focused: ":focus",
   children: ":scope > *",
+  /** Every element of the page, to name what reaches past the viewport. */
+  everyElement: "*",
 } as const;
 
 export const dialog = {
@@ -173,7 +175,7 @@ export const admin = {
   storageProvider: { b2: "Backblaze B2" },
 } as const;
 
-/** The literal account deletion requires, compared by the server and the form. */
+/** The literal the server requires to erase an account, whatever word the listener typed. */
 export const accountDeletionConfirmation = "DELETE";
 
 export const storage = {
@@ -194,7 +196,8 @@ export const style = {
   headingArrival: "heading-arrive",
   dialogArrival: "dialog-arrive",
   none: "none",
-  translucent: /^rgba\(/,
+  /** A colour with an alpha below one, in legacy (rgba) or modern (oklab, color) serialization. */
+  translucent: /^(rgba\(.+, 0?\.\d+\)|[a-z]+\(.+ \/ 0?\.\d+\))$/,
   opaque: /^rgb\(/,
   reducedTransparency: { name: "prefers-reduced-transparency", value: "reduce" },
 } as const;

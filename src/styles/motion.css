@@ -1,0 +1,161 @@
+/*
+ * Motion grammar. CSS owns control feedback and the arrival of headings, disclosures and dialogs;
+ * the GSAP layer (src/components/garden-motion.tsx) owns content reveals; the scene owns ambient
+ * motion. Nothing moves with the beat. Calm, reduced motion and reduced transparency each end in
+ * a defined still, opaque state at the bottom of this file, which is imported last.
+ */
+@layer components {
+  /* Headings arrive on insertion, before the delayed GSAP layer could ever reach them. */
+  .page-heading,
+  .discovery-intro {
+    animation: heading-arrive 520ms var(--ease-out);
+  }
+
+  /* Press feedback: one property (scale), so Calm and reduced motion can remove it in one rule. */
+  :is(
+      .button,
+      .icon-button,
+      .card-play,
+      .play-button,
+      .filter-chip,
+      .binaural-mode,
+      .account-button,
+      .more-navigation a,
+      .side-nav a,
+      .mobile-nav a,
+      .mobile-nav button,
+      .language-switch a
+    ):active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.97;
+  }
+
+  /* A toggled choice confirms itself once, where it is made. */
+  .icon-button[aria-pressed="true"] svg {
+    animation: choice-confirm 260ms var(--ease-out);
+  }
+  details[open] > :is(.catalog-facets, .binaural-frequencies) {
+    animation: disclosure-arrive 240ms var(--ease-out);
+  }
+
+  .dialog-overlay[data-state="open"] {
+    animation: veil-arrive 200ms var(--ease-out);
+  }
+  .dialog-overlay[data-state="closed"] {
+    animation: veil-leave 150ms var(--ease-out);
+  }
+  .dialog-content[data-state="open"] {
+    animation: dialog-arrive 320ms var(--ease-out);
+  }
+  .dialog-content[data-state="closed"] {
+    animation: dialog-leave 150ms var(--ease-out);
+  }
+
+  /* Arrivals move but never fade text, so contrast holds on every frame. */
+  @keyframes heading-arrive {
+    from {
+      translate: 0 12px;
+    }
+    to {
+      translate: 0 0;
+    }
+  }
+  @keyframes choice-confirm {
+    from {
+      scale: 0.8;
+    }
+    60% {
+      scale: 1.1;
+    }
+    to {
+      scale: 1;
+    }
+  }
+  @keyframes disclosure-arrive {
+    from {
+      translate: 0 6px;
+    }
+    to {
+      translate: 0 0;
+    }
+  }
+  @keyframes veil-arrive {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes veil-leave {
+    to {
+      opacity: 0;
+    }
+  }
+  /* Individual translate and scale compose with the centring transform of a dialog. */
+  @keyframes dialog-arrive {
+    from {
+      translate: 0 18px;
+      scale: 0.985;
+    }
+    to {
+      translate: 0 0;
+      scale: 1;
+    }
+  }
+  @keyframes dialog-leave {
+    to {
+      opacity: 0;
+      translate: 0 8px;
+    }
+  }
+
+  /* Calm: nothing decorative moves. The root attribute also reaches dialogs portaled outside the
+     shell, and the wash changes colour at once instead of cross-fading. */
+  .calm-mode *,
+  :root[data-calm="true"] *,
+  :root[data-calm="true"] *::before,
+  :root[data-calm="true"] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .calm-mode :active,
+  :root[data-calm="true"] :active {
+    scale: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+    :active {
+      scale: none !important;
+    }
+  }
+
+  /* Reduced transparency: every translucent or blurred surface becomes a solid fill. */
+  @media (prefers-reduced-transparency: reduce) {
+    .topbar,
+    .dialog-content,
+    .player-bar,
+    .mobile-nav {
+      background: var(--surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+    .dialog-overlay {
+      background: var(--bg);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+    .track-row:focus-within,
+    .track-row .card-play {
+      background: var(--surface-2);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) and (max-width: 600px) {
+    .track-grid > .track-tile .card-play {
+      background: var(--surface-2);
+    }
+  }
+}

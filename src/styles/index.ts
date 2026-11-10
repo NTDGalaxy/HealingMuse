@@ -8,6 +8,7 @@ import "./shell.css";
 import "./catalog.css";
 import "./overlays.css";
 import "./pages.css";
+import "./motion.css";
 import "@fontsource/be-vietnam-pro/vietnamese-400.css";
 import "@fontsource/be-vietnam-pro/vietnamese-600.css";
 import "@fontsource/be-vietnam-pro/vietnamese-700.css";

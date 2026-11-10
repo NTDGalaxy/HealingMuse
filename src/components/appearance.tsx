@@ -94,7 +94,7 @@ export function AppearanceControls({ primary = false }: { primary?: boolean }) {
           onChange={(event) => void store.setCalm(event.target.checked)}
         />
       </label>
-      <p className="small muted">{t("help")}</p>
+      <p className="muted">{t("help")}</p>
     </div>
   );
 }
