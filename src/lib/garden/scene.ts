@@ -59,7 +59,12 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
     return material;
   };
   const stroke = (color: THREE.Color, opacity = 0.8) => {
-    const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      // Lines need more weight on the light day ground to read at all.
+      opacity: Math.min(1, night ? opacity : opacity * 1.7),
+    });
     materials.push(material);
     return material;
   };
@@ -81,7 +86,7 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
           light(color, index % 3 === 2 ? 1.2 : 0.8),
         );
         ring.position.copy(center);
-        ring.rotation.set(Math.PI / 2.3 + random() * 0.2, random() * 0.3, 0);
+        ring.rotation.set(Math.PI / 3 + random() * 0.2, random() * 0.3, 0);
         add(ring, index < 5 ? 0 : index < 7 ? 1 : 2);
         const speed = 0.02 + random() * 0.03;
         animators.push((seconds) => {
@@ -171,7 +176,7 @@ function compose(id: GardenId, theme: GardenTheme, tint?: SceneTint): Compositio
         pivot.add(
           new THREE.LineLoop(
             keep(new THREE.BufferGeometry().setFromPoints(curve.getPoints(180))),
-            stroke(index % 2 ? mid : glow, 0.55),
+            stroke(index % 2 ? mid : glow, 0.8),
           ),
         );
         const body = new THREE.Mesh(
@@ -356,6 +361,8 @@ export function createGarden(
     }
     composition = compose(garden, theme, tint);
     composition.detail(quality.tier);
+    // Place moving parts at their start, so the first frame and the posters show them.
+    composition.animate(0);
     scene.add(composition.group);
     const ground = grounds[theme];
     scene.background = new THREE.Color(ground);
