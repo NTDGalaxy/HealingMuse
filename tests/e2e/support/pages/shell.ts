@@ -3,7 +3,8 @@ import { documentRoot, garden, shell } from "../contracts";
 import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 import type { GardenDetail, Theme } from "../test";
 
-type SideNavRoute = "explore" | "binaural" | "downloads" | "settings";
+export type SideNavRoute =
+  "home" | "explore" | "binaural" | "library" | "downloads" | "mood" | "settings";
 
 /** The persistent application chrome: navigation, appearance, dialogs and the garden. */
 export class Shell {

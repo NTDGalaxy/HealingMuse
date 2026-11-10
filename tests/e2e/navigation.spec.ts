@@ -12,6 +12,7 @@ import {
 } from "./support/test";
 import { recordings as prepared, size, uniqueSearchTerm } from "./support/contracts";
 import { Explore, Recordings, Shell } from "./support/pages";
+import type { SideNavRoute } from "./support/pages/shell";
 test("switching language preserves the native listening session", async ({ page }) => {
   await page.goto("/en");
   await new Recordings(page).listen(prepared.first.title.en).click();
@@ -106,22 +107,50 @@ for (const viewport of [
     await expectNoHorizontalOverflow(page);
   });
 }
-for (const locale of ["vi", "en"] as const)
-  test(`the phone tabs' labels stay apart at 320px in ${locale}`, async ({ page }) => {
-    const shell = new Shell(page, locale);
-    await page.setViewportSize({ width: 320, height: 740 });
-    await page.goto(`/${locale}/explore`);
-    const boxes = [];
-    for (const label of await shell.mobileNavLabels.all()) boxes.push((await label.boundingBox())!);
-    expect(boxes).toHaveLength(5);
-    for (let index = 1; index < boxes.length; index++) {
-      const before = boxes[index - 1];
-      expect(
-        boxes[index].x - (before.x + before.width),
-        `space before tab ${index + 1}`,
-      ).toBeGreaterThanOrEqual(size.tabLabelGap);
-    }
-    for (const tab of await shell.mobileNav.getByRole("link").all())
-      expect((await tab.boundingBox())!.width).toBeGreaterThanOrEqual(size.touchTarget);
-    await expectNoHorizontalOverflow(page);
-  });
+const sideNavRoutes = [
+  "home",
+  "explore",
+  "binaural",
+  "library",
+  "downloads",
+  "mood",
+  "settings",
+] as const satisfies readonly SideNavRoute[];
+// 1024 and 1100 px take the narrower 216 px sidebar; 1440 px the full one.
+for (const width of [1024, 1100, 1440])
+  for (const locale of ["vi", "en"] as const)
+    test(`the sidebar's destinations keep one line at ${width}px in ${locale}`, async ({
+      page,
+    }) => {
+      const shell = new Shell(page, locale);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/${locale}`);
+      for (const key of sideNavRoutes)
+        expect(
+          (await shell.sideNavLink(key).boundingBox())!.height,
+          `${key} keeps its name on one line`,
+        ).toBeLessThanOrEqual(size.sideNavItem);
+    });
+
+// 320 px is the narrowest supported phone; at 360 px and below the labels drop to 13 px.
+for (const width of [320, 360])
+  for (const locale of ["vi", "en"] as const)
+    test(`the phone tabs' labels stay apart at ${width}px in ${locale}`, async ({ page }) => {
+      const shell = new Shell(page, locale);
+      await page.setViewportSize({ width, height: 740 });
+      await page.goto(`/${locale}/explore`);
+      const boxes = [];
+      for (const label of await shell.mobileNavLabels.all())
+        boxes.push((await label.boundingBox())!);
+      expect(boxes).toHaveLength(5);
+      for (let index = 1; index < boxes.length; index++) {
+        const before = boxes[index - 1];
+        expect(
+          boxes[index].x - (before.x + before.width),
+          `space before tab ${index + 1}`,
+        ).toBeGreaterThanOrEqual(size.tabLabelGap);
+      }
+      for (const tab of await shell.mobileNav.getByRole("link").all())
+        expect((await tab.boundingBox())!.width).toBeGreaterThanOrEqual(size.touchTarget);
+      await expectNoHorizontalOverflow(page);
+    });

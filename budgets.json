@@ -15,96 +15,96 @@
     "home": {
       "startupJsGzip": 254976,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 9216,
       "ratchetModules": []
     },
     "explore": {
       "startupJsGzip": 254976,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 11264,
       "ratchetModules": []
     },
     "binaural": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 9216,
       "ratchetModules": []
     },
     "library": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 11264,
       "ratchetModules": []
     },
     "downloads": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 8192,
       "ratchetModules": []
     },
     "mood": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 7168,
       "ratchetModules": []
     },
     "settings": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 7168,
       "ratchetModules": []
     },
     "admin": {
       "startupJsGzip": 296960,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 11264,
       "ratchetModules": []
     },
     "resetPassword": {
       "startupJsGzip": 256000,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 8192,
       "ratchetModules": []
     },
     "privacy": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 12288,
       "ratchetModules": []
     },
     "terms": {
       "startupJsGzip": 259072,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 7168,
       "ratchetModules": []
     },
     "credits": {
       "startupJsGzip": 250880,
       "startupCssGzip": 17408,
-      "fontBytes": 105472,
-      "fontRequests": 6,
+      "fontBytes": 70656,
+      "fontRequests": 4,
       "mobilePosterBytes": 8192,
       "ratchetModules": []
     }

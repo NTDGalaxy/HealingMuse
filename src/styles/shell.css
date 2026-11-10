@@ -169,11 +169,15 @@
     padding: 0 14px;
     border-radius: var(--radius-pill);
     color: var(--muted);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     transition:
       background-color 160ms var(--ease-press),
       color 160ms var(--ease-press);
+  }
+  /* A long name wraps beside its icon rather than squeezing it. */
+  .side-nav svg {
+    flex: none;
   }
   @media (hover: hover) {
     .side-nav a:hover {
@@ -312,7 +316,7 @@
     border-radius: var(--radius-card);
     background: var(--surface-3);
     color: var(--text);
-    font-weight: 600;
+    font-weight: 700;
   }
   main {
     flex: 1;
@@ -345,7 +349,7 @@
     padding: 0 14px;
     border-radius: var(--radius-pill);
     color: var(--text);
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
   }
   @media (hover: hover) {
@@ -360,6 +364,14 @@
   @media (max-width: 1100px) {
     .topbar-welcome {
       display: none;
+    }
+    /* The 216 px sidebar keeps every destination on one line: "Nhật ký cảm xúc" needs 137 px. */
+    .sidebar {
+      padding-inline: 12px;
+    }
+    .side-nav a {
+      gap: 10px;
+      padding-inline: 10px;
     }
   }
   @media (max-width: 900px) {
@@ -426,7 +438,7 @@
       background: none;
       color: var(--muted);
       font-size: var(--step--1);
-      font-weight: 600;
+      font-weight: 400;
       line-height: 1.2;
       letter-spacing: -0.01em;
       text-align: center;

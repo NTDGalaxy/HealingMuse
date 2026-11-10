@@ -231,8 +231,11 @@ export const size = {
   lineCover: 56,
   /** The least room a recording line gives its name, however narrow the line. */
   lineTitleMin: 140,
-  /** The least space between two phone tab labels, so each reads as its own word. */
-  tabLabelGap: 4,
+  /** The least space between two phone tab labels, so each reads as its own word (bold labels
+   * leave 4 px between the Vietnamese tabs at 320 and 360 px, regular ones about 9). */
+  tabLabelGap: 8,
+  /** A sidebar destination's row: one line of 16 px text, so taller means its name wrapped. */
+  sideNavItem: 48,
 } as const;
 
 /** Settings layout: panels sit side by side from `twoColumnMinWidth`, separated by `panelGap`. */
