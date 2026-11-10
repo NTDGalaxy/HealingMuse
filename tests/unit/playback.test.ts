@@ -473,6 +473,40 @@ describe("playback engine", () => {
     expect(calls.closed).toContain("late");
   });
 
+  it("starts the next recording without waiting for the previous session to end", async () => {
+    // Ending the old session runs beside the next start, so its request (and its rate limit)
+    // stays off the way from the tap to the first sound.
+    const closing = deferred<void>();
+    const { engine, audio, calls } = setup({
+      userId: () => "u",
+      privacy: { owner: "u", consent: true },
+      sessionRequests: {
+        async open(trackId, beforeScore, owner) {
+          calls.opened.push({ trackId, beforeScore, owner });
+          return `session-${calls.opened.length}`;
+        },
+        close(id) {
+          calls.closed.push(id);
+          return closing.promise;
+        },
+      },
+    });
+    engine.play(a, [a, b]);
+    await flush();
+    expect(calls.opened).toHaveLength(1);
+    engine.play(b, [a, b]);
+    await flush();
+    // The first session's end is still pending, yet b already has its source and plays.
+    expect(calls.closed).toEqual(["session-1"]);
+    expect(calls.grants).toEqual(["a", "b"]);
+    expect(audio.src).toBe("grant:b");
+    expect(audio.paused).toBe(false);
+    expect(engine.state.getSnapshot()).toMatchObject({ current: b, loading: false });
+    closing.resolve();
+    await flush();
+    expect(calls.opened.map((session) => session.trackId)).toEqual(["a", "b"]);
+  });
+
   it("drops listening state for another account and never saves its session", async () => {
     const { engine, calls } = setup({
       userId: () => "u",
