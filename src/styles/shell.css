@@ -474,6 +474,17 @@
       font-size: 0.8125rem;
     }
   }
+  @media (max-width: 340px) {
+    /* Equal tabs no longer hold the longest labels (Trang chủ, Khám phá), so each tab takes its
+       label's width and an equal share of the rest, and the icon pill narrows. */
+    .mobile-nav {
+      grid-template-columns: repeat(5, auto);
+    }
+    .mobile-nav svg {
+      width: 48px;
+      padding: 4px 12px;
+    }
+  }
   /* Room for the player only while it is shown. The player renders beside the shell, not inside
      it, so the document is what knows. */
   :root:has(.player-bar[data-shown]) .sidebar {

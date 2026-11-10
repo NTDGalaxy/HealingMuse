@@ -106,3 +106,22 @@ for (const viewport of [
     await expectNoHorizontalOverflow(page);
   });
 }
+for (const locale of ["vi", "en"] as const)
+  test(`the phone tabs' labels stay apart at 320px in ${locale}`, async ({ page }) => {
+    const shell = new Shell(page, locale);
+    await page.setViewportSize({ width: 320, height: 740 });
+    await page.goto(`/${locale}/explore`);
+    const boxes = [];
+    for (const label of await shell.mobileNavLabels.all()) boxes.push((await label.boundingBox())!);
+    expect(boxes).toHaveLength(5);
+    for (let index = 1; index < boxes.length; index++) {
+      const before = boxes[index - 1];
+      expect(
+        boxes[index].x - (before.x + before.width),
+        `space before tab ${index + 1}`,
+      ).toBeGreaterThanOrEqual(size.tabLabelGap);
+    }
+    for (const tab of await shell.mobileNav.getByRole("link").all())
+      expect((await tab.boundingBox())!.width).toBeGreaterThanOrEqual(size.touchTarget);
+    await expectNoHorizontalOverflow(page);
+  });

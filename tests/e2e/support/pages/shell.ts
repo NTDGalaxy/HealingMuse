@@ -73,6 +73,10 @@ export class Shell {
   get mobileNav() {
     return this.page.locator(shell.mobileNav);
   }
+  /** The text labels of the phone tabs, in order. */
+  get mobileNavLabels() {
+    return this.mobileNav.locator(shell.navLabel);
+  }
   get moreButton() {
     return this.mobileNav.getByRole("button", { name: this.t("common.more"), exact: true });
   }

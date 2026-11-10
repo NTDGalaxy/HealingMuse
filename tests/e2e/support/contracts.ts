@@ -30,6 +30,8 @@ export const shell = {
   main,
   sidebar: part("sidebar"),
   mobileNav: part("mobile-nav"),
+  /** The text label under each phone tab's icon. */
+  navLabel: part("nav-label"),
   current: "data-current",
   /** A link whose text is in `locale`, as every language switch marks it. */
   languageLink: (locale: Locale) => `[lang="${locale}"]`,
@@ -229,6 +231,8 @@ export const size = {
   lineCover: 56,
   /** The least room a recording line gives its name, however narrow the line. */
   lineTitleMin: 140,
+  /** The least space between two phone tab labels, so each reads as its own word. */
+  tabLabelGap: 4,
 } as const;
 
 /** Settings layout: panels sit side by side from `twoColumnMinWidth`, separated by `panelGap`. */

@@ -183,7 +183,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             return (
               <Link key={key} href={href(key)} aria-current={active(key) ? "page" : undefined}>
                 <Icon size={21} aria-hidden="true" />
-                <span>{t(`nav.${key}`)}</span>
+                <span data-part="nav-label">{t(`nav.${key}`)}</span>
               </Link>
             );
           })}
@@ -194,7 +194,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             onClick={() => setMore(true)}
           >
             <MoreHorizontal size={21} aria-hidden="true" />
-            <span>{t("common.more")}</span>
+            <span data-part="nav-label">{t("common.more")}</span>
           </button>
         </nav>
         <Dialog open={more} onOpenChange={setMore} title={t("common.more")}>
