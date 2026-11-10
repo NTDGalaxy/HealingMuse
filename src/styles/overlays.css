@@ -246,8 +246,10 @@
     font-weight: 600;
     text-align: left;
   }
-  .queue-list button:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .queue-list button:hover {
+      background: var(--surface-2);
+    }
   }
   .queue-list button[aria-current="true"] {
     background: var(--surface-3);
@@ -300,8 +302,10 @@
       border-color 160ms var(--ease-press),
       background-color 160ms var(--ease-press);
   }
-  .mood-scores label:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .mood-scores label:hover {
+      background: var(--surface-2);
+    }
   }
   .mood-scores label:has(input:checked),
   .mood-scores label.selected {

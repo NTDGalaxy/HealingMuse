@@ -175,9 +175,11 @@
       background-color 160ms var(--ease-press),
       color 160ms var(--ease-press);
   }
-  .side-nav a:hover {
-    background: var(--surface-2);
-    color: var(--text);
+  @media (hover: hover) {
+    .side-nav a:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
   }
   .side-nav a[aria-current="page"] {
     background: var(--surface-3);
@@ -295,8 +297,10 @@
     font-weight: 700;
     text-decoration: none;
   }
-  .account-button:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .account-button:hover {
+      background: var(--surface-2);
+    }
   }
   .appearance-button {
     border: 1.5px solid var(--line);
@@ -344,8 +348,10 @@
     font-weight: 600;
     text-decoration: none;
   }
-  .more-navigation a:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .more-navigation a:hover {
+      background: var(--surface-2);
+    }
   }
   .more-navigation a[aria-current="page"] {
     background: var(--surface-3);

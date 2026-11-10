@@ -104,7 +104,6 @@
   }
   time,
   .duration,
-  .tabular,
   progress,
   table {
     font-variant-numeric: tabular-nums;
@@ -164,25 +163,32 @@
       background-color 160ms var(--ease-press),
       box-shadow 200ms var(--ease-out);
   }
-  .button:hover {
-    box-shadow: 0 8px 24px -10px var(--lav-glow);
+  /* Hover feedback only where a pointer hovers: a touch browser keeps :hover after a tap. */
+  @media (hover: hover) {
+    .button:hover {
+      box-shadow: 0 8px 24px -10px var(--lav-glow);
+    }
   }
   .button.listen {
     border-color: var(--jade);
     background: var(--jade);
     color: var(--on-jade);
   }
-  .button.listen:hover {
-    box-shadow: 0 8px 24px -10px var(--jade-glow);
+  @media (hover: hover) {
+    .button.listen:hover {
+      box-shadow: 0 8px 24px -10px var(--jade-glow);
+    }
   }
   .button.secondary {
     background: transparent;
     color: var(--text);
     border-color: var(--line-strong);
   }
-  .button.secondary:hover {
-    background: var(--surface-2);
-    box-shadow: none;
+  @media (hover: hover) {
+    .button.secondary:hover {
+      background: var(--surface-2);
+      box-shadow: none;
+    }
   }
   .button.danger {
     background: var(--danger);
@@ -215,8 +221,10 @@
       background-color 160ms var(--ease-press),
       scale 140ms var(--ease-press);
   }
-  .icon-button:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .icon-button:hover {
+      background: var(--surface-2);
+    }
   }
   .icon-button[aria-pressed="true"] {
     color: var(--jade-ink);
@@ -262,8 +270,10 @@
     font-weight: 600;
     text-decoration: none;
   }
-  .text-link:hover {
-    text-decoration: underline;
+  @media (hover: hover) {
+    .text-link:hover {
+      text-decoration: underline;
+    }
   }
   .filter-row {
     display: flex;
@@ -284,8 +294,10 @@
     text-decoration: none;
     transition: background-color 160ms var(--ease-press);
   }
-  .filter-chip:hover {
-    background: var(--surface-2);
+  @media (hover: hover) {
+    .filter-chip:hover {
+      background: var(--surface-2);
+    }
   }
   .filter-chip[aria-pressed="true"],
   .filter-chip[aria-current="true"] {
