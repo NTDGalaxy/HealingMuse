@@ -351,6 +351,14 @@ async function act(page, action, text) {
       .locator(".player-bar")
       .getByRole("button", { name: text.player.pause, exact: true })
       .click();
+    // Phones and tablets dock a mini player whose seek row shows only while it is expanded; it
+    // is opened to seek and closed again, so the capture is the docked player a listener sees.
+    const docked = !(await seek.isVisible());
+    if (docked)
+      await page
+        .locator(".player-bar")
+        .getByRole("button", { name: text.player.expand, exact: true })
+        .click();
     await seek.fill("0");
     await page.waitForFunction(() => {
       const audio = document.querySelector("audio");
@@ -363,6 +371,14 @@ async function act(page, action, text) {
         slider.value === "0"
       );
     });
+    if (docked)
+      await page
+        .locator(".player-bar")
+        .getByRole("button", { name: text.player.collapse, exact: true })
+        .click();
+    // The pointer would otherwise rest where the last click landed, over whatever moved under it
+    // (on phones the first recording up next), and capture that element's hover state.
+    await page.mouse.move(0, 0);
     // Announcements show a toast for six seconds; capture the resting state after it leaves.
     await page.locator(".toast").waitFor({ state: "detached", timeout: 15000 });
   } else if (action === "focus") {
