@@ -70,12 +70,15 @@ test("dialog entrances and exits keep repeated keyboard focus restoration", asyn
 test("later phone cards rise while the first listening target stays stationary", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  // A small phone, so the last recording up next starts below the first view.
+  await page.setViewportSize({ width: 375, height: 667 });
   await watchCardMoves(page);
   await page.goto("/vi");
   await expectMotionStarted(page);
   await expectMotionSettled(page);
-  await new Recordings(page, "vi").moreCards.last().scrollIntoViewIfNeeded();
+  const later = new Recordings(page, "vi").moreCards.last();
+  expect((await later.boundingBox())!.y).toBeGreaterThan(667);
+  await later.scrollIntoViewIfNeeded();
   await expect.poll(() => cardMoved(page, "later")).toBe(true);
   expect(await cardMoved(page, "first")).toBe(false);
 });

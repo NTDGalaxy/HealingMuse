@@ -172,7 +172,7 @@
   }
   .track-feature [data-part="track-artist"] {
     font-size: var(--step-1);
-    font-weight: 500;
+    font-weight: 400;
   }
   .track-meta {
     display: flex;
@@ -696,13 +696,27 @@
     }
   }
   @media (max-width: 600px) {
-    /* The phone hero stays compact so the next recording shows in the first view: the page line
-       is a quiet label, the artist and time share a line and Play is 56 px. */
+    /* The phone hero stays compact so the next recording shows in the first view, also while the
+       mini player is docked: the recording's name leads (the page name stays for assistive
+       technology), the cover is wide, the artist and time share a line and Play is 56 px. */
+    .discovery-intro {
+      margin: 0;
+    }
     .discovery-intro h1 {
-      font-size: var(--step-0);
-      font-weight: 600;
-      letter-spacing: 0;
-      color: var(--muted);
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    /* A wide cover keeps the first recording up next clear of the docked mini player at 844 px. */
+    .featured-section {
+      gap: 24px;
+    }
+    .featured-section .track-feature > .track-art {
+      aspect-ratio: 5 / 4;
     }
     .track-feature .track-description {
       grid-template-columns: auto minmax(0, 1fr);
@@ -729,6 +743,16 @@
     }
     .track-feature .track-bottom {
       margin-top: 10px;
+    }
+  }
+  @media (max-width: 380px) {
+    /* Too narrow for the artist and the time on one line: each takes its own, left-aligned, and no
+       separator is left at the start of a line. */
+    .track-feature .track-description {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .track-feature .track-meta::before {
+      content: none;
     }
   }
 }

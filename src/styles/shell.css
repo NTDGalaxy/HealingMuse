@@ -463,11 +463,12 @@
       font-size: 0.8125rem;
     }
   }
-  /* Room for the player only while it is shown. */
-  .app-shell:has(.player-bar[data-shown]) .sidebar {
+  /* Room for the player only while it is shown. The player renders beside the shell, not inside
+     it, so the document is what knows. */
+  :root:has(.player-bar[data-shown]) .sidebar {
     bottom: var(--player);
   }
-  .app-shell:has(.player-bar[data-shown]) .main-column {
+  :root:has(.player-bar[data-shown]) .main-column {
     padding-bottom: calc(var(--player) + var(--mobile-nav));
   }
 }

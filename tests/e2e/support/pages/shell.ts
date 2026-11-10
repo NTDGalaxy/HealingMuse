@@ -45,6 +45,14 @@ export class Shell {
   get sidebar() {
     return this.page.locator(shell.sidebar);
   }
+  /** A legal link at the foot of the desktop sidebar, by its message key under `nav`. */
+  sidebarLegalLink(key: "privacy" | "terms" | "credits") {
+    return this.sidebar.getByRole("link", { name: this.t(`nav.${key}`), exact: true });
+  }
+  /** The contentinfo landmark that closes every page, after the main region. */
+  get pageFooter() {
+    return this.page.getByRole("contentinfo");
+  }
   /** Every search form; Home and Explore each render one. */
   get searchField() {
     return this.page.locator(shell.searchField);
