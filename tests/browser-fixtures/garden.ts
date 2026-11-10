@@ -8,7 +8,8 @@ const canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
 canvas.style.width = "100vw";
 canvas.style.height = "100vh";
 const renderer = createGarden(canvas, {
-  viewport: { width: innerWidth, height: innerHeight },
+  // Posters are supersampled at each tier's cap whatever the capture device: 2 exceeds every cap.
+  viewport: { width: innerWidth, height: innerHeight, devicePixelRatio: 2 },
   scene: { garden: id, theme },
   onEvent: (event) => {
     document.documentElement.dataset.state = event.type;

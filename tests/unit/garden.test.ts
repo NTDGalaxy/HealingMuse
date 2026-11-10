@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { gardens, initialQuality, lowerQuality, type GardenId } from "../../src/lib/garden/config";
+import {
+  gardens,
+  initialQuality,
+  lowerQuality,
+  pixelRatioFor,
+  type GardenId,
+} from "../../src/lib/garden/config";
 import { composeScene } from "../../src/lib/garden/scene";
 import { gardenForPath } from "../../src/lib/garden/route";
 import { appearanceBootstrap } from "../../src/components/appearance";
@@ -35,6 +41,15 @@ describe("garden route and resource policy", () => {
     expect(middle.pixelRatio).toBeLessThan(initial.pixelRatio);
     expect(lowest.pixelRatio).toBeLessThan(middle.pixelRatio);
     expect(lowerQuality(lowest)).toBeNull();
+  });
+  it("draws at the tier's resolution cap but never above the device pixel ratio", () => {
+    const phone = initialQuality(true);
+    const desktop = initialQuality(false);
+    expect(pixelRatioFor(phone, 2.625)).toBe(1);
+    expect(pixelRatioFor(desktop, 2)).toBe(1.5);
+    expect(pixelRatioFor(desktop, 1)).toBe(1);
+    expect(pixelRatioFor(desktop, 1.25)).toBe(1.25);
+    expect(pixelRatioFor(lowerQuality(desktop)!, 1)).toBe(0.8);
   });
 });
 

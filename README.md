@@ -153,7 +153,7 @@ Appearance is applied before hydration and stored locally without a database cha
 Automatic rendering uses one persistent Three.js scene host and one active scene, tinted by the playing recording's colours.
 Where supported, rendering runs through OffscreenCanvas in a worker.
 A lightweight main-thread renderer and matching responsive posters provide fallbacks.
-Mobile rendering starts at 30 fps with capped resolution.
+Mobile rendering starts at 30 fps; resolution is capped per quality tier and never exceeds the device pixel ratio.
 Sustained slow rendering reduces quality, then switches to a still without repeatedly oscillating between tiers.
 Hidden tabs suspend rendering, and renderer failures do not block the audio player.
 A pure state machine in [src/lib/garden/controller.ts](src/lib/garden/controller.ts) owns that lifecycle, and both renderers sit behind one port interface.

@@ -27,6 +27,10 @@ export type GardenQuality = { tier: QualityTier; fps: number; pixelRatio: number
 export function initialQuality(mobile: boolean): GardenQuality {
   return { tier: 2, fps: mobile ? 30 : 60, pixelRatio: mobile ? 1 : 1.5 };
 }
+/** Drawing-buffer scale: the quality tier's cap, never more than the device shows. */
+export function pixelRatioFor(quality: GardenQuality, devicePixelRatio: number): number {
+  return Math.min(quality.pixelRatio, devicePixelRatio);
+}
 // Downgrade only, with a six-second observation window. Never oscillate during a visit.
 export function lowerQuality(current: GardenQuality): GardenQuality | null {
   if (current.tier === 0) return null;

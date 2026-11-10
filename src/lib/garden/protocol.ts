@@ -11,8 +11,8 @@ export const gardenProtocol = 2;
 /** The playing recording's artwork colours, which the scene's light takes on. */
 export type SceneTint = Readonly<{ glow: string; mid: string }>;
 export type SceneSpec = Readonly<{ garden: GardenId; theme: GardenTheme; tint?: SceneTint }>;
-/** Scene size in CSS pixels. */
-export type Viewport = Readonly<{ width: number; height: number }>;
+/** Scene size in CSS pixels and the device pixel ratio it is shown at. */
+export type Viewport = Readonly<{ width: number; height: number; devicePixelRatio: number }>;
 
 /** Host to renderer. */
 export type HostCommand =

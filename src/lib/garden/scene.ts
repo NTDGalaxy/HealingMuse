@@ -1,5 +1,12 @@
 import * as THREE from "three";
-import { gardens, initialQuality, lowerQuality, type GardenId, type GardenTheme } from "./config";
+import {
+  gardens,
+  initialQuality,
+  lowerQuality,
+  pixelRatioFor,
+  type GardenId,
+  type GardenTheme,
+} from "./config";
 import type { GraphicsMarker } from "./budget-markers";
 import type { SceneEvent, SceneSpec, SceneTint, Viewport } from "./protocol";
 
@@ -368,7 +375,7 @@ export function createGarden(
   canvas: HTMLCanvasElement | OffscreenCanvas,
   { viewport, scene: spec, onEvent = () => {}, poster = false, lowPower = false }: GardenOptions,
 ) {
-  let { width, height } = viewport;
+  let { width, height, devicePixelRatio: density } = viewport;
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -395,7 +402,7 @@ export function createGarden(
     windowStart = 0,
     slowWindows = 0;
   const resize = (w: number, h: number) => {
-    renderer.setPixelRatio(quality.pixelRatio);
+    renderer.setPixelRatio(pixelRatioFor(quality, density));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.position.set(w < 700 ? -0.2 : -1.5, 4.8, w < 700 ? 19 : 16);
@@ -479,7 +486,7 @@ export function createGarden(
         }
         quality = next;
         composition.detail(quality.tier);
-        renderer.setPixelRatio(quality.pixelRatio);
+        renderer.setPixelRatio(pixelRatioFor(quality, density));
         renderer.setSize(width, height, false);
         // Draw less distant geometry and reduce fill cost at lower tiers.
         camera.far = quality.tier === 1 ? 45 : 30;
@@ -500,8 +507,7 @@ export function createGarden(
   return {
     change,
     resize: (next: Viewport) => {
-      width = next.width;
-      height = next.height;
+      ({ width, height, devicePixelRatio: density } = next);
       resize(width, height);
       if (poster) renderer.render(scene, camera);
     },
