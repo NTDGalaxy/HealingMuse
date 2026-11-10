@@ -46,8 +46,12 @@ select {
   background: #ffffff;
   color: #382b44;
 }
-button:hover {
-  background: #194c3e;
+/* Hover only where a pointer hovers (a touch browser keeps :hover after a tap), in each theme's own
+   green so the label stays readable, and never on Remove. */
+@media (hover: hover) {
+  button:not(.remove):hover {
+    background: color-mix(in srgb, var(--green) 80%, var(--text));
+  }
 }
 :focus-visible {
   outline: 3px solid #78419a;
