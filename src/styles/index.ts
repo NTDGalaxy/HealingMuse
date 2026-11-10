@@ -3,14 +3,14 @@
 // fixture always render with the same CSS. scripts/css/analyze.mjs reads the local imports below.
 import "./tailwind.css";
 import "./tokens.css";
-import "../app/globals.css";
-import "../app/sanctuary.css";
-import "../app/binaural.css";
-import "../app/botanical.css";
-import "../app/interaction.css";
+import "./base.css";
+import "./shell.css";
+import "./catalog.css";
+import "./overlays.css";
+import "./pages.css";
 import "@fontsource/be-vietnam-pro/vietnamese-400.css";
-import "@fontsource/be-vietnam-pro/vietnamese-500.css";
 import "@fontsource/be-vietnam-pro/vietnamese-600.css";
+import "@fontsource/be-vietnam-pro/vietnamese-700.css";
 import "@fontsource/be-vietnam-pro/latin-400.css";
-import "@fontsource/be-vietnam-pro/latin-500.css";
 import "@fontsource/be-vietnam-pro/latin-600.css";
+import "@fontsource/be-vietnam-pro/latin-700.css";

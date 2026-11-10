@@ -1,0 +1,634 @@
+/* Catalogue: Home's featured recording and up-next, recording tiles and rows, rails, Explore. */
+@layer components {
+  .page-heading,
+  .discovery-intro {
+    display: grid;
+    gap: 8px;
+    margin: 12px 0 28px;
+  }
+  .page-heading h1 {
+    font-size: var(--step-4);
+    letter-spacing: -0.025em;
+  }
+  /* Home's page name steps down so the featured recording's name leads. */
+  .discovery-intro h1 {
+    font-size: var(--step-3);
+    letter-spacing: -0.02em;
+  }
+  .page-heading p {
+    color: var(--muted);
+    font-size: var(--step-1);
+  }
+  .section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .home-page > section,
+  .home-shelves > section,
+  .home-shelves > .home-discovery {
+    margin-top: 56px;
+  }
+  .home-shelves > .featured-section {
+    margin-top: 0;
+  }
+
+  /* The recording a view leads with: its artwork owns the space, Play sits beside its name. */
+  .featured-section {
+    display: grid;
+    gap: 32px;
+  }
+  .track-title {
+    all: unset;
+    display: block;
+    color: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+  }
+  .track-title:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  .track-title:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.2em;
+  }
+  .track-card[data-current] .track-title {
+    color: var(--jade-ink);
+  }
+  .track-card {
+    position: relative;
+    min-width: 0;
+  }
+  .track-art {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-art);
+    background: var(--surface-3);
+  }
+  .track-art .artwork {
+    width: 100%;
+    height: 100%;
+  }
+  .artwork-lines {
+    stroke-width: 1.4px;
+    opacity: 0.72;
+  }
+  .duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+  .track-card[data-current] .duration {
+    color: var(--jade-ink);
+  }
+  .track-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .downloaded-badge {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--jade);
+    color: var(--on-jade);
+  }
+  .card-play {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border: 0;
+    background: var(--jade);
+    color: var(--on-jade);
+    font-weight: 700;
+    transition:
+      transform 160ms var(--ease-press),
+      box-shadow 220ms var(--ease-out);
+  }
+  .card-play:active {
+    transform: scale(0.96);
+  }
+  .card-play:disabled {
+    opacity: 0.5;
+  }
+  .card-play-icon {
+    display: grid;
+    place-items: center;
+  }
+  .track-selected .track-art {
+    outline: 3px solid var(--jade);
+    outline-offset: 2px;
+  }
+
+  .track-feature {
+    display: grid;
+    gap: 20px;
+  }
+  .track-feature .track-art {
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 1;
+    border-radius: var(--radius-card);
+    box-shadow: 0 28px 60px -28px var(--shadow);
+  }
+  .track-feature .artwork-lines {
+    stroke-width: 2px;
+  }
+  .track-feature .track-description {
+    display: grid;
+    gap: 6px;
+  }
+  .track-heading {
+    font-size: clamp(1.875rem, 1.2rem + 2.6vw, 3.25rem);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  .track-feature [data-part="track-artist"] {
+    font-size: var(--step-1);
+    font-weight: 500;
+  }
+  .track-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    color: var(--muted);
+  }
+  .track-meta > span:not(.duration)::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-right: 14px;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: middle;
+  }
+  .track-feature .track-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .track-feature .track-bottom {
+    flex-wrap: nowrap;
+  }
+  .track-feature .track-actions {
+    gap: 0;
+  }
+  .track-feature .card-play {
+    flex: none;
+    min-height: 64px;
+    padding: 0 26px 0 9px;
+    border-radius: var(--radius-pill);
+    font-size: var(--step-1);
+    box-shadow: 0 14px 34px -14px var(--jade-glow);
+  }
+  .track-feature .card-play-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: color-mix(in oklab, var(--on-jade) 14%, transparent);
+  }
+  .track-feature .card-play:hover {
+    box-shadow: 0 18px 40px -12px var(--jade-glow);
+  }
+  .track-feature .track-actions {
+    margin-left: auto;
+  }
+
+  /* Up next and list lines: art, name, time, actions on one line. */
+  .home-more-recordings h2 {
+    margin-bottom: 8px;
+  }
+  .track-list {
+    display: grid;
+    gap: 2px;
+  }
+  .track-row {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    min-height: 72px;
+    padding: 8px;
+    margin: 0 -8px;
+    border-radius: var(--radius-art);
+    transition: background-color 160ms var(--ease-press);
+  }
+  .track-row:hover,
+  .track-row:focus-within {
+    background: color-mix(in oklab, var(--surface-2) 80%, transparent);
+  }
+  .track-row .track-art {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+  }
+  .track-row .card-play {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: color-mix(in oklab, var(--bg) 55%, transparent);
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 160ms var(--ease-press);
+  }
+  .track-row .card-play:focus-visible,
+  .track-row:hover .card-play,
+  .track-row[data-current] .card-play {
+    opacity: 1;
+  }
+  .track-row .card-play-label,
+  .track-tile .card-play-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .track-row .track-description {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title bottom"
+      "artist bottom";
+    column-gap: 12px;
+    align-items: center;
+  }
+  .track-row .track-title {
+    grid-area: title;
+    font-size: var(--step-0);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .track-row [data-part="track-artist"] {
+    grid-area: artist;
+    color: var(--muted);
+    font-size: var(--step--1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .track-row .track-bottom {
+    grid-area: bottom;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Tiles: artwork above, round Play on the artwork. */
+  .track-grid,
+  .track-rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+    gap: 28px 20px;
+  }
+  .track-tile {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+  .track-tile .track-art {
+    aspect-ratio: 1;
+  }
+  .track-tile .card-play {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    box-shadow: 0 10px 24px -10px var(--shadow);
+  }
+  .track-tile .card-play:hover {
+    box-shadow: 0 12px 28px -10px var(--jade-glow);
+  }
+  .track-tile .track-description {
+    display: grid;
+    gap: 2px;
+  }
+  .track-tile .track-title {
+    font-size: var(--step-0);
+    line-height: 1.3;
+  }
+  .track-tile [data-part="track-artist"] {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+  .track-tile .track-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px 8px;
+    margin-top: 4px;
+  }
+  .track-tile .track-actions {
+    margin-right: -8px;
+  }
+
+  /* Home discovery, listening paths, collections */
+  .home-discovery {
+    display: grid;
+    gap: 16px;
+  }
+  .discovery-search {
+    max-width: 720px;
+  }
+  .discovery-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .discovery-categories a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+    color: var(--text);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .discovery-categories a:hover {
+    background: var(--surface-3);
+  }
+  .listening-paths h2 {
+    margin-bottom: 16px;
+  }
+  .collection-section .section-heading h2 {
+    font-size: var(--step-2);
+  }
+  .trust-note {
+    margin-top: 64px;
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  /* Explore */
+  .catalog-filter-details {
+    margin-top: 16px;
+  }
+  .catalog-filter-details summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--line-strong);
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+  .catalog-filter-details summary::-webkit-details-marker {
+    display: none;
+  }
+  .catalog-filter-details[open] summary {
+    background: var(--surface-2);
+  }
+  .catalog-facets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+    padding: 20px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .catalog-facets label {
+    display: grid;
+    gap: 8px;
+  }
+  .results-note {
+    margin: 24px 0 16px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .catalog-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .empty-state {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    padding: 32px;
+    border-radius: var(--radius-card);
+    background: var(--surface-2);
+  }
+  .empty-state svg {
+    color: var(--lav);
+  }
+  .empty-state p {
+    color: var(--muted);
+  }
+
+  /* Loading: the shape of what is coming. */
+  .catalog-loading {
+    display: grid;
+    gap: 20px;
+  }
+  .catalog-loading > p {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .loading-covers {
+    display: grid;
+    grid-template-columns: minmax(0, 460px);
+    gap: 14px;
+  }
+  .loading-covers span {
+    display: block;
+    border-radius: var(--radius-art);
+    background: linear-gradient(
+      100deg,
+      var(--surface-2) 30%,
+      var(--surface-3) 50%,
+      var(--surface-2) 70%
+    );
+    background-size: 300% 100%;
+    animation: loading-sheen 1.6s var(--ease-out) infinite;
+  }
+  .loading-covers span:first-child {
+    aspect-ratio: 1;
+    border-radius: var(--radius-card);
+  }
+  .loading-covers span:not(:first-child) {
+    height: 20px;
+    width: 70%;
+  }
+  .loading-covers span:last-child {
+    width: 40%;
+  }
+  @keyframes loading-sheen {
+    from {
+      background-position: 100% 0;
+    }
+    to {
+      background-position: 0 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    /* Desktop: artwork beside its name and Play, up next under the name in the same column. */
+    .featured-section {
+      grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+      grid-template-areas:
+        "art info"
+        "art next";
+      grid-template-rows: auto 1fr;
+      column-gap: clamp(32px, 4vw, 64px);
+      row-gap: 36px;
+      align-items: start;
+    }
+    .featured-section > .featured-recording,
+    .featured-section > .featured-recording > .track-feature {
+      display: contents;
+    }
+    .featured-section .track-feature > .track-art {
+      grid-area: art;
+    }
+    .featured-section .track-feature > .track-description {
+      grid-area: info;
+      align-self: end;
+      padding-top: 24px;
+    }
+    .featured-section > .home-more-recordings {
+      grid-area: next;
+    }
+  }
+  @media (max-width: 1100px) {
+    .catalog-facets {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 600px) {
+    .track-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+    /* On a phone a grid of recordings reads as a list: the native shape for single tracks. */
+    .track-grid > .track-tile {
+      grid-template-columns: 56px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+      min-height: 72px;
+      padding: 8px;
+      margin: 0 -8px;
+      border-radius: var(--radius-art);
+    }
+    .track-grid > .track-tile .track-art {
+      width: 56px;
+      height: 56px;
+      aspect-ratio: auto;
+      border-radius: 10px;
+    }
+    .track-grid > .track-tile .card-play {
+      inset: 0;
+      width: auto;
+      height: auto;
+      border-radius: inherit;
+      background: color-mix(in oklab, var(--bg) 55%, transparent);
+      color: var(--text);
+      box-shadow: none;
+      opacity: 0;
+    }
+    .track-grid > .track-tile .card-play:focus-visible,
+    .track-grid > .track-tile[data-current] .card-play {
+      opacity: 1;
+    }
+    .track-grid > .track-tile .track-description {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "title bottom"
+        "artist bottom";
+      column-gap: 12px;
+      align-items: center;
+    }
+    .track-grid > .track-tile .track-title {
+      grid-area: title;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-grid > .track-tile [data-part="track-artist"] {
+      grid-area: artist;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-grid > .track-tile .track-bottom {
+      grid-area: bottom;
+      margin: 0;
+      flex-wrap: nowrap;
+    }
+    .track-grid > .track-tile .track-actions,
+    .track-row .track-actions {
+      margin-right: 0;
+    }
+    /* On a phone a line keeps favourite and details; download lives in the details sheet. */
+    .track-grid > .track-tile .track-actions [data-action="download"],
+    .track-row .track-actions [data-action="download"] {
+      display: none;
+    }
+    .track-rail {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 156px;
+      grid-template-columns: none;
+      gap: 16px;
+      margin: 0 calc(var(--gutter) * -1);
+      padding: 0 var(--gutter) 4px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding: 0 var(--gutter);
+      scrollbar-width: none;
+    }
+    .track-rail::-webkit-scrollbar {
+      display: none;
+    }
+    .track-rail > .track-card {
+      scroll-snap-align: start;
+    }
+    .track-rail .track-tile .track-bottom {
+      justify-content: flex-start;
+    }
+    .catalog-facets {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .featured-section .track-feature .track-art {
+      max-width: none;
+    }
+    .home-page > section,
+    .home-shelves > section,
+    .home-shelves > .home-discovery {
+      margin-top: 44px;
+    }
+  }
+}

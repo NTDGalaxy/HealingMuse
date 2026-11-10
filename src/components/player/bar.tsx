@@ -14,7 +14,7 @@ import {
 import type { Locale } from "@/lib/types";
 import { useStore } from "@/lib/state/create-store";
 import type { PlaybackEngine } from "@/lib/playback/engine";
-import { NatureArt } from "../art";
+import { Artwork } from "../artwork";
 import { SeekRow } from "./seek-row";
 
 export type PlayerDialog = "queue" | "timer";
@@ -41,11 +41,12 @@ export function PlayerBar({
       style={controlsHidden || !current ? { display: "none" } : undefined}
       className={`player-bar ${current ? "active" : "idle"} ${expanded ? "expanded" : ""}`}
       data-part="player-bar"
+      data-playing={playing || undefined}
       data-bottom-overlay=""
       aria-label={t("player.nowPlaying")}
     >
       <div className="player-track">
-        {current && <NatureArt kind={current.artwork} color={current.color} />}
+        {current && <Artwork track={current} />}
         <div>
           <strong data-part="player-title">{current?.title[locale] ?? t("player.idle")}</strong>
           <span className="muted small">{current?.artist ?? t("player.idleNote")}</span>

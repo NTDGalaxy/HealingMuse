@@ -1,0 +1,464 @@
+/* Route layouts: Binaural, Library, Downloads, Mood, Settings, Admin, reading pages, account. */
+@layer components {
+  /* Binaural: modes as a segmented choice, one session panel, the background mixer below. */
+  .binaural-page {
+    display: grid;
+    gap: 28px;
+  }
+  .binaural-heading {
+    margin-bottom: 0;
+  }
+  .binaural-modes {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .binaural-modes legend {
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  .binaural-mode {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    min-height: 88px;
+    padding: 16px 18px;
+    border-radius: var(--radius-card);
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    cursor: pointer;
+    transition:
+      border-color 160ms var(--ease-press),
+      background-color 160ms var(--ease-press);
+  }
+  .binaural-mode:hover {
+    background: var(--surface-2);
+  }
+  .binaural-mode input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .binaural-mode > span {
+    display: grid;
+    gap: 2px;
+    font-weight: 700;
+  }
+  .binaural-mode small {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: var(--step--1);
+  }
+  .binaural-mode.selected,
+  .binaural-mode:has(input:checked) {
+    border-color: var(--jade);
+    background: color-mix(in oklab, var(--jade) 10%, var(--surface));
+  }
+  .binaural-mode:has(input:focus-visible) {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .binaural-player {
+    display: grid;
+    gap: 20px;
+  }
+  .binaural-player-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .binaural-state {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  /* Three slow bars: the session is alive, never pulsing at the beat frequency. */
+  .binaural-visualizer {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 40px;
+    color: var(--lav);
+  }
+  .binaural-visualizer i {
+    display: block;
+    width: 6px;
+    height: 40%;
+    border-radius: 3px;
+    background: var(--jade);
+    transform-origin: bottom;
+  }
+  .binaural-visualizer i:nth-child(2) {
+    height: 70%;
+  }
+  .binaural-visualizer i:nth-child(3) {
+    height: 55%;
+  }
+  .binaural-player[data-state="playing"] .binaural-visualizer i {
+    animation: binaural-drift 8s ease-in-out infinite alternate;
+  }
+  .binaural-player[data-state="playing"] .binaural-visualizer i:nth-child(2) {
+    animation-delay: -3s;
+  }
+  .binaural-player[data-state="playing"] .binaural-visualizer i:nth-child(3) {
+    animation-delay: -5s;
+  }
+  @keyframes binaural-drift {
+    from {
+      transform: scaleY(0.55);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+  .binaural-preset-row,
+  .binaural-session-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    align-items: end;
+  }
+  .binaural-preset-row label,
+  .binaural-session-options label:not(.check-row) {
+    display: grid;
+    gap: 8px;
+  }
+  .binaural-session-options small {
+    color: var(--muted);
+  }
+  .binaural-progress {
+    display: grid;
+    gap: 8px;
+  }
+  .binaural-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .binaural-buttons .button:first-child {
+    min-height: 56px;
+    padding: 0 28px;
+    font-size: var(--step-1);
+  }
+  .binaural-volumes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .binaural-volume {
+    display: grid;
+    gap: 6px;
+  }
+  .binaural-volume > span {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+  }
+  .binaural-volume output {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .binaural-headphone-note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+  .binaural-headphone-note svg {
+    flex: none;
+    color: var(--lav);
+  }
+  .binaural-advanced summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .binaural-frequencies {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .binaural-frequencies > div {
+    padding: 14px 16px;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+  .binaural-frequencies dt {
+    color: var(--muted);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+  .binaural-frequencies dd {
+    font-size: var(--step-2);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .binaural-frequencies dd small {
+    font-size: var(--step--1);
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .binaural-background,
+  .binaural-preferences,
+  .binaural-education {
+    display: grid;
+    gap: 16px;
+  }
+  .binaural-catalogue-selection {
+    font-weight: 600;
+  }
+  .binaural-tracks {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .binaural-tracks[disabled] {
+    opacity: 0.6;
+  }
+  .binaural-recording .track-card {
+    width: 100%;
+  }
+  .binaural-favorites > div {
+    display: grid;
+    gap: 12px;
+  }
+  .binaural-references {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+  .binaural-education ul {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 8px;
+  }
+
+  /* Library and Downloads */
+  .playlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .playlist-panel {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+  .playlist-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-art);
+    background: var(--lav-tint);
+    color: var(--lav);
+  }
+  .edit-list {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .edit-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 52px;
+    padding: 4px 4px 4px 14px;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+  .storage-panel {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding: 20px;
+    border-radius: var(--radius-card);
+    background: var(--surface-2);
+  }
+  .remove-download {
+    justify-self: start;
+  }
+
+  /* Mood */
+  .consent-panel,
+  .privacy-note {
+    display: grid;
+    gap: 12px;
+  }
+  .privacy-note {
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+  .mood-trends {
+    display: grid;
+    gap: 16px;
+  }
+
+  /* Settings: aligned panels on desktop, one column on smaller screens. */
+  .settings-stack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+  .settings-stack > .panel {
+    display: grid;
+    gap: 16px;
+  }
+  .settings-install {
+    grid-column: 1 / -1;
+  }
+  .settings-identity {
+    display: grid;
+    gap: 4px;
+  }
+  .settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .settings-account-footer {
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .appearance-controls {
+    display: grid;
+    gap: 16px;
+  }
+  .appearance-controls > label:not(.setting-row) {
+    display: grid;
+    gap: 8px;
+  }
+
+  /* Admin */
+  .admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .admin-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .admin-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .review-filter,
+  .review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+  }
+  .review-preview,
+  .collection-editor,
+  .release-review {
+    display: grid;
+    gap: 16px;
+  }
+  .release-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .manifest-fact {
+    padding: 12px 14px;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+  .release-item {
+    display: grid;
+    gap: 6px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Reading pages and account */
+  .legal-page,
+  .garden-credits {
+    display: grid;
+    gap: 16px;
+    max-width: 760px;
+  }
+  .legal-page h2,
+  .garden-credits h2 {
+    margin-top: 16px;
+  }
+  .legal-page p,
+  .legal-page li {
+    line-height: 1.7;
+  }
+  .credit-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .credit-list li {
+    padding: 14px 16px;
+    border-radius: var(--radius-art);
+    background: var(--surface-2);
+  }
+  .credit-text {
+    color: var(--muted);
+  }
+  .password-reset-panel {
+    max-width: 520px;
+    display: grid;
+    gap: 16px;
+  }
+  .auth-options {
+    display: grid;
+    gap: 10px;
+  }
+
+  @media (max-width: 1100px) {
+    .binaural-modes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 900px) {
+    .settings-stack,
+    .admin-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 700px) {
+    .binaural-modes,
+    .binaural-frequencies {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .binaural-mode {
+      min-height: 72px;
+    }
+    .panel,
+    .reading-surface {
+      padding: 20px;
+    }
+  }
+}

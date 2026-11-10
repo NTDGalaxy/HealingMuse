@@ -1,79 +1,127 @@
-/* Design tokens: the only place custom properties are set on the root element. */
-/* Each value is the one that won the cascade among the former competing :root blocks, per
-   theme, viewport range and transparency preference. Night overrides use the higher
-   specificity of :root[data-theme="night"], so their order relative to :root does not matter;
-   the media blocks below must stay after the blocks they refine. */
+/* Design tokens: the only place custom properties are set on the root element.
+   Night-mode music app: a plum-night ground with a lavender-white day twin, one neon jade spent
+   only on listening, and a wash that wears the playing recording's artwork colours. Every text
+   pairing below passes WCAG AA on bg, surface and surface-2 in both themes. */
+
+/* Registered so the wash cross-fades between recordings instead of jumping. */
+@property --wash-glow {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #c9b6f0;
+}
+@property --wash-mid {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8d6bdc;
+}
+@property --wash-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2a1744;
+}
+@property --wash-light {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #dccbff;
+}
+
 @layer components {
   :root {
-    /* Colour */
-    --bg: #f3eff7;
-    --surface: #fffcff;
-    --text: #382b44;
-    --muted: #665571;
-    --green: #236553;
-    --line: #d9cfe2;
-    --tint: #e8e0f0;
-    --jade-tint: #e4f0ea;
-    --forest: #382b44;
-    --mint: #e5f0eb;
-    --focus: #765297;
-    --on-green: #ffffff;
-    --danger: #963f34;
-    --danger-tint: #fae7e1;
+    color-scheme: light;
+    /* Ground and surfaces (day) */
+    --bg: #f5f1fa;
+    --surface: #fdfbff;
+    --surface-2: #efe8f8;
+    --surface-3: #e6dcf3;
+    --line: #dcd0ea;
+    /* Boundaries of controls the listener operates: 3:1 against the ground */
+    --line-strong: #8a7aa0;
+    --text: #1c0f27;
+    --muted: #5a4a6c;
+    /* Lavender carries structure: links, selection, focus */
+    --lav: #6a4db2;
+    --lav-tint: #e7defa;
+    /* Jade is listening: Play, the playing state, progress */
+    --jade: #0b7f63;
+    --on-jade: #ffffff;
+    --jade-ink: #086f56;
+    --jade-glow: #0b7f6333;
+    --focus: #6a4db2;
+    --danger: #a63a2b;
+    --danger-tint: #fbe6e1;
     --on-danger: #ffffff;
-    /* Glass */
-    --glass: #fffcffc7;
-    --panel-glass: #fffcffb8;
-    --reading-glass: #fffcffe6;
-    --glass-highlight: #ffffffb8;
-    --glass-shadow: #382b4414;
-    --glass-reflection: #ffffff54;
+    --shadow: #2a144026;
+    --scrim: #1c0f2799;
+    /* How strongly the wash tints the top of the screen */
+    --wash-strength: 0.55;
+    --wash-ground: var(--bg);
+    /* Shape: cards 16, artwork and fields 12, controls are pills, Play is round */
+    --radius-card: 16px;
+    --radius-art: 12px;
+    --radius-field: 12px;
+    --radius-pill: 999px;
     /* Layout */
-    --sidebar: 216px;
-    --player: 96px;
-    --radius: 16px;
+    --sidebar: 248px;
+    --topbar: 64px;
+    --player: 88px;
+    --mobile-nav: 0px;
+    --gutter: 40px;
+    --content: 1280px;
+    /* Type */
+    --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --step--1: 0.875rem;
+    --step-0: 1rem;
+    --step-1: 1.125rem;
+    --step-2: 1.375rem;
+    --step-3: clamp(1.625rem, 1.2rem + 1.4vw, 2.25rem);
+    --step-4: clamp(1.75rem, 1.1rem + 2.2vw, 2.75rem);
     /* Motion */
-    --motion-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-press: cubic-bezier(0.2, 0, 0, 1);
+    --wash-time: 600ms;
   }
   :root[data-theme="night"] {
-    --bg: #191522;
-    --surface: #282232;
-    --text: #f5eff9;
-    --muted: #c4b6d0;
-    --green: #95d7b9;
-    --line: #57485f;
-    --tint: #382e45;
-    --jade-tint: #293f39;
-    --focus: #d8b6f5;
-    --on-green: #173b2e;
-    --danger: #ffb4a4;
-    --danger-tint: #482d31;
-    --on-danger: #482d31;
-    --glass: #282232c7;
-    --panel-glass: #282232b8;
-    --reading-glass: #282232e8;
-    --glass-highlight: #e8d9f52e;
-    --glass-shadow: #100c1a33;
-    --glass-reflection: #c1a6dd12;
+    color-scheme: dark;
+    --bg: #12091a;
+    --surface: #1a1026;
+    --surface-2: #241635;
+    --surface-3: #2e1d44;
+    --line: #3a2850;
+    --line-strong: #8676a0;
+    --text: #f4eefb;
+    --muted: #bcafd0;
+    --lav: #cbb8f2;
+    --lav-tint: #2e2045;
+    --jade: #3fe0b5;
+    --on-jade: #052a20;
+    --jade-ink: #6ff0cb;
+    --jade-glow: #3fe0b559;
+    --focus: #e6d8ff;
+    --danger: #ff9e8c;
+    --danger-tint: #3a1720;
+    --on-danger: #2a0d08;
+    --shadow: #05020acc;
+    --scrim: #05020ab3;
+    --wash-strength: 0.5;
   }
-  @media (max-width: 1100px) and (min-width: 901px) {
+  @media (max-width: 1100px) {
     :root {
-      --sidebar: 190px;
+      --sidebar: 216px;
+      --gutter: 28px;
     }
   }
   @media (max-width: 900px) {
     :root {
+      --sidebar: 0px;
+      --topbar: 60px;
       --player: 72px;
-      --mobile-nav: calc(67px + env(safe-area-inset-bottom));
+      --mobile-nav: calc(68px + env(safe-area-inset-bottom));
+      --gutter: 20px;
     }
   }
-  @media (prefers-reduced-transparency: reduce) {
-    :root,
-    :root[data-theme="night"] {
-      --glass: var(--surface);
-      --panel-glass: var(--surface);
-      --reading-glass: var(--surface);
-      --glass-reflection: transparent;
+  @media (max-width: 380px) {
+    :root {
+      --gutter: 16px;
     }
   }
 }
