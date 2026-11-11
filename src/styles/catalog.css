@@ -552,6 +552,26 @@
     width: 190px;
     border-radius: var(--radius-pill);
   }
+  /* Tablet: the text sits centred beside the cover, as the featured name does. */
+  @media (min-width: 700px) and (max-width: 1023px) {
+    .loading-covers {
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      grid-template-rows: 1fr repeat(3, auto) 1fr;
+      column-gap: 32px;
+    }
+    .loading-covers span:nth-child(1) {
+      grid-row: 1 / -1;
+    }
+    .loading-covers span:nth-child(2) {
+      grid-area: 2 / 2;
+    }
+    .loading-covers span:nth-child(3) {
+      grid-area: 3 / 2;
+    }
+    .loading-covers span:nth-child(4) {
+      grid-area: 4 / 2;
+    }
+  }
   @media (min-width: 1024px) {
     .loading-covers {
       grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
@@ -584,16 +604,14 @@
     }
   }
 
-  @media (min-width: 1024px) {
-    /* Desktop: artwork beside its name and Play, up next under the name in the same column. */
+  @media (min-width: 700px) {
+    /* Tablet: artwork beside its name and Play, so Listen stays in the first view, also while the
+       mini player is docked; up next runs the full width below. */
     .featured-section {
-      grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
       grid-template-areas:
         "art info"
-        "art next";
-      grid-template-rows: auto 1fr;
-      column-gap: clamp(32px, 4vw, 64px);
-      row-gap: 36px;
+        "next next";
       align-items: start;
     }
     .featured-section > .featured-recording,
@@ -605,11 +623,26 @@
     }
     .featured-section .track-feature > .track-description {
       grid-area: info;
-      align-self: end;
-      padding-top: 24px;
+      align-self: center;
     }
     .featured-section > .home-more-recordings {
       grid-area: next;
+    }
+  }
+  @media (min-width: 1024px) {
+    /* Desktop: a larger artwork, with up next under the name in the same column. */
+    .featured-section {
+      grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+      grid-template-areas:
+        "art info"
+        "art next";
+      grid-template-rows: auto 1fr;
+      column-gap: clamp(32px, 4vw, 64px);
+      row-gap: 36px;
+    }
+    .featured-section .track-feature > .track-description {
+      align-self: end;
+      padding-top: 24px;
     }
   }
   @media (max-width: 1100px) {

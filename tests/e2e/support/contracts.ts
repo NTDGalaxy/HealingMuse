@@ -247,6 +247,10 @@ export const size = {
 export const layout = {
   /** Phone layouts, such as a grid of recordings read as lines, apply up to this width. */
   phoneMaxWidth: 600,
+  /** From this width Home sets its featured cover beside the name, with up next below. */
+  featuredBesideMinWidth: 700,
+  /** From this width Home's up next moves beside the featured cover, under the name. */
+  featuredColumnMinWidth: 1024,
   twoColumnMinWidth: 1100,
   panelGap: 24,
   /** The minimum space between the two buttons of a settings action group. */

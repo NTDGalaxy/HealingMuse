@@ -47,6 +47,23 @@ At 1024 px Home's featured column is narrow beside its cover.
 It takes the compact Listen pill and leaves Download in details, so nothing reaches past the page and Listen, favourite and details keep one line.
 The narrower sidebar keeps every destination on one line ("Nhật ký cảm xúc" used to wrap), and the legal links at its foot are spaced with no separators, so none is stranded at a line's end.
 
+## Home on a tablet
+
+| Stacked, as first built (820 by 1180) | Cover beside the name, the owner's choice |
+| --- | --- |
+| ![Stacked Home at 820 px: the wide cover pushes Listen down to the docked mini player](before-tablet-vi-home-night.webp) | ![Home at 820 px with the cover beside the name and up next across the width](after-tablet-vi-home-night.webp) |
+
+From 700 to 1023 px Home sets the featured cover, at most 360 px, beside its name, metadata and Listen, and runs up next across the full width below; the owner chose this on 2026-11-11.
+Stacked, the cover filled the width at 820 by 1180, Listen ended about 820 px down and two lines up next showed above the docked mini player.
+Beside the name, Listen ends at 446 px and three lines up next show in full.
+Below 700 px Home stays stacked, and from 1024 px up next moves beside the cover as before.
+
+![Home at 1000 by 800 with the player bar: Listen and the first line up next stay in view](after-laptop-vi-home-1000-day.webp)
+
+At 1000 by 800 and 1023 by 768, where the sidebar and the player bar take their room, the stacked layout put Listen below the fold.
+Beside the name it ends at 454 px at 1000 by 800, and the first line up next ends above the player bar.
+A name column narrower than 350 px (700 to about 780 px and 900 to about 1010 px) takes the compact Listen pill, as at 1024 px.
+
 ## Binaural
 
 ![Binaural on a phone, night](after-phone-vi-binaural-night.webp)
@@ -55,7 +72,7 @@ Band names stay, with Hz ranges and sound descriptors that make no claim about a
 
 ## Evidence and limits
 
-The regression suites are [mobile-player.spec.ts](../../e2e/mobile-player.spec.ts) for touch, pointer, narrow and downloaded lines, [navigation.spec.ts](../../e2e/navigation.spec.ts) for the 320 px tabs, and [personal-features.spec.ts](../../e2e/personal-features.spec.ts) for a saved heart on a narrow line.
+The regression suites are [mobile-player.spec.ts](../../e2e/mobile-player.spec.ts) for touch, pointer, narrow and downloaded lines and for Home's featured composition from 699 to 1024 px, [navigation.spec.ts](../../e2e/navigation.spec.ts) for the 320 px tabs, and [personal-features.spec.ts](../../e2e/personal-features.spec.ts) for a saved heart on a narrow line.
 [navigation.spec.ts](../../e2e/navigation.spec.ts) also holds the sidebar's one-line destinations and its legal links, and [typography.test.ts](../../unit/typography.test.ts) keeps the type to two weights.
 Each new test was run against the build without its fix and failed for the defect it names.
 The full Playwright suite passes against the real local catalogue.
