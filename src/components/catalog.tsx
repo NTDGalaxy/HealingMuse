@@ -3,7 +3,17 @@ import { memo, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Play, Heart, Download, MoreHorizontal, ArrowUpRight, Check, Plus } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Heart,
+  Download,
+  MoreHorizontal,
+  ArrowUpRight,
+  Check,
+  Plus,
+  AudioLines,
+} from "lucide-react";
 import {
   useAppActions,
   useDownloadState,
@@ -13,7 +23,8 @@ import {
   useUserId,
 } from "./app-state";
 import { usePlayer } from "./player";
-import { NatureArt } from "./art";
+import { Artwork } from "./artwork";
+import { useWashPreview } from "./wash";
 import { Dialog } from "./dialog";
 import { clock } from "@/lib/audio";
 import type { CatalogPage, CatalogQuery, CuratedCollection, Locale, Track } from "@/lib/types";
@@ -28,18 +39,20 @@ import { SearchField } from "./ui/search-field";
 
 /** The shared empty state under its earlier name, still imported by binaural-catalogue.tsx. */
 export { EmptyState as Empty };
+/** tile: artwork above its text; row: one list line; feature: the recording a view leads with. */
+export type TrackCardLayout = "tile" | "row" | "feature";
 // Memoised: a card re-renders only for its own favourite, download and sign-in state, never for
 // download progress, notices or other recordings.
 export const TrackCard = memo(function TrackCard({
   track,
-  compact = false,
+  layout = "tile",
   queue,
   continuation,
   selection,
   primary = false,
 }: {
   track: Track;
-  compact?: boolean;
+  layout?: TrackCardLayout;
   queue?: Track[];
   continuation?: CatalogQuery;
   selection?: { selected: boolean; choose: () => void; label: string; disabled?: boolean };
@@ -56,62 +69,98 @@ export const TrackCard = memo(function TrackCard({
   const { downloaded, busy } = useDownloadState(track.id);
   const signedIn = useUserId() !== null;
   const title = track.title[locale];
+  // The loaded recording wears the listening colour wherever it is listed, and its Play control
+  // becomes Pause while it plays (and resumes it, not restarts it, while it is paused).
+  const current = player.current?.id === track.id;
+  const sounding = current && player.playing && !selection;
+  const play =
+    selection?.choose ??
+    (() => (current ? void player.toggle() : player.play(track, queue, continuation)));
+  const playButton = (
+    <button
+      className="card-play"
+      data-part="track-play"
+      {...primaryControl(primary && !selection)}
+      aria-label={
+        selection?.label ?? t(sounding ? "catalog.pauseTitle" : "catalog.playTitle", { title })
+      }
+      aria-pressed={selection ? selection.selected : undefined}
+      disabled={selection?.disabled}
+      onClick={play}
+    >
+      <span className="card-play-icon" data-part="track-play-icon" aria-hidden="true">
+        {selection ? (
+          selection.selected ? (
+            <Check size={22} />
+          ) : (
+            <Plus size={22} />
+          )
+        ) : sounding ? (
+          <Pause size={layout === "row" ? 18 : 22} fill="currentColor" />
+        ) : (
+          <Play size={layout === "row" ? 18 : 22} fill="currentColor" />
+        )}
+      </span>
+      {!selection && (
+        <span className="card-play-label" data-part="track-play-label">
+          {t(sounding ? "player.pause" : "common.play")}
+        </span>
+      )}
+    </button>
+  );
+  const titleButton = (
+    <button
+      className="track-title"
+      data-part="track-title"
+      aria-label={selection?.label}
+      aria-pressed={selection ? selection.selected : undefined}
+      disabled={selection?.disabled}
+      onClick={play}
+    >
+      {title}
+    </button>
+  );
+  const duration = (
+    <span className="duration">
+      {current && <AudioLines size={16} aria-hidden="true" />}
+      {clock(track.duration)}
+    </span>
+  );
   return (
     <article
-      className={`track-card ${compact ? "track-compact" : ""} ${selection?.selected ? "track-selected" : ""}`}
+      className={`track-card track-${layout}${selection?.selected ? " track-selected" : ""}`}
       data-part="track-card"
+      data-current={current || undefined}
     >
       <div className="track-art" data-part="track-art">
-        <NatureArt kind={track.artwork} color={track.color} />
-        <span className="track-category">{t(`catalog.${track.category}`)}</span>
-        <button
-          className="card-play"
-          data-part="track-play"
-          {...primaryControl(primary && !selection)}
-          aria-label={selection?.label ?? t("catalog.playTitle", { title })}
-          aria-pressed={selection ? selection.selected : undefined}
-          disabled={selection?.disabled}
-          onClick={selection?.choose ?? (() => player.play(track, queue, continuation))}
-        >
-          {selection ? (
-            selection.selected ? (
-              <Check size={22} aria-hidden="true" />
-            ) : (
-              <Plus size={22} aria-hidden="true" />
-            )
-          ) : (
-            <Play size={22} fill="currentColor" aria-hidden="true" />
-          )}
-          {!selection && (
-            <span className="card-play-label" data-part="track-play-label">
-              {t("common.play")}
-            </span>
-          )}
-        </button>
+        <Artwork track={track} />
+        {layout !== "feature" && playButton}
         {downloaded && (
-          <span className="downloaded-badge" title={t("catalog.downloaded")}>
+          <span
+            className="downloaded-badge"
+            data-part="track-downloaded"
+            title={t("catalog.downloaded")}
+          >
             <Check size={16} aria-hidden="true" />
             <span className="sr-only">{t("catalog.downloaded")}</span>
           </span>
         )}
       </div>
       <div className="track-description" data-part="track-description">
-        <button
-          className="track-title"
-          data-part="track-title"
-          aria-label={selection?.label}
-          aria-pressed={selection ? selection.selected : undefined}
-          disabled={selection?.disabled}
-          onClick={selection?.choose ?? (() => player.play(track, queue, continuation))}
-        >
-          {title}
-        </button>
+        {layout === "feature" ? <h2 className="track-heading">{titleButton}</h2> : titleButton}
         <p data-part="track-artist">{track.artist}</p>
+        {layout === "feature" && (
+          <p className="track-meta">
+            {duration}
+            <span>{t(`catalog.${track.category}`)}</span>
+          </p>
+        )}
         <div className="track-bottom">
-          <span className="duration">{clock(track.duration)}</span>
+          {layout === "feature" ? playButton : duration}
           <div className="track-actions" data-part="track-actions">
             <button
               className="icon-button"
+              data-action="favorite"
               aria-label={t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
               aria-pressed={saved}
               onClick={() =>
@@ -123,6 +172,7 @@ export const TrackCard = memo(function TrackCard({
             {track.downloadAllowed && track.source.kind === "hosted" && (
               <button
                 className="icon-button"
+                data-action="download"
                 aria-label={t("catalog.download", { title })}
                 disabled={busy || downloaded}
                 onClick={() => void actions.download(track)}
@@ -162,17 +212,40 @@ export const TrackCard = memo(function TrackCard({
           </a>
         </p>
         {track.changes && <p className="muted small">{track.changes}</p>}
-        <button
-          className="button secondary"
-          onClick={() => {
-            setDetails(false);
-            if (!signedIn) actions.openAuth();
-            else setAdd(true);
-          }}
-        >
-          <Plus size={18} aria-hidden="true" />
-          {t("catalog.playlistAdd")}
-        </button>
+        {/* Every action a list line folds away on a phone stays reachable here. */}
+        <div className="dialog-actions details-actions">
+          <button
+            className="button secondary"
+            aria-pressed={saved}
+            onClick={() =>
+              void actions.perform("/api/favorites", { trackId: track.id, saved: !saved })
+            }
+          >
+            <Heart size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
+            {t(saved ? "catalog.unfavorite" : "catalog.favorite", { title })}
+          </button>
+          {track.downloadAllowed && track.source.kind === "hosted" && (
+            <button
+              className="button secondary"
+              disabled={busy || downloaded}
+              onClick={() => void actions.download(track)}
+            >
+              <Download size={18} aria-hidden="true" />
+              {t(downloaded ? "catalog.downloaded" : "catalog.download", { title })}
+            </button>
+          )}
+          <button
+            className="button secondary"
+            onClick={() => {
+              setDetails(false);
+              if (!signedIn) actions.openAuth();
+              else setAdd(true);
+            }}
+          >
+            <Plus size={18} aria-hidden="true" />
+            {t("catalog.playlistAdd")}
+          </button>
+        </div>
       </Dialog>
       <Dialog open={add} onOpenChange={setAdd} title={t("library.addTitle")}>
         <PlaylistChoices track={track} close={() => setAdd(false)} />
@@ -245,22 +318,13 @@ export function CatalogUnavailable() {
     />
   );
 }
+/** Home's large title, streamed before the catalogue so the first paint already names the page. */
 export function HomeIntro() {
   const t = useTranslations();
-  const locale = useLocale() as Locale;
   return (
-    <>
-      <section className="discovery-intro">
-        <div>
-          <h1>{t("home.title")}</h1>
-          <p>{t("home.subtitle")}</p>
-        </div>
-        <Link className="text-link" href={`/${locale}/explore`}>
-          {t("home.secondary")}
-          <ArrowUpRight size={18} aria-hidden="true" />
-        </Link>
-      </section>
-    </>
+    <header className="discovery-intro">
+      <h1>{t("home.title")}</h1>
+    </header>
   );
 }
 function HomeDiscovery() {
@@ -322,52 +386,54 @@ export function HomeView({
   useEffect(() => {
     registerTracks([...tracks, ...collectionTracks]);
   }, [tracks, collectionTracks, registerTracks]);
+  // While nothing plays, the wash wears the featured recording's colours.
+  useWashPreview(unavailable ? null : (tracks[0] ?? null));
+  const continuation = initialPage.nextCursor
+    ? { limit: 12, cursor: initialPage.nextCursor }
+    : undefined;
   return (
     <div className={withIntro ? "home-page" : "home-shelves"}>
       {withIntro && <HomeIntro />}
       {unavailable ? (
         <CatalogUnavailable />
       ) : (
-        <section className="featured-section">
-          <div className="section-heading">
-            <div>
-              <h2>{t("home.suggestion")}</h2>
-              <p>{t("home.featuredNote")}</p>
-            </div>
-          </div>
+        <section className="featured-section" aria-label={t("home.suggestion")}>
           <div className="featured-recording" data-part="featured-recording">
             {tracks.slice(0, 1).map((track) => (
               <TrackCard
                 key={track.id}
                 track={track}
+                layout="feature"
                 queue={tracks}
-                continuation={
-                  initialPage.nextCursor ? { limit: 12, cursor: initialPage.nextCursor } : undefined
-                }
+                continuation={continuation}
                 primary
               />
             ))}
           </div>
+          {tracks.length > 1 && (
+            <section
+              className="home-more-recordings"
+              data-part="more-recordings"
+              aria-labelledby="home-up-next"
+            >
+              <h2 id="home-up-next">{t("home.upNext")}</h2>
+              <div className="track-list">
+                {tracks.slice(1, 4).map((track) => (
+                  <TrackCard
+                    key={track.id}
+                    track={track}
+                    layout="row"
+                    queue={tracks}
+                    continuation={continuation}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
           {!tracks.length && <EmptyState title={t("common.emptyCatalog")} />}
         </section>
       )}
       <HomeDiscovery />
-      {tracks.length > 1 && (
-        <section className="home-more-recordings" data-part="more-recordings">
-          <div className="track-grid">
-            {tracks.slice(1, 4).map((track) => (
-              <TrackCard
-                key={track.id}
-                track={track}
-                queue={tracks}
-                continuation={
-                  initialPage.nextCursor ? { limit: 12, cursor: initialPage.nextCursor } : undefined
-                }
-              />
-            ))}
-          </div>
-        </section>
-      )}
       <section className="listening-paths">
         <h2>{t("home.today")}</h2>
         <div className="filter-row">
@@ -391,7 +457,7 @@ export function HomeView({
                 {t("common.viewAll")}
               </Link>
             </div>
-            <div className="track-grid">
+            <div className="track-rail">
               {recordings.slice(0, 4).map((track) => (
                 <TrackCard key={track.id} track={track} queue={recordings} />
               ))}

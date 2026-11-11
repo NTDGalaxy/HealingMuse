@@ -133,7 +133,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
           {selected?.title[locale] ?? t("binaural.backgroundUnavailable")}
         </p>
       )}
-      <p className="muted small">{t("binaural.backgroundHint")}</p>
+      <p className="muted">{t("binaural.backgroundHint")}</p>
       <button
         className="filter-chip binaural-tones-only"
         type="button"
@@ -155,7 +155,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
           </button>
         </div>
       )}
-      {localMode && <p className="small muted">{t("binaural.offlineCatalogue")}</p>}
+      {localMode && <p className="muted">{t("binaural.offlineCatalogue")}</p>}
       <p className="results-note" role="status">
         {busy || (!loaded && !localMode)
           ? t("common.loading")
@@ -182,7 +182,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
                 }}
               />
               {track.source.kind !== "hosted" && (
-                <p className="small muted">{t("binaural.mixUnsupported")}</p>
+                <p className="muted">{t("binaural.mixUnsupported")}</p>
               )}
               {session.backgroundId === track.id && (
                 <a className="button secondary binaural-return" href="#binaural-player-heading">
@@ -246,7 +246,7 @@ export function BinauralCatalogue({ initial }: { initial: CatalogPage }) {
           </button>
         )}
       </nav>
-      <p className="small muted">
+      <p className="muted">
         {t("binaural.licensing")} <Link href={`/${locale}/credits`}>{t("binaural.credits")}</Link>
       </p>
     </section>

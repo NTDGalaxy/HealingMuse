@@ -9,6 +9,18 @@ export class TrackCard {
   get play() {
     return this.root.locator(card.play);
   }
+  /** The glyph inside Play; on a touch row cover it is the opaque jade badge. */
+  get playIcon() {
+    return this.root.locator(card.playIcon);
+  }
+  /** The check on the cover of a recording saved on this device. */
+  get downloaded() {
+    return this.root.locator(card.downloaded);
+  }
+  /** The card's own favourite button (the details sheet has another). */
+  get favorite() {
+    return this.root.locator(card.favorite);
+  }
   get playLabel() {
     return this.root.locator(card.playLabel);
   }
@@ -64,6 +76,10 @@ export class Recordings {
   }
   get cards() {
     return this.scope.locator(card.root);
+  }
+  /** Cards in the main reading region, excluding Next's hidden streamed copy. */
+  get mainCards() {
+    return this.scope.getByRole("main").locator(card.root);
   }
   get visibleCards() {
     return this.cards.filter({ visible: true });

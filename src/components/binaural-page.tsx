@@ -166,7 +166,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
         <div className="binaural-buttons" data-part="binaural-session-controls">
           <button
             type="button"
-            className="button"
+            className="button listen"
             {...primaryControl()}
             disabled={
               !session.ready || busy || (!playing && (session.backgroundLoading || durationError))
@@ -194,7 +194,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           <Headphones size={19} aria-hidden="true" />
           {t("headphones")}
         </p>
-        <p className="small muted">{t("pausePolicy")}</p>
+        <p className="muted">{t("pausePolicy")}</p>
         <div className="binaural-preset-row">
           <label htmlFor="binaural-preset">
             {t("preset")}
@@ -331,7 +331,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
               onChange={(event) => session.update({ beatHz: Number(event.target.value) })}
             />
           </label>
-          <p className="small muted">{t("frequencyExplanation")}</p>
+          <p className="muted">{t("frequencyExplanation")}</p>
         </details>
       </section>
       {session.favorites.length > 0 && (
@@ -370,7 +370,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
           />
           {t("remember")}
         </label>
-        <p className="small muted">{t("privacy")}</p>
+        <p className="muted">{t("privacy")}</p>
         <button
           type="button"
           className="text-button"
@@ -392,7 +392,7 @@ export function BinauralPage({ initialCatalogue }: { initialCatalogue: CatalogPa
         <h2 id="binaural-guide-heading">{t("guideTitle")}</h2>
         <p>{t("explanation")}</p>
         <p>{t("research")}</p>
-        <p className="small muted">{t("visualizerNote")}</p>
+        <p className="muted">{t("visualizerNote")}</p>
         <h3>{t("safetyTitle")}</h3>
         <ul>
           <li>{t("safetyVolume")}</li>

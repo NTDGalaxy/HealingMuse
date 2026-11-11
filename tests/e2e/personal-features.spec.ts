@@ -13,6 +13,7 @@ import {
 import type { PersonalData, Playlist, Track } from "@/lib/types";
 import { paginateTracks } from "../../src/lib/catalog-query";
 import {
+  accountDeletionConfirmation,
   admin,
   dialog as dialogs,
   harness,
@@ -32,6 +33,7 @@ import {
   Player,
   Settings,
   Shell,
+  TrackCard,
 } from "./support/pages";
 
 let fixtures: FixtureHarness | undefined;
@@ -96,6 +98,20 @@ const lastingGrant = () => ({
 function screens(page: Page, locale: Locale = "en") {
   return new HarnessScreens(page, fixtures!, locale);
 }
+
+test("a narrow line keeps a saved recording's filled heart", async ({ page }) => {
+  const ui = screens(page);
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: personalData({ favorites: [harness.recording.id] }) }),
+  );
+  await page.setViewportSize({ width: 320, height: 740 });
+  await ui.open();
+  await ui.show("library");
+  const saved = new TrackCard(ui.recordings.cards.filter({ visible: true }).first());
+  // Narrow lines fold favourite into the details sheet, except the heart that shows a saved state.
+  await expect(saved.favorite).toBeVisible();
+  await expect(saved.favorite).toHaveAttribute("aria-pressed", "true");
+});
 
 const email = "synthetic@example.invalid";
 const syntheticPassword = "synthetic password only";
@@ -432,6 +448,33 @@ test("synthetic accounts manage a library, paired check-ins, erasure, and sign-o
   await ui.show("settings");
   await settings.deleteAccountPermanently();
   await expect(settings.guestNote).toBeVisible();
+});
+test("Vietnamese erasure takes XÓA however it is typed and still sends the server literal", async ({
+  page,
+}) => {
+  const ui = screens(page, "vi");
+  const settings = new Settings(page, "vi");
+  const data = personalData({ locale: "vi" });
+  const erasures: unknown[] = [];
+  await page.route("**/api/me", (route) => {
+    if (route.request().method() !== "DELETE") return route.fulfill({ json: data });
+    erasures.push(route.request().postDataJSON());
+    return route.fulfill({ json: { ok: true } });
+  });
+  await ui.open({ locale: "vi" });
+  await ui.show("settings");
+  await settings.deleteAccount.click();
+  // The English word does not confirm in Vietnamese; lower case, decomposed accents and no
+  // accents at all do.
+  await settings.confirmation.fill(t("en", "settings.confirmationWord"));
+  await expect(settings.confirmDelete).toBeDisabled();
+  for (const typed of [" xo\u0301a ", "XOA"]) {
+    await settings.confirmation.fill(typed);
+    await expect(settings.confirmDelete).toBeEnabled();
+  }
+  await settings.confirmDelete.click();
+  await expect(settings.guestNote).toBeVisible();
+  expect(erasures).toEqual([{ confirmation: accountDeletionConfirmation }]);
 });
 test("a conflicting playlist edit shows the latest version before another save", async ({
   page,

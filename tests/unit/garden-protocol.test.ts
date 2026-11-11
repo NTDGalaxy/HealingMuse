@@ -58,7 +58,7 @@ describe("garden worker protocol", () => {
       type: "init",
       protocol,
       canvas: {} as OffscreenCanvas,
-      viewport: { width: 390, height: 844 },
+      viewport: { width: 390, height: 844, devicePixelRatio: 2.625 },
       scene: { garden: "lotus", theme: "day" },
     });
     expect(compatible(init(gardenProtocol))).toBe(true);

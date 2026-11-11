@@ -1,4 +1,4 @@
-import { test as base, expect, type Locator, type Page } from "@playwright/test";
+import { test as base, expect, type Browser, type Locator, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import type { Track } from "@/lib/types";
 import {
@@ -8,6 +8,7 @@ import {
   personalDataPath,
   playbackGrantPath,
   player,
+  shell,
   storage,
 } from "./contracts";
 
@@ -39,13 +40,63 @@ export async function storeCalm(page: Page) {
   await page.evaluate((key) => localStorage.setItem(key, "true"), storage.calm);
 }
 
-export const test = base.extend<{
-  /** Stores appearance preferences with an init script; call it before navigating. */
-  appearance: (options: AppearanceOptions) => Promise<void>;
-}>({
+/** GPU renderers that are software rasterizers: Chromium's SwiftShader, Mesa's and Windows WARP. */
+const softwareRenderer = /swiftshader|llvmpipe|lavapipe|softpipe|swrast|microsoft basic render/i;
+/** The two GPU features that move page drawing onto the GPU process. */
+const pageDrawingFeatures = ["gpu_compositing", "rasterization"];
+
+/**
+ * Fails when the browser composites or rasterizes pages on a software rasterizer posing as a GPU,
+ * such as SwiftShader or llvmpipe. With page drawing there, the deferred teardown of the previous
+ * document's compositor, a second after every navigation, waits synchronously on the GPU process:
+ * it took 6 to 8 s on 2 cores (0.1 ms in software compositing) and froze pages for up to 11 s on a
+ * loaded CI runner, with the scene and every check waiting behind it. Headless Chromium composites
+ * pages in software and keeps SwiftShader for WebGL alone, which is all the scenes need; a launch
+ * flag such as --use-angle=swiftshader moves page drawing onto it. A real GPU passes, because its
+ * renderer is not a software one, and so does a headed run that falls back to software compositing.
+ */
+async function expectNoEmulatedCompositing(browser: Browser) {
+  const session = await browser.newBrowserCDPSession();
+  try {
+    const { gpu } = await session.send("SystemInfo.getInfo");
+    const status = gpu.featureStatus ?? {};
+    // A renamed feature would otherwise make this check pass without looking at anything.
+    expect(Object.keys(status), "Chromium's GPU feature names").toEqual(
+      expect.arrayContaining(pageDrawingFeatures),
+    );
+    const renderer = gpu.auxAttributes?.glRenderer ?? "";
+    const accelerated = pageDrawingFeatures.filter((feature) =>
+      status[feature].startsWith("enabled"),
+    );
+    expect(
+      softwareRenderer.test(renderer) ? accelerated : [],
+      `page drawing accelerated on a software rasterizer (${renderer})`,
+    ).toEqual([]);
+  } finally {
+    await session.detach();
+  }
+}
+
+export const test = base.extend<
+  {
+    /** Stores appearance preferences with an init script; call it before navigating. */
+    appearance: (options: AppearanceOptions) => Promise<void>;
+  },
+  {
+    /** Checks once per worker that its browser draws pages in software or on a real GPU. */
+    compositing: void;
+  }
+>({
   appearance: async ({ page }, use) => {
     await use((options) => setAppearance(page, options));
   },
+  compositing: [
+    async ({ browser }, use) => {
+      await expectNoEmulatedCompositing(browser);
+      await use();
+    },
+    { scope: "worker", auto: true },
+  ],
 });
 
 /** The WCAG tags every accessibility scan enforces. */
@@ -78,14 +129,97 @@ export async function expectAccessible(page: Page, scope?: string, options?: Axe
   await test.step(
     `axe finds no violations${scope ? ` in ${scope}` : ""}`,
     async () => {
+      // Contrast is a property of the settled page, not of a frame inside an entrance.
+      await expectMotionSettled(page);
       expect((await axe(page, scope, options).analyze()).violations).toEqual([]);
     },
     { box: true },
   );
 }
 
+/** No horizontal page scroll; a failure names the first elements that reach past the viewport. */
 export async function expectNoHorizontalOverflow(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const overflow = await page.evaluate(
+    (every) =>
+      document.documentElement.scrollWidth <= innerWidth
+        ? []
+        : [...document.querySelectorAll(every)]
+            .filter((element) => element.getBoundingClientRect().right > innerWidth + 0.5)
+            .slice(0, 6)
+            .map(
+              (element) => `${element.tagName.toLowerCase()}.${[...element.classList].join(".")}`,
+            ),
+    shell.everyElement,
+  );
+  expect(overflow, "elements reaching past the viewport").toEqual([]);
+}
+
+/** Whether a person can see the element (rendered, CSS-visible, no fully transparent ancestor). */
+function seen(locator: Locator) {
+  return locator.evaluate((element) =>
+    element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }),
+  );
+}
+
+/**
+ * A person can see the element: it is rendered, not hidden by CSS and neither it nor an ancestor
+ * is fully transparent. Playwright's visibility ignores opacity; the timed gate does not.
+ */
+export async function expectSeen(locator: Locator) {
+  await test.step(
+    `${locator} can be seen`,
+    async () => {
+      await expect
+        .poll(() => seen(locator), {
+          message: "rendered, not hidden by CSS and not fully transparent",
+        })
+        .toBe(true);
+    },
+    { box: true },
+  );
+}
+
+/** The element is present but a person cannot see it (for example, transparent until hover). */
+export async function expectUnseen(locator: Locator) {
+  await test.step(
+    `${locator} cannot be seen`,
+    async () => {
+      await expect(locator).toBeAttached();
+      await expect
+        .poll(() => seen(locator), { message: "hidden by CSS or fully transparent" })
+        .toBe(false);
+    },
+    { box: true },
+  );
+}
+
+/**
+ * A tap on the centre of `at` reaches `target`: nothing painted above it takes the tap. Covers
+ * overlap, which neither Playwright's visibility nor checkVisibility() detects.
+ */
+export async function expectTapLandsOn(at: Locator, target: Locator) {
+  await test.step(
+    `a tap on ${at} reaches ${target}`,
+    async () => {
+      // Centred, so the fixed top bar and bottom navigation are not the topmost element there.
+      await at.evaluate((element) =>
+        element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" }),
+      );
+      const box = (await at.boundingBox())!;
+      const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      await expect
+        .poll(
+          () =>
+            target.evaluate(
+              (element, { x, y }) => element.contains(document.elementFromPoint(x, y)),
+              point,
+            ),
+          { message: "the topmost element at that point is the target or inside it" },
+        )
+        .toBe(true);
+    },
+    { box: true },
+  );
 }
 
 /** The single native media element owned by the persistent player. Strict: it must be unique. */

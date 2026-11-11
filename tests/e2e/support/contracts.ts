@@ -1,4 +1,5 @@
 import { revealTargets } from "../../../src/lib/garden/reveal-targets";
+import { decorationMarks } from "../../../src/lib/perf/audio-first";
 import { readinessMarks } from "../../../src/lib/perf/readiness";
 import type { Locale } from "./i18n";
 
@@ -29,7 +30,11 @@ export const shell = {
   calmClass: "calm-mode",
   main,
   sidebar: part("sidebar"),
+  /** The legal links at the foot of the desktop sidebar. */
+  sidebarLegal: part("sidebar-legal"),
   mobileNav: part("mobile-nav"),
+  /** The text label under each phone tab's icon. */
+  navLabel: part("nav-label"),
   current: "data-current",
   /** A link whose text is in `locale`, as every language switch marks it. */
   languageLink: (locale: Locale) => `[lang="${locale}"]`,
@@ -38,12 +43,18 @@ export const shell = {
   /** The visual notice; aria-hidden, because the live region announces the same text. */
   toast: part("toast"),
   scenery: part("scenery"),
+  /** Set on the top bar while content is scrolled under it (the bar is glass only then). */
+  scrolled: "data-scrolled",
   pageHeading: part("page-heading"),
   emptyState: part("empty-state"),
   /** The help line under a setting's name (body copy is found by role). */
   settingHelp: part("setting-help"),
   focused: ":focus",
+  /** Focus a keyboard user can see, the state the focus ring belongs to. */
+  focusVisible: ":focus-visible",
   children: ":scope > *",
+  /** Every element of the page, to name what reaches past the viewport. */
+  everyElement: "*",
 } as const;
 
 export const dialog = {
@@ -70,13 +81,19 @@ export const garden = {
   quality: "data-quality",
   renderer: "data-renderer",
   /** Performance marks of the audio-first start (src/lib/perf/audio-first.ts). */
-  sceneStartMark: "hm:scene-start",
-  motionStartMark: "hm:motion-start",
-  motionLoadedMark: "hm:motion-loaded",
+  sceneStartMark: decorationMarks.scene,
+  motionStartMark: decorationMarks.motion,
+  motionLoadedMark: decorationMarks.motionLoaded,
+  /** The GSAP layer's code failed to load for good, the chunk loader's own retry included. */
+  motionUnavailableMark: decorationMarks.motionUnavailable,
 } as const;
 
 /** Local recordings served by the preview, for holding a recording while it starts. */
 export const localAudioRoute = "**/api/local-audio/*";
+/** Catalogue page requests, routed when a test needs a catalogue of its own. */
+export const catalogRoute = "**/api/catalog?*";
+/** The local catalogue's audio for one recording (preview mode, Range-capable). */
+export const localAudioPath = (id: string) => `/api/local-audio/${id}`;
 
 /** Every emitted JavaScript chunk, for failing one that contains a given marker. */
 export const chunkRoute = "**/_next/static/chunks/*.js";
@@ -95,7 +112,13 @@ export const chunkMarkers = {
 export const card = {
   root: part("track-card"),
   play: part("track-play"),
+  /** The glyph inside Play; on a touch row cover it is the opaque jade badge. */
+  playIcon: part("track-play-icon"),
   playLabel: part("track-play-label"),
+  /** The check on the cover of a recording saved on this device. */
+  downloaded: part("track-downloaded"),
+  /** A card's own favourite button; a narrow line folds it into the details sheet. */
+  favorite: '[data-action="favorite"]',
   title: part("track-title"),
   /** The text column: title, artist and the actions row. */
   description: part("track-description"),
@@ -173,7 +196,7 @@ export const admin = {
   storageProvider: { b2: "Backblaze B2" },
 } as const;
 
-/** The literal account deletion requires, compared by the server and the form. */
+/** The literal the server requires to erase an account, whatever word the listener typed. */
 export const accountDeletionConfirmation = "DELETE";
 
 export const storage = {
@@ -194,8 +217,13 @@ export const style = {
   headingArrival: "heading-arrive",
   dialogArrival: "dialog-arrive",
   none: "none",
-  translucent: /^rgba\(/,
+  /** A colour with an alpha below one, in legacy (rgba) or modern (oklab, color) serialization. */
+  translucent: /^(rgba\(.+, 0?\.\d+\)|[a-z]+\(.+ \/ 0?\.\d+\))$/,
   opaque: /^rgb\(/,
+  /** A fully transparent fill: nothing painted over what lies beneath. */
+  transparent: "rgba(0, 0, 0, 0)",
+  /** The opacity of a control that is shown but cannot be used. */
+  dimmed: "0.5",
   reducedTransparency: { name: "prefers-reduced-transparency", value: "reduce" },
 } as const;
 
@@ -204,10 +232,25 @@ export const size = {
   touchTarget: 44,
   readableFont: 16,
   compactLabel: 24,
+  /** The cover of a recording line: a phone list row or a row on Home. */
+  lineCover: 56,
+  /** The least room a recording line gives its name, however narrow the line. */
+  lineTitleMin: 140,
+  /** The least space between two phone tab labels, so each reads as its own word (bold labels
+   * leave 4 px between the Vietnamese tabs at 320 and 360 px, regular ones about 9). */
+  tabLabelGap: 8,
+  /** A sidebar destination's row: one line of 16 px text, so taller means its name wrapped. */
+  sideNavItem: 48,
 } as const;
 
 /** Settings layout: panels sit side by side from `twoColumnMinWidth`, separated by `panelGap`. */
 export const layout = {
+  /** Phone layouts, such as a grid of recordings read as lines, apply up to this width. */
+  phoneMaxWidth: 600,
+  /** From this width Home sets its featured cover beside the name, with up next below. */
+  featuredBesideMinWidth: 700,
+  /** From this width Home's up next moves beside the featured cover, under the name. */
+  featuredColumnMinWidth: 1024,
   twoColumnMinWidth: 1100,
   panelGap: 24,
   /** The minimum space between the two buttons of a settings action group. */

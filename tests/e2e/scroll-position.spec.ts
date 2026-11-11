@@ -31,14 +31,17 @@ for (const width of [390, 1440]) {
       // element it sees moving before it clicks. Let the driver finish that, then measure a plain
       // pointer click, which may land during the entrance just as a listener's tap can.
       const heading = page.getByRole("heading", { level: 1 });
-      await heading.click({ trial: true });
-      const target = await heading.evaluate((element) => {
-        const box = element.getBoundingClientRect();
-        return { x: box.x + Math.min(24, box.width / 2), y: box.y + box.height / 2 };
-      });
-      const before = await page.evaluate(() => scrollY);
-      await page.mouse.click(target.x, target.y);
-      await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
+      // On a phone, Home's page name is for assistive technology only, so there is none to click.
+      if ((await heading.boundingBox())!.width > 1) {
+        await heading.click({ trial: true });
+        const target = await heading.evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          return { x: box.x + Math.min(24, box.width / 2), y: box.y + box.height / 2 };
+        });
+        const before = await page.evaluate(() => scrollY);
+        await page.mouse.click(target.x, target.y);
+        await expect.poll(() => page.evaluate(() => scrollY)).toBe(before);
+      }
       // Clicking supporting copy after scrolling used to refocus the entire main container.
       const copy = shell.mainCopy.last();
       // Finish the test driver's preparatory scrolling before measuring the user's click.

@@ -3,7 +3,8 @@ import { Search } from "lucide-react";
 
 /**
  * A search form: an optional leading icon, a visually hidden label, the `q` input and a submit
- * button that repeats the label. Form attributes (action, onSubmit) pass through.
+ * button that repeats the label (as an icon on phones). Form attributes (action, onSubmit) pass
+ * through.
  */
 export function SearchField({
   id,
@@ -48,8 +49,10 @@ export function SearchField({
         placeholder={placeholder}
         {...input}
       />
-      <button className="button" type={submitType}>
-        {label}
+      {/* Phones show the icon alone; the label stays the button's accessible name. */}
+      <button className="button search-submit" type={submitType}>
+        <Search className="search-submit-icon" size={20} aria-hidden="true" />
+        <span className="search-submit-label">{label}</span>
       </button>
     </form>
   );

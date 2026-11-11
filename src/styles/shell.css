@@ -1,0 +1,509 @@
+/* Shell: the scene and wash layers, sidebar, top bar, main column, mobile navigation. */
+@layer components {
+  .app-shell {
+    position: relative;
+    isolation: isolate;
+    min-height: 100dvh;
+  }
+
+  /* The route's 3D scene and its matching poster sit under the wash at the top of the screen and
+     fade into the ground, so text below always reads on a solid colour. */
+  .sanctuary-scenery {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar);
+    right: 0;
+    height: min(82vh, 780px);
+    z-index: -2;
+    pointer-events: none;
+    overflow: hidden;
+    /* The scene stays ambient behind text: a fixed strength and a fade well before the fold. */
+    opacity: var(--scene-strength);
+    -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 92%);
+    mask-image: linear-gradient(to bottom, #000 35%, transparent 92%);
+  }
+  .garden-poster,
+  .garden-poster img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .garden-poster.poster-night {
+    display: none;
+  }
+  :root[data-theme="night"] .garden-poster.poster-day {
+    display: none;
+  }
+  :root[data-theme="night"] .garden-poster.poster-night {
+    display: block;
+  }
+  .garden-canvas {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 900ms var(--ease-out);
+  }
+  .garden-canvas[data-state="ready"] {
+    opacity: 1;
+  }
+  .garden-canvas canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* The wash: the playing recording's artwork colours over the top of the screen. */
+  .wash {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar);
+    right: 0;
+    height: min(82vh, 780px);
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        90% 70% at 22% 0%,
+        color-mix(in oklab, var(--wash-mid) calc(var(--wash-strength) * 100%), transparent) 0%,
+        transparent 72%
+      ),
+      radial-gradient(
+        60% 55% at 88% 12%,
+        color-mix(in oklab, var(--wash-glow) calc(var(--wash-strength) * 55%), transparent) 0%,
+        transparent 70%
+      ),
+      linear-gradient(to bottom, transparent 30%, var(--bg) 96%);
+    transition:
+      --wash-glow var(--wash-time) var(--ease-out),
+      --wash-mid var(--wash-time) var(--ease-out),
+      --wash-light var(--wash-time) var(--ease-out);
+  }
+  :root:not([data-theme="night"]) .wash {
+    background:
+      radial-gradient(
+        90% 70% at 22% 0%,
+        color-mix(in oklab, var(--wash-light) calc(var(--wash-strength) * 100%), transparent) 0%,
+        transparent 72%
+      ),
+      radial-gradient(
+        60% 55% at 88% 12%,
+        color-mix(in oklab, var(--wash-mid) calc(var(--wash-strength) * 32.5%), transparent) 0%,
+        transparent 70%
+      ),
+      linear-gradient(to bottom, transparent 30%, var(--bg) 96%);
+  }
+
+  .skip-link {
+    position: fixed;
+    left: 12px;
+    top: -80px;
+    z-index: 60;
+    padding: 12px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 12px;
+  }
+
+  /* Sidebar: the desktop navigation, a solid surface beside the wash. */
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 16px 16px;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+  }
+  .brand,
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 8px;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+  .brand small {
+    display: block;
+    color: var(--muted);
+    font-size: var(--step--1);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--jade);
+    color: var(--on-jade);
+  }
+  .brand-accent {
+    color: var(--lav);
+  }
+  .side-nav {
+    display: grid;
+    gap: 4px;
+  }
+  .side-nav a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 48px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      background-color 160ms var(--ease-press),
+      color 160ms var(--ease-press);
+  }
+  /* A long name wraps beside its icon rather than squeezing it. */
+  .side-nav svg {
+    flex: none;
+  }
+  @media (hover: hover) {
+    .side-nav a:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+  }
+  .side-nav a[aria-current="page"] {
+    background: var(--surface-3);
+    color: var(--text);
+  }
+  .side-nav a[aria-current="page"] svg {
+    color: var(--lav);
+  }
+  .sidebar-note {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+    padding: 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: var(--step--1);
+    line-height: 1.5;
+  }
+  .sidebar-note svg {
+    flex: none;
+    color: var(--jade-ink);
+  }
+  /* Spaced links with no separators, so a line break never strands one. */
+  .sidebar-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 16px;
+    padding: 0 8px;
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+  .sidebar-footer a {
+    color: var(--muted);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Main column */
+  .main-column {
+    margin-left: var(--sidebar);
+    min-height: 100dvh;
+    padding-bottom: var(--mobile-nav);
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: var(--topbar);
+    padding: 0 var(--gutter);
+    background: transparent;
+    transition: background-color 200ms var(--ease-out);
+  }
+  /* Glass only once content scrolls under the bar; at the top the wash runs to the edge. */
+  .topbar[data-scrolled] {
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+  .mobile-brand {
+    display: none;
+  }
+  .topbar-welcome {
+    color: var(--muted);
+    font-size: var(--step--1);
+    font-weight: 400;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  /* 44 px links fill the pill; the current one's inset ring stands in for padding, so the
+     control lines up with the 44 px buttons beside it. */
+  .language-switch {
+    display: flex;
+    border-radius: var(--radius-pill);
+    background: var(--surface-2);
+  }
+  .language-switch a {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .language-switch a[aria-current="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: inset 0 0 0 3px var(--surface-2);
+  }
+  .account-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--line-strong);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  @media (hover: hover) {
+    .account-button:hover {
+      background: var(--surface-2);
+    }
+  }
+  .appearance-button {
+    border: 1.5px solid var(--line);
+  }
+  .connection-banner {
+    margin: 8px var(--gutter) 0;
+    max-width: none;
+    padding: 12px 16px;
+    border-radius: var(--radius-card);
+    background: var(--surface-3);
+    color: var(--text);
+    font-weight: 700;
+  }
+  main {
+    flex: 1;
+    width: 100%;
+    max-width: calc(var(--content) + var(--gutter) * 2);
+    padding: 12px var(--gutter) 56px;
+  }
+  main:focus {
+    outline: none;
+  }
+  .page-footer {
+    padding: 0 var(--gutter) 32px;
+    color: var(--muted);
+    font-size: var(--step--1);
+  }
+
+  /* Mobile navigation: four destinations and More, docked under the player. */
+  .mobile-nav {
+    display: none;
+  }
+  .more-navigation {
+    display: grid;
+    gap: 4px;
+  }
+  .more-navigation a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 52px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    color: var(--text);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  @media (hover: hover) {
+    .more-navigation a:hover {
+      background: var(--surface-2);
+    }
+  }
+  .more-navigation a[aria-current="page"] {
+    background: var(--surface-3);
+  }
+
+  @media (max-width: 1100px) {
+    .topbar-welcome {
+      display: none;
+    }
+    /* The 216 px sidebar keeps every destination on one line: "Nhật ký cảm xúc" needs 137 px. */
+    .sidebar {
+      padding-inline: 12px;
+    }
+    .side-nav a {
+      gap: 10px;
+      padding-inline: 10px;
+    }
+  }
+  @media (max-width: 900px) {
+    .sidebar {
+      display: none;
+    }
+    .mobile-brand {
+      display: flex;
+      padding: 0;
+      font-size: 18px;
+    }
+    .mobile-brand svg {
+      flex: none;
+      width: 34px;
+      height: 34px;
+      padding: 7px;
+      border-radius: 50%;
+      background: var(--jade);
+      color: var(--on-jade);
+    }
+    .topbar {
+      gap: 8px;
+    }
+    .topbar-actions {
+      gap: 4px;
+    }
+    .account-button {
+      padding: 0 12px;
+      white-space: nowrap;
+      flex: none;
+    }
+    .appearance-button {
+      min-width: 44px;
+      height: 44px;
+      padding: 0 10px;
+    }
+    .language-switch a {
+      padding: 0 8px;
+    }
+    .mobile-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 25;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      height: var(--mobile-nav);
+      padding: 6px 4px env(safe-area-inset-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+    }
+    .mobile-nav a,
+    .mobile-nav button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      min-height: 56px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font-size: var(--step--1);
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      text-align: center;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .mobile-nav svg {
+      width: 56px;
+      height: 30px;
+      padding: 4px 16px;
+      border-radius: var(--radius-pill);
+      transition: background-color 160ms var(--ease-press);
+    }
+    .mobile-nav a[aria-current="page"],
+    .mobile-nav button[data-current="true"] {
+      color: var(--text);
+    }
+    .mobile-nav a[aria-current="page"] svg,
+    .mobile-nav button[data-current="true"] svg {
+      background: var(--surface-3);
+      color: var(--lav);
+    }
+    .sanctuary-scenery,
+    .wash {
+      height: min(72vh, 600px);
+    }
+  }
+  @media (max-width: 420px) {
+    /* The mark alone carries the brand where the account and language controls need the room. */
+    .mobile-brand {
+      font-size: 0;
+      gap: 0;
+    }
+  }
+  @media (max-width: 380px) {
+    /* The narrowest top bars offer only the other language; the interface shows the current one. */
+    .language-switch a[aria-current="true"] {
+      display: none;
+    }
+  }
+  @media (max-width: 360px) {
+    /* The one exception to the 14 px floor: five tab labels on the narrowest phones. */
+    .mobile-nav a,
+    .mobile-nav button {
+      font-size: 0.8125rem;
+    }
+  }
+  @media (max-width: 340px) {
+    /* Equal tabs no longer hold the longest labels (Trang chủ, Khám phá), so each tab takes its
+       label's width and an equal share of the rest, and the icon pill narrows. */
+    .mobile-nav {
+      grid-template-columns: repeat(5, auto);
+    }
+    .mobile-nav svg {
+      width: 48px;
+      padding: 4px 12px;
+    }
+  }
+  /* Room for the player only while it is shown. The player renders beside the shell, not inside
+     it, so the document is what knows. */
+  :root:has(.player-bar[data-shown]) .sidebar {
+    bottom: var(--player);
+  }
+  :root:has(.player-bar[data-shown]) .main-column {
+    padding-bottom: calc(var(--player) + var(--mobile-nav));
+  }
+}

@@ -1,10 +1,16 @@
 {
-  "title": "HealingMuse botanical world",
+  "title": "HealingMuse light scenes and generated covers",
   "geometry": {
     "source": "src/lib/garden/scene.ts",
     "author": "HealingMuse project",
     "license": "MIT",
-    "method": "Original parametric petals, leaves, stems, terraces, arches and instanced botanical compositions. No downloaded models or textures."
+    "method": "Original procedural light forms (rings, a resting meter, waves, orbits, a point grid, ripples and prisms) drawn as lines and points by one shared interpreter, one seed per route. No downloaded models or textures."
+  },
+  "covers": {
+    "source": "src/lib/artwork.ts",
+    "author": "HealingMuse project",
+    "license": "MIT",
+    "method": "Deterministic inline SVG drawn from each recording identifier, artwork family and colour. No photographs or third-party images."
   },
   "posters": {
     "generator": "scripts/render-gardens.mjs",
@@ -12,12 +18,6 @@
     "variants": ["day", "night"],
     "widths": [480, 1440],
     "mobileBudgetBytes": 81920
-  },
-  "developmentConcept": {
-    "tool": "OpenAI built-in image generation tool",
-    "purpose": "Art direction reference only; not downloaded by the application",
-    "sha256": "6485cfaa8f3b4939a3d3d09ab3075bd8e33c00d7f8369af00dc9625d80368eff",
-    "prompt": "Development concept art for HealingMuse, a Vietnamese-first recreational instrumental music listening application. Wide 16:9 artwork, no UI, text, logos, people or medical symbols. A dreamlike floating lotus courtyard, sculptural jade lotus, curled leaves and blush lavender petals, pale-lilac stone terraces, curved suspended paths, distant botanical arches, low mist and pale blue lavender dawn. Matte porcelain stone, translucent plants, soft directional light. Botanical forms at right and lower right, quiet negative space upper left. Restrained lavender #f3eff7 and jade #236553. Visual development reference for original procedural Three.js scenes."
   },
   "dependencies": {
     "three": "MIT",

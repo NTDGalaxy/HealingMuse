@@ -1,45 +1,25 @@
-import credits from "../../../../content/artwork-credits.json";
 import { getLocale } from "next-intl/server";
 export default async function Page() {
   const vi = (await getLocale()) === "vi";
   return (
-    <>
-      <h1>{vi ? "Nguồn hình ảnh" : "Artwork credits"}</h1>
+    <div className="legal-page">
+      <h1>{vi ? "Ghi công" : "Credits"}</h1>
       <p>
         {vi
-          ? "Ảnh được cắt, đổi kích thước và chuyển sang WebP. Giấy phép của ảnh gốc được giữ nguyên."
-          : "Photographs are cropped, resized and converted to WebP. Original licences are retained."}
+          ? "Ảnh bìa của mỗi bản thu được vẽ bằng mã nguồn của HealingMuse từ mã và màu của bản thu. Ứng dụng không dùng ảnh chụp hay hình ảnh của bên thứ ba."
+          : "Each recording's cover is drawn by HealingMuse's own code from the recording's identifier and colour. The app uses no photographs or third-party images."}
       </p>
-      <ul className="credit-list">
-        {credits.map((credit) => (
-          <li key={credit.kind}>
-            <a href={credit.provenanceUrl} rel="noopener noreferrer" target="_blank">
-              {credit.title}
-            </a>
-            <p>
-              {credit.artist} · <a href={credit.licenseUrl}>{credit.license}</a>
-            </p>
-          </li>
-        ))}
-      </ul>
-      <h2>{vi ? "Những khu vườn tưởng tượng" : "Imagined botanical gardens"}</h2>
-      <div className="reading-surface garden-credits">
-        <p>
-          {vi
-            ? "Mười hai khu vườn được tạo riêng cho HealingMuse bằng các mô hình thực vật và kiến trúc nguyên bản. Mỗi khu vườn có ánh sáng ban ngày, ban đêm và một hình ảnh tĩnh tương ứng."
-            : "Twelve gardens were created for HealingMuse using original botanical and architectural models. Each garden has day and night lighting and a matching still image."}
-        </p>
-        <p>
-          {vi
-            ? "Một hình ảnh ý tưởng được tạo bằng công cụ tạo ảnh trong quá trình thiết kế. Hình ảnh này chỉ dùng làm tham khảo, không được tải khi sử dụng ứng dụng. Các khu vườn không phải địa điểm có thật; âm nhạc và bản thu vẫn do con người sáng tạo."
-            : "An image tool produced a development concept used only as a design reference. The application does not load that concept image. The gardens depict imagined places; music and recordings remain human-created."}
-        </p>
-        <p>
-          {vi
-            ? "Mô hình gốc và mã nguồn được cấp phép MIT. Hình ảnh tĩnh được kết xuất từ chính các khu vườn trong ứng dụng."
-            : "Original models and source code are licensed under MIT. Still images are rendered from the application's own gardens."}
-        </p>
-      </div>
-    </>
+      <h2>{vi ? "Cảnh ánh sáng ba chiều" : "Three-dimensional light scenes"}</h2>
+      <p>
+        {vi
+          ? "Mỗi trang có một cảnh ánh sáng ba chiều riêng, dựng từ mã nguồn gốc theo giấy phép MIT. Các hình tĩnh thay thế được kết xuất từ chính những cảnh này."
+          : "Each page has its own three-dimensional light scene, built from original source code under the MIT licence. The still images are rendered from the same scenes."}
+      </p>
+      <p>
+        {vi
+          ? "Âm nhạc và các bản thu do con người sáng tác và biểu diễn. Giấy phép và nguồn của từng bản thu nằm trong phần chi tiết của bản thu đó."
+          : "The music and recordings are composed and performed by people. Each recording's licence and source are in that recording's details."}
+      </p>
+    </div>
   );
 }

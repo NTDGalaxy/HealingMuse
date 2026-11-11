@@ -32,7 +32,7 @@ function garden() {
     decoration: (signal) => decorationMayStart({ signal }),
     mark() {},
     scene: { garden: "lotus", theme: "day" },
-    viewport: { width: 390, height: 844 },
+    viewport: { width: 390, height: 844, devicePixelRatio: 2.625 },
     visible: true,
   });
   return { controller, created };

@@ -1,8 +1,8 @@
-// The full-screen scene's viewport, in CSS pixels.
+// The full-screen scene's viewport: its CSS size and the device pixel ratio it is shown at.
 import type { Viewport } from "./protocol";
 
 export function readViewport(): Viewport {
-  return { width: innerWidth, height: innerHeight };
+  return { width: innerWidth, height: innerHeight, devicePixelRatio: devicePixelRatio || 1 };
 }
 
 export type FrameScheduler = {
@@ -33,16 +33,32 @@ export function perFrame(apply: () => void, frames: FrameScheduler = animationFr
   };
 }
 
-/** Reports the viewport after resizes, at most once per frame. Returns the cleanup. */
+/**
+ * Reports the viewport after resizes, zoom and moves to a screen of another pixel density, at
+ * most once per frame. Returns the cleanup.
+ */
 export function watchViewport(
   onChange: (viewport: Viewport) => void,
   frames: FrameScheduler = animationFrames,
 ): () => void {
   const update = perFrame(() => onChange(readViewport()), frames);
   const schedule = () => update.schedule();
+  // A resolution query matches only the current ratio, so it changes once whenever that does.
+  let density: MediaQueryList | null = null;
+  const followDensity = () => {
+    density?.removeEventListener("change", densityChanged);
+    density = matchMedia(`(resolution: ${devicePixelRatio || 1}dppx)`);
+    density.addEventListener("change", densityChanged);
+  };
+  function densityChanged() {
+    followDensity();
+    schedule();
+  }
+  followDensity();
   addEventListener("resize", schedule);
   return () => {
     removeEventListener("resize", schedule);
+    density?.removeEventListener("change", densityChanged);
     update.cancel();
   };
 }

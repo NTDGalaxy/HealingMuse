@@ -104,12 +104,21 @@ export async function expectMotionStarted(page: Page, since = 0) {
 
 /** Waits until the GSAP layer's code has arrived and the layer has mounted. */
 export async function expectMotionLoaded(page: Page) {
+  await expectMark(page, garden.motionLoadedMark);
+}
+
+/**
+ * Waits until the GSAP layer's code has failed to load for good: the chunk loader retries a
+ * failed chunk once on its own, so a refused request alone does not mean the page gave up.
+ */
+export async function expectMotionUnavailable(page: Page) {
+  await expectMark(page, garden.motionUnavailableMark);
+}
+
+async function expectMark(page: Page, mark: string) {
   await expect
     .poll(() =>
-      page.evaluate(
-        (mark) => performance.getEntriesByName(mark, "mark").length > 0,
-        garden.motionLoadedMark,
-      ),
+      page.evaluate((name) => performance.getEntriesByName(name, "mark").length > 0, mark),
     )
     .toBe(true);
 }

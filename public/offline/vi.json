@@ -2,7 +2,7 @@
   "nav": {
     "home": "Trang chủ",
     "explore": "Khám phá",
-    "library": "Thư viện của tôi",
+    "library": "Thư viện",
     "downloads": "Đã tải xuống",
     "mood": "Nhật ký cảm xúc",
     "settings": "Cài đặt",
@@ -18,7 +18,7 @@
     "footer": "Âm nhạc để giải trí và hỗ trợ tinh thần. Không phải lời khuyên hay phương pháp điều trị y khoa.",
     "language": "Ngôn ngữ",
     "preview": "Bản xem trước cục bộ",
-    "credits": "Ảnh",
+    "credits": "Ghi công",
     "binaural": "Binaural"
   },
   "common": {
@@ -36,7 +36,6 @@
     "minutes": "{count} phút",
     "tracks": "{count} bản thu",
     "offline": "Bạn đang ngoại tuyến. Những bản thu đã tải vẫn sẵn sàng để nghe.",
-    "onlineRequired": "Kết nối internet để lưu thay đổi cá nhân.",
     "emptyCatalog": "Bộ sưu tập âm nhạc đang được chuẩn bị. Bạn hãy quay lại sau nhé.",
     "saved": "Đã lưu",
     "external": "Mở trong thẻ mới",
@@ -50,39 +49,28 @@
     "notFoundText": "Hãy trở về với âm nhạc của bạn nhé."
   },
   "home": {
-    "eyebrow": "MỘT CHÚT THỜI GIAN CHO BẠN",
     "title": "Tìm một khoảng lặng.",
     "subtitle": "Một giai điệu thân quen, một âm thanh mới. Chọn điều bạn muốn nghe, theo nhịp của riêng mình.",
-    "cta": "Chọn một âm thanh",
     "secondary": "Khám phá bộ sưu tập",
     "today": "Bạn muốn dành khoảnh khắc này thế nào?",
-    "todayNote": "Chọn điều phù hợp với bạn hôm nay.",
-    "featured": "Một vài âm thanh dịu dàng",
-    "featuredNote": "Được chọn với sự quan tâm, sẵn sàng khi bạn muốn.",
-    "natureTitle": "Ghé thăm một góc thiên nhiên",
-    "natureText": "Mưa trên tán lá. Dòng nước chảy thong thả. Những âm thanh thân quen, chẳng cần đi đâu xa.",
-    "natureCta": "Khám phá âm thanh thiên nhiên",
     "welcome": "Chào bạn đến với HealingMuse",
     "curated": "Bản thu được chọn bởi con người",
     "private": "Cảm xúc thuộc về riêng bạn",
     "atYourPace": "Lắng nghe theo nhịp của bạn",
     "gentleNote": "Bạn có thể nghe mà không cần tài khoản. Đăng nhập bất cứ khi nào bạn muốn lưu âm thanh yêu thích.",
     "suggestion": "Một khởi đầu nhẹ nhàng",
-    "heroLabel": "Minh họa khu rừng yên tĩnh bên dòng sông"
+    "upNext": "Nghe tiếp"
   },
   "goals": {
     "relax": "Thả lỏng",
     "rest": "Nghỉ ngơi một chút",
-    "focus": "Tập trung nhẹ nhàng",
-    "relaxDescription": "Âm thanh mềm mại để thư thái",
-    "restDescription": "Dành chỗ cho một nhịp chậm hơn",
-    "focusDescription": "Một người bạn yên tĩnh trong ngày"
+    "focus": "Tập trung nhẹ nhàng"
   },
   "catalog": {
     "title": "Tìm âm thanh của bạn",
     "subtitle": "Những bản nhạc không lời được chọn lọc. Tìm giai điệu theo nhịp của riêng bạn.",
     "search": "Tìm bản thu",
-    "searchPlaceholder": "Piano, guitar, giai điệu quen...",
+    "searchPlaceholder": "Piano, guitar, giai điệu quen…",
     "instrumental": "Nhạc không lời",
     "nature": "Âm thanh thiên nhiên",
     "results": "{count} bản thu để khám phá",
@@ -106,11 +94,11 @@
     "youtubeVisible": "Giữ trình phát hiển thị khi xem. Tải xuống và nghe khi khóa màn hình dành cho các bản thu lưu trữ có quyền sử dụng phù hợp.",
     "openYoutube": "Mở trên YouTube",
     "googlePrivacy": "Chính sách riêng tư Google",
-    "youtubeTerms": "Điều khoản YouTube",
     "playlistAdd": "Thêm vào danh sách phát",
     "human": "Bản thu được tạo bởi con người",
     "playTitle": "Nghe {title}",
-    "youtubeLoading": "Đang tải trình phát YouTube...",
+    "pauseTitle": "Tạm dừng {title}",
+    "youtubeLoading": "Đang tải trình phát YouTube…",
     "chooseAnother": "Chọn một bản thu khác",
     "genre": "Dòng nhạc",
     "instrument": "Nhạc cụ",
@@ -131,7 +119,6 @@
     "seek": "Vị trí phát",
     "volume": "Âm lượng",
     "mute": "Tắt tiếng",
-    "unmute": "Bật tiếng",
     "queue": "Danh sách đang nghe",
     "queueTitle": "Tiếp theo",
     "repeat": "Lặp danh sách phát",
@@ -143,10 +130,8 @@
     "timerEnded": "Đã hết thời gian hẹn. Bạn cứ thong thả nhé.",
     "playingStatus": "Đang phát {title}",
     "loadingStatus": "Đang chuẩn bị {title}",
-    "finished": "Phiên nghe này đã kết thúc",
     "finish": "Kết thúc phiên nghe",
     "queueEmpty": "Danh sách đang nghe còn trống.",
-    "offlinePlayback": "Đang nghe bản thu đã tải",
     "cannotAutoplay": "Trình duyệt cần thêm một lần chạm. Nhấn phát để bắt đầu.",
     "playbackError": "Chưa thể phát bản thu này. Hãy thử lại hoặc chọn bản khác.",
     "refreshFailed": "Kết nối bị gián đoạn. Kết nối lại rồi nhấn phát để tiếp tục.",
@@ -164,7 +149,6 @@
     "codeNote": "Nhập mã trong email của bạn. Bạn nhớ kiểm tra cả thư rác nhé.",
     "verify": "Đăng nhập",
     "changeEmail": "Dùng email khác",
-    "resend": "Gửi lại mã",
     "agree": "Tôi đồng ý với điều khoản và chính sách riêng tư, và hiểu rằng HealingMuse hỗ trợ nghe nhạc giải trí, không phải điều trị y khoa.",
     "unavailable": "Đăng nhập chưa mở trong bản xem trước này. Bạn vẫn có thể khám phá và nghe với tư cách khách.",
     "signOut": "Đăng xuất",
@@ -229,7 +213,6 @@
     "noPlaylistTracks": "Thêm bản thu từ Khám phá để bắt đầu.",
     "addTitle": "Chọn danh sách phát",
     "added": "Đã thêm bản thu vào danh sách phát.",
-    "alreadyAdded": "Bản thu này đã có trong danh sách phát.",
     "deleteTitle": "Xóa danh sách phát này?",
     "deleteText": "Các bản thu vẫn có trong Khám phá.",
     "conflict": "Danh sách này vừa thay đổi trên thiết bị khác. Chúng tôi đã tải bản mới nhất. Hãy xem lại trước khi lưu nhé."
@@ -254,8 +237,7 @@
     "unsupported": "Trình duyệt này chưa hỗ trợ lưu bản tải. Bạn vẫn có thể nghe trực tuyến.",
     "storageFull": "Thiết bị chưa đủ dung lượng. Gỡ một bản tải hoặc giải phóng bộ nhớ rồi thử lại nhé.",
     "interrupted": "Tải xuống bị gián đoạn. Kết nối lại và thử lần nữa.",
-    "integrity": "Chưa xác minh được bản tải này. Bạn hãy thử tải lại nhé.",
-    "eligible": "Chỉ các bản thu có quyền sử dụng ngoại tuyến mới có thể tải xuống."
+    "integrity": "Chưa xác minh được bản tải này. Bạn hãy thử tải lại nhé."
   },
   "mood": {
     "title": "Một chút thời gian nhìn lại",
@@ -298,8 +280,7 @@
     "title": "Để bạn thấy thoải mái hơn",
     "subtitle": "Một vài lựa chọn nhỏ để HealingMuse phù hợp với bạn.",
     "appearance": "Không gian lắng nghe",
-    "calm": "Chế độ tĩnh",
-    "calmText": "Giữ giao diện đứng yên và giảm các chi tiết trang trí.",
+    "calm": "Chế độ êm dịu",
     "language": "Ngôn ngữ",
     "account": "Tài khoản của bạn",
     "guestText": "Bạn đang nghe với tư cách khách. Đăng nhập để lưu thư viện riêng tư trên nhiều thiết bị.",
@@ -310,11 +291,11 @@
     "installText": "Thêm HealingMuse vào màn hình chính để dễ dàng mở nhạc đã tải.",
     "installButton": "Thêm vào màn hình chính",
     "installManual": "Trên iPhone, mở menu Chia sẻ của Safari và chọn Thêm vào Màn hình chính. Trình duyệt khác có mục Cài đặt hoặc Thêm vào màn hình chính trong menu.",
-    "installed": "HealingMuse đã được cài trên thiết bị này.",
     "deleteAccount": "Xóa tài khoản của tôi",
     "deleteTitle": "Xóa tài khoản của bạn?",
     "deleteText": "Thao tác này xóa vĩnh viễn hồ sơ, danh sách phát, yêu thích, phiên nghe và cảm xúc đã lưu. Bạn có thể gỡ các bản tải trên thiết bị riêng.",
-    "confirmation": "Nhập DELETE để xác nhận",
+    "confirmation": "Nhập XÓA để xác nhận",
+    "confirmationWord": "XÓA",
     "confirmDelete": "Xóa tài khoản vĩnh viễn",
     "deleted": "Tài khoản của bạn đã được xóa.",
     "signOutNote": "Nhạc đã tải vẫn ở trên thiết bị này. Thông tin tài khoản riêng tư được xóa khỏi giao diện."
@@ -359,8 +340,8 @@
     "previewNote": "Tải tệp MP3 bằng công cụ nhập âm thanh đã kiểm tra trước khi xuất bản.",
     "count": "{count} bản thu trong khu vực quản lý",
     "noMood": "Khu vực này chỉ quản lý nội dung. Nhật ký cảm xúc của người nghe là riêng tư.",
-    "artwork": "Kiểu hình minh họa",
-    "color": "Màu hình minh họa",
+    "artwork": "Kiểu ảnh bìa",
+    "color": "Màu ảnh bìa",
     "colorOptions": {
       "sage": "Xanh lá dịu",
       "sand": "Cát ấm",
@@ -383,7 +364,7 @@
     "release": {
       "title": "Phát hành danh mục",
       "description": "Công bố một tập hợp bản thu cố định đã được chuyển lên sau khi hoàn thành đánh giá bởi con người.",
-      "loading": "Đang tải đợt phát hành...",
+      "loading": "Đang tải đợt phát hành…",
       "empty": "Chưa có bản kê phát hành sẵn sàng.",
       "recordings": "Bản thu trong bản kê",
       "matching": "Thông tin khớp bản kê",
@@ -397,7 +378,7 @@
       "rights": "Tôi đã xác minh quyền sử dụng và ghi công cho từng bản thu trong bản kê này.",
       "provenance": "Tôi đã xác minh từng bản thu có nguồn gốc được ghi nhận và do con người sáng tạo.",
       "identity": "Tài khoản quản trị đang đăng nhập và tên của bạn sẽ được lưu trong hồ sơ phát hành.",
-      "publishing": "Đang công bố...",
+      "publishing": "Đang công bố…",
       "publish": "Xác nhận và công bố {count} bản thu",
       "changed": "Bản kê, thông tin hoặc âm thanh đã thay đổi. Hãy tải lại và đánh giá đợt phát hành.",
       "storage": "Kho lưu âm thanh",
@@ -408,7 +389,7 @@
   "privacy": {
     "title": "Quyền riêng tư của bạn",
     "intro": "HealingMuse chỉ thu thập những gì cần thiết cho tài khoản tùy chọn và các tính năng lắng nghe.",
-    "accounts": "Tài khoản dùng email để đăng nhập không cần mật khẩu. Yêu thích và danh sách phát thuộc tài khoản của bạn.",
+    "accounts": "Tài khoản dùng email để đăng nhập, bằng mật khẩu hoặc mã dùng một lần gửi qua email. Yêu thích và danh sách phát thuộc tài khoản của bạn.",
     "mood": "Nhật ký cảm xúc cần sự đồng ý riêng, chỉ chủ tài khoản có thể truy cập qua ứng dụng và được tự động xóa sau 90 ngày. Bạn có thể xóa sớm hơn trong Nhật ký cảm xúc hoặc Cài đặt.",
     "offline": "Bản thu đã tải và thông tin ghi công được lưu trên thiết bị. Dữ liệu tài khoản và cảm xúc không được lưu để dùng ngoại tuyến. Hãy gỡ riêng các bản tải khi dùng thiết bị chung.",
     "providers": "Dịch vụ tài khoản và nội dung sử dụng Supabase, Backblaze B2 và Vercel. Nếu bạn chọn tải trình phát YouTube hoặc mở Spotify, dịch vụ đó xử lý thông tin theo điều khoản và chính sách quyền riêng tư của họ.",
@@ -479,11 +460,9 @@
     }
   },
   "binaural": {
-    "eyebrow": "Một cách lắng nghe dịu dàng",
     "title": "Lắng nghe âm binaural",
-    "intro": "Khám phá hai âm thanh stereo nhẹ nhàng, riêng lẻ hoặc cùng âm nhạc. Chọn ý định lắng nghe và bắt đầu ở âm lượng nhỏ.",
+    "intro": "Hai âm stereo nhẹ, nghe riêng hoặc cùng âm nhạc. Hãy bắt đầu ở âm lượng nhỏ.",
     "chooseMode": "Chọn chế độ lắng nghe",
-    "yourSession": "Không gian lắng nghe của bạn",
     "preset": "Thiết lập có sẵn",
     "favoritePreset": "Yêu thích thiết lập này",
     "favorites": "Thiết lập yêu thích",
@@ -502,7 +481,7 @@
     "pause": "Tạm dừng",
     "resume": "Tiếp tục nghe",
     "stop": "Kết thúc",
-    "loadingEngine": "Đang chuẩn bị điều khiển âm thanh...",
+    "loadingEngine": "Đang chuẩn bị điều khiển âm thanh…",
     "loadingMusic": "Đang chuẩn bị nhạc nền. Bắt đầu hoặc tiếp tục khi sẵn sàng.",
     "completed": "Phiên nghe đã hoàn tất. Hãy dành một khoảnh khắc yên tĩnh.",
     "interrupted": "Âm thanh đã bị gián đoạn. Chọn Tiếp tục nghe khi bạn sẵn sàng.",
@@ -547,12 +526,12 @@
     "safetyReference": "WHO: hướng dẫn nghe an toàn",
     "states": {
       "idle": "Sẵn sàng khi bạn muốn",
-      "starting": "Đang bắt đầu nhẹ nhàng...",
+      "starting": "Đang bắt đầu nhẹ nhàng…",
       "playing": "Đang nghe",
-      "pausing": "Đang tạm dừng nhẹ nhàng...",
+      "pausing": "Đang tạm dừng nhẹ nhàng…",
       "paused": "Đã tạm dừng. Tiếp tục khi sẵn sàng.",
       "interrupted": "Đã gián đoạn. Chọn Tiếp tục nghe để nghe tiếp.",
-      "stopping": "Đang giảm âm...",
+      "stopping": "Đang giảm âm…",
       "completed": "Phiên nghe hoàn tất",
       "unsupported": "Âm thanh chưa khả dụng",
       "error": "Chưa bắt đầu được âm thanh"
@@ -560,31 +539,31 @@
     "modes": {
       "beta": {
         "title": "Beta",
-        "purpose": "Tập trung và rõ ràng",
-        "preset0": "Tập trung",
-        "preset1": "Chú tâm",
-        "preset2": "Tâm trí chủ động"
+        "purpose": "Nhịp đập nhanh và sáng",
+        "preset0": "Nhanh vừa",
+        "preset1": "Nhanh",
+        "preset2": "Rất nhanh"
       },
       "alpha": {
         "title": "Alpha",
-        "purpose": "Thư thái và sáng tạo",
-        "preset0": "Thư giãn nhẹ nhàng",
-        "preset1": "Nhận biết bình yên",
-        "preset2": "Dòng chảy sáng tạo"
+        "purpose": "Nhịp đập vừa và đều",
+        "preset0": "Chậm hơn",
+        "preset1": "Vừa",
+        "preset2": "Nhanh hơn"
       },
       "theta": {
         "title": "Theta",
-        "purpose": "Thiền sâu",
-        "preset0": "Tĩnh lặng chánh niệm",
-        "preset1": "Thiền sâu",
-        "preset2": "Chiêm nghiệm"
+        "purpose": "Nhịp đập chậm và mềm",
+        "preset0": "Rất chậm",
+        "preset1": "Chậm",
+        "preset2": "Chậm vừa"
       },
       "delta": {
         "title": "Delta",
-        "purpose": "Chuẩn bị nghỉ ngơi",
-        "preset0": "Chuẩn bị ngủ",
-        "preset1": "Đêm yên tĩnh",
-        "preset2": "Nghỉ ngơi sâu"
+        "purpose": "Nhịp đập rất chậm và trầm",
+        "preset0": "Chậm nhất",
+        "preset1": "Rất chậm",
+        "preset2": "Chậm"
       }
     },
     "engineError": "Không tải được bộ điều khiển nghe. Hãy kết nối lại và thử lần nữa, hoặc nghe nhạc thông thường.",
@@ -601,11 +580,11 @@
     "system": "Theo thiết bị",
     "day": "Ban ngày",
     "night": "Ban đêm",
-    "garden": "Chi tiết khu vườn",
+    "garden": "Cảnh ánh sáng",
     "auto": "3D tự động",
-    "still": "Vườn tĩnh - tiết kiệm pin và dữ liệu",
-    "calm": "Chế độ tĩnh",
+    "still": "Hình tĩnh, tiết kiệm pin",
+    "calm": "Chế độ êm dịu",
     "calmHelp": "Dừng mọi chuyển động trang trí.",
-    "help": "Lựa chọn được lưu trên thiết bị này. Bạn vẫn nghe nhạc với mọi chế độ khu vườn."
+    "help": "Lựa chọn được lưu trên thiết bị này. Nhạc vẫn phát như nhau với mọi lựa chọn cảnh."
   }
 }

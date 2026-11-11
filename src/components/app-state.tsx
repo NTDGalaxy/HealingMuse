@@ -224,6 +224,10 @@ export function usePersonalError(): string {
 export function useNotice(): string {
   return useStore(useAppStores().announcer);
 }
+/** The current notice while it is also shown on screen (spoken-only notices stay empty). */
+export function useToast(): string {
+  return useStore(useAppStores().announcer.toast);
+}
 export function useDownloadedRecords(): DownloadedTrack[] {
   return useStore(useAppStores().downloads.records, (records) => records.items);
 }

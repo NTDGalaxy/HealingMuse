@@ -3,7 +3,8 @@ import { documentRoot, garden, shell } from "../contracts";
 import { t, type Locale, type MessageKey, type MessageValues } from "../i18n";
 import type { GardenDetail, Theme } from "../test";
 
-type SideNavRoute = "explore" | "binaural" | "downloads" | "settings";
+export type SideNavRoute =
+  "home" | "explore" | "binaural" | "library" | "downloads" | "mood" | "settings";
 
 /** The persistent application chrome: navigation, appearance, dialogs and the garden. */
 export class Shell {
@@ -45,6 +46,18 @@ export class Shell {
   get sidebar() {
     return this.page.locator(shell.sidebar);
   }
+  /** Everything at the foot of the desktop sidebar, in order: its legal links and nothing else. */
+  get sidebarLegalItems() {
+    return this.page.locator(shell.sidebarLegal).locator(shell.children);
+  }
+  /** A legal link at the foot of the desktop sidebar, by its message key under `nav`. */
+  sidebarLegalLink(key: "privacy" | "terms" | "credits") {
+    return this.sidebar.getByRole("link", { name: this.t(`nav.${key}`), exact: true });
+  }
+  /** The contentinfo landmark that closes every page, after the main region. */
+  get pageFooter() {
+    return this.page.getByRole("contentinfo");
+  }
   /** Every search form; Home and Explore each render one. */
   get searchField() {
     return this.page.locator(shell.searchField);
@@ -64,6 +77,10 @@ export class Shell {
   }
   get mobileNav() {
     return this.page.locator(shell.mobileNav);
+  }
+  /** The text labels of the phone tabs, in order. */
+  get mobileNavLabels() {
+    return this.mobileNav.locator(shell.navLabel);
   }
   get moreButton() {
     return this.mobileNav.getByRole("button", { name: this.t("common.more"), exact: true });

@@ -246,7 +246,7 @@ function harness({ workerThrows = false } = {}) {
     },
     mark: () => marks.push(Date.now()),
     scene: { garden: "lotus", theme: "day" },
-    viewport: { width: 390, height: 844 },
+    viewport: { width: 390, height: 844, devicePixelRatio: 3 },
     visible: true,
   });
   const decorate = async () => {
@@ -266,7 +266,7 @@ describe("garden controller", () => {
     controller.setPolicy(true);
     expect(phase()).toMatchObject({ phase: "waiting" });
     controller.setScene({ garden: "fern", theme: "night" });
-    controller.resize({ width: 1440, height: 900 });
+    controller.resize({ width: 1440, height: 900, devicePixelRatio: 1 });
     expect(ports).toEqual([]);
     expect(marks).toEqual([]);
     await decorate();
@@ -275,17 +275,20 @@ describe("garden controller", () => {
     expect(ports.map((port) => [port.kind, port.init])).toEqual([
       [
         "worker",
-        { scene: { garden: "fern", theme: "night" }, viewport: { width: 1440, height: 900 } },
+        {
+          scene: { garden: "fern", theme: "night" },
+          viewport: { width: 1440, height: 900, devicePixelRatio: 1 },
+        },
       ],
     ]);
     ports[0].emit({ type: "ready" });
     expect(phase()).toMatchObject({ phase: "ready", renderer: "worker" });
     expect(ports[0].calls).toEqual([["visible", true]]);
     controller.setScene({ garden: "seed", theme: "day" });
-    controller.resize({ width: 800, height: 600 });
+    controller.resize({ width: 800, height: 600, devicePixelRatio: 2 });
     expect(ports[0].calls.slice(1)).toEqual([
       ["scene", { garden: "seed", theme: "day" }],
-      ["resize", { width: 800, height: 600 }],
+      ["resize", { width: 800, height: 600, devicePixelRatio: 2 }],
     ]);
   });
 

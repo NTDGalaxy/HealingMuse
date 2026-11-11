@@ -113,14 +113,19 @@ describe("field family", () => {
       'placeholder="Title or artist"',
       'type="search"',
     ]);
-    expect(form).toMatch(/\/><button class="button" type="submit">Search<\/button><\/form>$/);
+    // The submit button keeps its label as its name and carries the icon phones show instead.
+    expect(form).toMatch(
+      /\/><button class="button search-submit" type="submit"><svg [^>]*search-submit-icon[^>]*>.*?<\/svg><span class="search-submit-label">Search<\/span><\/button><\/form>$/,
+    );
     const plain = html(
       h(SearchField, { id: "review-search", label: "Search", placeholder: "Find" }),
     );
     expect(plain).toMatch(
       /^<form class="search-box" data-part="search-field"><label class="sr-only" for="review-search">Search<\/label><input /,
     );
-    expect(plain).toMatch(/\/><button class="button">Search<\/button><\/form>$/);
+    expect(plain).toMatch(
+      /\/><button class="button search-submit"><svg [^>]*>.*?<\/svg><span class="search-submit-label">Search<\/span><\/button><\/form>$/,
+    );
   });
 });
 

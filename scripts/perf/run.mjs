@@ -2,6 +2,7 @@
 // Timed 3 s gate for every route (see the gate definition in the plan and CLAUDE.md).
 // Usage: node scripts/perf/run.mjs --base=http://127.0.0.1:3127 [--routes=all|home,explore]
 //   [--locales=vi] [--theme=day | --themes=day,night] [--samples=30 | --quick] [--label=name] [--resume]
+//   [--commit=<sha>]  the build under test, when the server was built from another checkout
 import { chromium, devices } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
@@ -150,14 +151,18 @@ function probe(/** @type {{ kind: string, audio: string | null }} */ contract) {
   );
 }
 
-const browser = await chromium.launch({ headless: true });
-const commit = (() => {
+const harnessCommit = (() => {
   try {
     return execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
   } catch {
     return null;
   }
 })();
+// The report names the build it measured. By default the server is assumed to be built from this
+// checkout; a comparison run that measures a server built elsewhere must say which build that is.
+const commit = argument("commit", harnessCommit ?? "");
+if (commit && !/^[0-9a-f]{7,40}$/.test(commit)) throw new Error("Invalid --commit");
+const browser = await chromium.launch({ headless: true });
 
 /** CPU calibration: a fixed workload under the same throttle, reported with the results. */
 async function calibrate() {
@@ -289,7 +294,8 @@ const summaries = cells.map((cell) => ({
 const report = {
   schemaVersion: 1,
   label,
-  commit,
+  commit: commit || null,
+  harnessCommit,
   startedAt,
   finishedAt: new Date().toISOString(),
   base: new URL(base).host,

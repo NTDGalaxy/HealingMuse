@@ -6,11 +6,13 @@ import {
   expectPlaying,
   expectPrimaryReady,
   expectSameListeningSession,
+  expectNoHorizontalOverflow,
   holdRequests,
   markListeningSession,
 } from "./support/test";
-import { recordings as prepared, uniqueSearchTerm } from "./support/contracts";
+import { recordings as prepared, size, uniqueSearchTerm } from "./support/contracts";
 import { Explore, Recordings, Shell } from "./support/pages";
+import type { SideNavRoute } from "./support/pages/shell";
 test("switching language preserves the native listening session", async ({ page }) => {
   await page.goto("/en");
   await new Recordings(page).listen(prepared.first.title.en).click();
@@ -78,3 +80,81 @@ test("Explore Next keeps keyboard focus while the next page loads", async ({ pag
   // search parameters), so focus restarts at the top as on a page load; keeping the controls
   // mounted across pages is redesign work.
 });
+
+for (const viewport of [
+  { width: 320, height: 740 },
+  { width: 1440, height: 900 },
+]) {
+  test(`language and legal links are full-size targets at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    const shell = new Shell(page, "vi");
+    await page.setViewportSize(viewport);
+    await page.goto("/vi");
+    // The narrowest top bar offers only the other language; wider ones offer both.
+    const offered = viewport.width <= 380 ? (["en"] as const) : (["vi", "en"] as const);
+    for (const locale of offered) {
+      const box = (await shell.languageLink(locale).boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(size.touchTarget);
+      expect(box.height).toBeGreaterThanOrEqual(size.touchTarget);
+    }
+    if (viewport.width <= 380) await expect(shell.languageLink("vi")).toBeHidden();
+    if (await shell.sidebar.isVisible())
+      for (const key of ["privacy", "terms", "credits"] as const)
+        expect((await shell.sidebarLegalLink(key).boundingBox())!.height).toBeGreaterThanOrEqual(
+          size.touchTarget,
+        );
+    await expectNoHorizontalOverflow(page);
+  });
+}
+const sideNavRoutes = [
+  "home",
+  "explore",
+  "binaural",
+  "library",
+  "downloads",
+  "mood",
+  "settings",
+] as const satisfies readonly SideNavRoute[];
+// 1024 and 1100 px take the narrower 216 px sidebar; 1440 px the full one.
+for (const width of [1024, 1100, 1440])
+  for (const locale of ["vi", "en"] as const)
+    test(`the sidebar's destinations and legal links read cleanly at ${width}px in ${locale}`, async ({
+      page,
+    }) => {
+      const shell = new Shell(page, locale);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/${locale}`);
+      for (const key of sideNavRoutes)
+        expect(
+          (await shell.sideNavLink(key).boundingBox())!.height,
+          `${key} keeps its name on one line`,
+        ).toBeLessThanOrEqual(size.sideNavItem);
+      // Only the three links: no separator a line break could leave stranded at a line's end.
+      await expect(shell.sidebarLegalItems).toHaveText(
+        (["privacy", "terms", "credits"] as const).map((key) => shell.t(`nav.${key}`)),
+      );
+    });
+
+// 320 px is the narrowest supported phone; at 360 px and below the labels drop to 13 px.
+for (const width of [320, 360])
+  for (const locale of ["vi", "en"] as const)
+    test(`the phone tabs' labels stay apart at ${width}px in ${locale}`, async ({ page }) => {
+      const shell = new Shell(page, locale);
+      await page.setViewportSize({ width, height: 740 });
+      await page.goto(`/${locale}/explore`);
+      const boxes = [];
+      for (const label of await shell.mobileNavLabels.all())
+        boxes.push((await label.boundingBox())!);
+      expect(boxes).toHaveLength(5);
+      for (let index = 1; index < boxes.length; index++) {
+        const before = boxes[index - 1];
+        expect(
+          boxes[index].x - (before.x + before.width),
+          `space before tab ${index + 1}`,
+        ).toBeGreaterThanOrEqual(size.tabLabelGap);
+      }
+      for (const tab of await shell.mobileNav.getByRole("link").all())
+        expect((await tab.boundingBox())!.width).toBeGreaterThanOrEqual(size.touchTarget);
+      await expectNoHorizontalOverflow(page);
+    });

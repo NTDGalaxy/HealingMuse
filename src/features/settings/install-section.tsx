@@ -35,7 +35,7 @@ export function InstallSection() {
           {t("settings.installButton")}
         </Button>
       ) : (
-        <p className="muted small">{t("settings.installManual")}</p>
+        <p className="muted">{t("settings.installManual")}</p>
       )}
     </section>
   );

@@ -24,6 +24,8 @@ class FakeAudio extends EventTarget implements AudioOutput {
   currentTime = 0;
   duration = Number.NaN;
   error: unknown = null;
+  volume = 1;
+  muted = false;
   refusePlay = false;
   buffering = false;
   private source: string | null = null;
@@ -530,6 +532,23 @@ describe("playback engine", () => {
     slow.resolve("grant:a");
     await flush();
     expect(audio.getAttribute("src")).toBeNull();
+  });
+
+  it("keeps the volume and mute for the visit, including on an element attached later", () => {
+    const { engine, audio, detach } = setup();
+    engine.setVolume(0.4);
+    engine.toggleMute();
+    expect([audio.volume, audio.muted]).toEqual([0.4, true]);
+    // Raising the slider ends the mute; values outside the range are clamped.
+    engine.setVolume(1.7);
+    expect([audio.volume, audio.muted]).toEqual([1, false]);
+    engine.setVolume(0);
+    engine.toggleMute();
+    detach();
+    const next = new FakeAudio();
+    engine.attach(next, new EventTarget())();
+    expect([next.volume, next.muted]).toEqual([0, true]);
+    expect(engine.state.getSnapshot()).toMatchObject({ volume: 0, muted: true });
   });
 });
 

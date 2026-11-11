@@ -1,6 +1,6 @@
 # HealingMuse
 
-A Vietnamese-first music and wellbeing PWA for adults living with cancer, with an English interface and a garden for every page.
+A Vietnamese-first music and wellbeing PWA for adults living with cancer, with an English interface and a light scene behind every page.
 HealingMuse offers recreational listening and optional personal reflection without treatment claims.
 The current published catalogue contains **348 human-created instrumental recordings**, available to browse and play without signing in.
 The application contains no runtime AI models, chatbots, transcription or generation APIs.
@@ -12,7 +12,7 @@ The application contains no runtime AI models, chatbots, transcription or genera
 - [Listening and discovery](#listening-and-discovery)
 - [Binaural sessions](#binaural-sessions)
 - [Library, downloads and reflection](#library-downloads-and-reflection)
-- [Botanical design and accessibility](#botanical-design-and-accessibility)
+- [Design and accessibility](#design-and-accessibility)
 - [Accounts and email delivery](#accounts-and-email-delivery)
 - [Local development](#local-development)
 - [Configuration](#configuration)
@@ -115,40 +115,45 @@ The retention migration schedules removal of entries older than 90 days.
 Revoking mood consent removes the associated listening sessions and check-ins.
 Content administrators do not gain access to another user's mood data through their content role.
 
-## Botanical design and accessibility
+## Design and accessibility
 
-HealingMuse keeps its lavender, plum and jade identity, logo and self-hosted Be Vietnam Pro typography.
-Translucent panels, reflective edges and bounded frosted navigation frame the scenery.
-Reading areas use stronger surface tinting to preserve text contrast.
-Recording cards align their actions consistently, and forms retain normal document flow on smaller screens.
+HealingMuse looks like a music app after dark: a plum-night interface with a lavender-white day twin.
+It keeps its lavender, plum and jade identity, logo and self-hosted Be Vietnam Pro typography.
+Neon jade is reserved for listening: the Play control, the playing state and progress.
+While a recording plays, the top of the screen takes on that recording's colours and cross-fades when the recording changes.
+Every recording has its own generated cover, drawn in code from its identifier, artwork family and colour, so covers need no image requests or photographs.
+Home leads with one named recording that plays in one tap, with what to hear next beside or below it.
+Cards use 16-pixel corners, covers and fields 12-pixel corners, and controls are pills with a round Play.
+Glass is limited to the top bar and the dialog veil; content panels are solid.
 
-| Page              | Route after `/vi` or `/en` | Garden                      |
-| ----------------- | -------------------------- | --------------------------- |
-| Home              | `/`                        | Floating lotus court        |
-| Explore           | `/explore`                 | Sculptural fern ravine      |
-| Binaural          | `/brainwave-entrainment`   | Moonflower amphitheatre     |
-| Library           | `/library`                 | Wisteria arbor              |
-| Downloads         | `/downloads`               | Seed conservatory           |
-| Mood              | `/mood`                    | Water-lily pool             |
-| Settings          | `/settings`                | Bonsai courtyard            |
-| Content studio    | `/admin`                   | Propagation glasshouse      |
-| Password recovery | `/reset-password`          | Orchid vestibule            |
-| Privacy           | `/privacy`                 | Sheltered fern cloister     |
-| Terms             | `/terms`                   | Cypress arcade              |
-| Credits           | `/credits`                 | Botanical sculpture gallery |
+| Page              | Route after `/vi` or `/en` | Light scene      |
+| ----------------- | -------------------------- | ---------------- |
+| Home              | `/`                        | Concentric rings |
+| Explore           | `/explore`                 | Resting meter    |
+| Binaural          | `/brainwave-entrainment`   | Slow waves       |
+| Library           | `/library`                 | Orbits           |
+| Downloads         | `/downloads`               | Point grid       |
+| Mood              | `/mood`                    | Ripples          |
+| Settings          | `/settings`                | Prisms           |
+| Content studio    | `/admin`                   | Point grid       |
+| Password recovery | `/reset-password`          | Concentric rings |
+| Privacy           | `/privacy`                 | Ripples          |
+| Terms             | `/terms`                   | Resting meter    |
+| Credits           | `/credits`                 | Orbits           |
 
-Authentication dialogs retain the current route's garden.
-The offline shell uses a sheltered garden still.
-Botanical imagery is decorative and does not imply that nature recordings are included in the current instrumental release.
+Each scene is one of seven light forms drawn by a shared interpreter; scenes that share a form differ by their own seed.
+Scene ids keep their earlier route keys, which the posters, service worker and route registry use.
+Authentication dialogs keep the current route's scene, and the offline shell uses a still.
+The scenes are decorative and move slowly; nothing pulses with the music or the binaural beat.
 
 ### Appearance and motion
 
-Your garden and Settings expose System, Day and Night appearance, plus Automatic and Still garden detail.
+Settings and the appearance dialog expose System, Day and Night appearance, plus Automatic 3D and Still image scene detail.
 Appearance is applied before hydration and stored locally without a database change.
-Automatic rendering uses one persistent Three.js scenery host and one active garden.
+Automatic rendering uses one persistent Three.js scene host and one active scene, tinted by the playing recording's colours.
 Where supported, rendering runs through OffscreenCanvas in a worker.
 A lightweight main-thread renderer and matching responsive posters provide fallbacks.
-Mobile rendering starts at 30 fps with capped resolution.
+Mobile rendering starts at 30 fps; resolution is capped per quality tier and never exceeds the device pixel ratio.
 Sustained slow rendering reduces quality, then switches to a still without repeatedly oscillating between tiers.
 Hidden tabs suspend rendering, and renderer failures do not block the audio player.
 A pure state machine in [src/lib/garden/controller.ts](src/lib/garden/controller.ts) owns that lifecycle, and both renderers sit behind one port interface.
@@ -156,17 +161,17 @@ That runtime and the GSAP layer are loaded on demand, so they add nothing to a r
 The scene and the GSAP layer start only once the route's primary control is usable and any recording that is starting has played or failed, so decoration never competes with the first sound.
 A renderer that has not drawn its first frame eight seconds after the scene starts is replaced by the poster.
 
-Short page entrances introduce the heading and listening surfaces.
-New catalogue results use a capped stagger, including results that reuse existing recording cards.
-Selections, pressed controls, disclosures and dialogs provide brief visual feedback.
+CSS owns control feedback and the arrival of headings, disclosures and dialogs ([src/styles/motion.css](src/styles/motion.css)).
+GSAP owns content reveals: new catalogue results use a capped stagger, including results that reuse existing recording cards.
+The scene owns ambient motion.
 Listening controls in the first viewport stay stationary during their entrance.
 Entrances never require hidden default content, and scrolling remains native.
 GSAP scopes and shared observers are cleaned up on route and preference changes.
 
-Calm and reduced motion stop decorative animation.
-Still garden reduces graphics work and data transfer while retaining ordinary interface feedback.
+Calm and reduced motion stop decorative animation, press feedback and the colour cross-fade.
+Still image reduces graphics work and data transfer while retaining ordinary interface feedback.
 Reduced transparency replaces translucent surfaces with opaque fills.
-Keyboard navigation, visible focus, accessible dialogs, status announcements and 44-pixel primary touch controls are part of the implementation.
+Keyboard navigation, visible focus, accessible dialogs, status announcements, 48-pixel touch targets, 16-pixel body copy and a 14-pixel text floor are part of the implementation.
 Mobile navigation provides Home, Explore, Binaural and Library, plus More for the remaining destinations.
 Focus is scrolled above fixed navigation and player surfaces when needed.
 Automated accessibility checks complement the separate screen-reader and physical-device checks described below.
@@ -205,7 +210,7 @@ Changing the app's site variable alone does not update Supabase's separate Auth 
 ### Requirements
 
 - Node.js 22 and npm.
-- Playwright Chromium for browser checks and garden-poster rendering.
+- Playwright Chromium for browser checks and scene-poster rendering.
 - A configured Supabase project for accounts and cloud-backed application data.
 - Prepared, licensed local recordings for an audio-enabled local preview.
 
@@ -303,12 +308,14 @@ Appearance and graphics preferences require no database migration.
 ### Repository map
 
 ```text
-src/app/                 Localized routes, API handlers and interface styles
+src/app/                 Localized routes and API handlers
+src/styles/              Design tokens and the global stylesheets, in cascade order
 src/components/          Shell, players, discovery and shared components
 src/components/ui/       Interface primitives: buttons, fields, states, pagers, lists, confirmations
 src/features/            Account, library, downloads, mood, settings, legal and admin screens
 src/lib/binaural/        Validated session configuration and stereo audio engine
-src/lib/garden/          Procedural scenes, lifecycle controller, renderers and worker protocol
+src/lib/garden/          Procedural light scenes, lifecycle controller, renderers and worker protocol
+src/lib/artwork.ts       Generated recording covers and the palettes the wash and scenes share
 src/lib/browser/         Downloads, API client and client-side utilities
 src/lib/server/          Catalogue, storage resolver and API boundaries
 src/lib/storage/         Optional B2 signing and integrity checks
@@ -316,7 +323,7 @@ src/messages/            Vietnamese and English source messages
 src/offline/             Service-worker source
 public/gardens/          Responsive posters rendered from the runtime scenes
 public/offline/          Offline shell and generated translations/fonts
-content/                 Source metadata, provider rules and artwork provenance
+content/                 Source metadata, provider rules and scene provenance
 supabase/migrations/     Ordered, checksum-tracked schema migrations
 scripts/                 Builds, preparation, delivery and validation tools
 tests/                   Unit, browser, integration and visual evidence
@@ -422,7 +429,7 @@ A baseline and its check must therefore come from the same configuration.
 ### Stylesheets
 
 [src/styles/index.ts](src/styles/index.ts) is the single style entry, imported by the root layout and the Vite component fixture.
-It loads Tailwind first (which declares the cascade layer order), then [src/styles/tokens.css](src/styles/tokens.css), the only place custom properties are set on the root element, then the bespoke stylesheets in `src/app/`, whose rules all live in `@layer components`.
+It loads Tailwind first (which declares the cascade layer order), then [src/styles/tokens.css](src/styles/tokens.css), the only place custom properties are set on the root element, then the bespoke stylesheets in `src/styles/` (base, shell, catalogue, overlays, pages and motion, in that order), whose rules all live in `@layer components`.
 `npm run css:analyze` reports duplicated selectors, shadowed declarations, never-referenced classes and tokens declared outside `tokens.css`; `npm run css:analyze -- --fix` removes shadowed declarations while keeping `!important` ones and fallbacks for browsers below the Next.js support floor.
 Check any stylesheet change with the visual equivalence oracle.
 
@@ -436,14 +443,14 @@ npm run budgets
 
 Poster generation renders the actual runtime scenes through installed Playwright Chromium and creates responsive AVIF/WebP assets.
 It does not access cloud audio or use a paid generation service.
-Prompts, provenance and licenses are recorded in [content/garden-assets.json](content/garden-assets.json).
+Provenance and licenses are recorded in [content/garden-assets.json](content/garden-assets.json).
 `npm run budgets` (also `npm run garden:budget`) runs [scripts/check-budgets.mjs](scripts/check-budgets.mjs) against the build manifests, with no browser, timing or network.
 For every route in `src/lib/routes.ts` it gates startup JS and CSS (re-gzipped at level 9), the fonts resolved from the startup `@font-face` rules, and the mobile poster against the ceilings in [budgets.json](budgets.json).
 It fails when a forbidden module (Radix dialog, three.js, GSAP, the binaural engine, Zod, supabase-js or the YouTube embed) ships in a route's startup JS without a `ratchetModules` allowance, and when a detector marker no longer matches any emitted chunk.
 The emitted graphics chunks, including dependencies and workers, must stay within **220 KiB gzip**, and each mobile poster must remain **80 KiB or less**.
 Graphics chunks are found by marker strings: three.js and GSAP by text their builds contain, and the garden scenes, worker, host runtime and GSAP layer by the literals listed in [src/lib/garden/budget-markers.ts](src/lib/garden/budget-markers.ts).
 A ceiling may only rise in a commit that states the metric, its old and new value and timed-gate evidence, approved in the pull request.
-Catalogue-dependent bytes (artwork images and, with `--base=<url>`, HTML) are reported in `artifacts/budget-report.json` and never gated.
+Catalogue-dependent bytes (HTML, with `--base=<url>`) are reported in `artifacts/budget-report.json` and never gated.
 Generated shell assets are rebuilt through `scripts/build-shell.mjs`, which also runs before normal builds.
 Edit source translations or service-worker code and regenerate their outputs instead of editing generated files directly.
 The offline shell is listed once, in [src/offline/shell.mjs](src/offline/shell.mjs): the build writes that list into `public/sw.js`, hashes every listed file (icons included) into the cache version, and the service-worker spec serves the same list.
@@ -519,6 +526,6 @@ Do not manually edit generated files or changelogs, and do not add agent coautho
 Write full sentences on separate lines in long Markdown files.
 
 Application source is distributed under the [MIT license](LICENSE).
-Music and third-party artwork retain their individual licenses and attribution requirements.
-See recording details, the Credits page, [audio source metadata](content/audio-sources.json), [artwork credits](content/artwork-credits.json) and [garden provenance](content/garden-assets.json).
-Development-generated decorative concepts are distinct from the human-created music catalogue.
+Music retains its individual licenses and attribution requirements.
+See recording details, the Credits page, [audio source metadata](content/audio-sources.json) and [scene provenance](content/garden-assets.json).
+Generated covers and light scenes are decorative and distinct from the human-created music catalogue.

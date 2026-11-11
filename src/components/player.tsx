@@ -27,6 +27,7 @@ const Context = createContext<{
   playing: boolean;
   controlsHidden: boolean;
   play: (track: Track, queue?: readonly Track[], continuation?: CatalogQuery) => void;
+  toggle: () => Promise<void>;
   pauseForOtherAudio: () => void;
   registerOtherAudio: (pause: () => void) => () => void;
   setControlsHidden: (hidden: boolean) => void;
@@ -83,7 +84,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       online: () => navigator.onLine,
       announce: (key, track) => {
         const { t, locale } = i18n.current;
-        actions.announce(track ? t(key, { title: track.title[locale] }) : t(key));
+        // The player bar already shows what loads and plays; those notices are spoken only.
+        const visual = key !== "player.loadingStatus" && key !== "player.playingStatus";
+        actions.announce(track ? t(key, { title: track.title[locale] }) : t(key), { visual });
       },
       failed: () => monitor("playback_failed"),
       beginPlaybackStart,
@@ -113,6 +116,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       playing,
       controlsHidden,
       play: engine.play,
+      /** Pauses the loaded recording, or resumes (or retries) it. */
+      toggle: engine.toggle,
       pauseForOtherAudio: engine.pauseForOtherAudio,
       registerOtherAudio: engine.registerOtherAudio,
       setControlsHidden: engine.setControlsHidden,

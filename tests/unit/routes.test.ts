@@ -23,7 +23,9 @@ describe("route registry", () => {
 
   it("matches the pages that exist, in both directions", () => {
     const pages = readdirSync(appDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(`${appDir}/${entry.name}/page.tsx`))
+      // A bracketed directory is the catch-all that renders not-found, not a destination.
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("["))
+      .filter((entry) => existsSync(`${appDir}/${entry.name}/page.tsx`))
       .map((entry) => entry.name);
     const segments = routes.map((entry) => entry.segment).filter(Boolean);
     expect([...segments].sort()).toEqual([...pages].sort());

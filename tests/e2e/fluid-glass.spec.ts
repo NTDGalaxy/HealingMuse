@@ -70,12 +70,15 @@ test("dialog entrances and exits keep repeated keyboard focus restoration", asyn
 test("later phone cards rise while the first listening target stays stationary", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  // A small phone, so the last recording up next starts below the first view.
+  await page.setViewportSize({ width: 375, height: 667 });
   await watchCardMoves(page);
   await page.goto("/vi");
   await expectMotionStarted(page);
   await expectMotionSettled(page);
-  await new Recordings(page, "vi").moreCards.last().scrollIntoViewIfNeeded();
+  const later = new Recordings(page, "vi").moreCards.last();
+  expect((await later.boundingBox())!.y).toBeGreaterThan(667);
+  await later.scrollIntoViewIfNeeded();
   await expect.poll(() => cardMoved(page, "later")).toBe(true);
   expect(await cardMoved(page, "first")).toBe(false);
 });
@@ -135,22 +138,26 @@ test("glass remains readable in both themes and becomes opaque with reduced tran
     await appearance({ theme, garden: "still" });
     await page.goto("/en/settings");
     await shell.expectTheme(theme);
-    const panel = new Settings(page).appearance;
-    expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
+    // Glass is kept for the bounded fixed navigation, once content scrolls under it; content
+    // panels are solid in every mode.
+    const glass = shell.topbar;
+    await page.evaluate(() => window.scrollTo(0, 320));
+    await expect(glass).toHaveAttribute(chrome.scrolled, "");
+    await expectMotionSettled(page);
+    expect(await glass.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.translucent,
     );
-    await expectMotionSettled(page);
     await expectAccessible(page, chrome.main, { allRules: true });
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setEmulatedMedia", {
       features: [{ ...style.reducedTransparency }],
     });
-    expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
+    expect(await glass.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(
       style.opaque,
     );
-    expect(
-      await shell.sidebar.evaluate((element) => getComputedStyle(element).backdropFilter),
-    ).toBe(style.none);
+    expect(await glass.evaluate((element) => getComputedStyle(element).backdropFilter)).toBe(
+      style.none,
+    );
     await cdp.send("Emulation.setEmulatedMedia", { features: [] });
     await cdp.detach();
   }

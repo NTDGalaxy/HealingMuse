@@ -21,6 +21,7 @@ import {
   decorationWaitedForSound,
   expectMotionLoaded,
   expectMotionStarted,
+  expectMotionUnavailable,
   firstSound,
   motionPassTimes,
   pageTime,
@@ -30,7 +31,6 @@ import {
 } from "./support/motion";
 import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 import { graphicsMarkers } from "../../src/lib/garden/budget-markers";
-test.use({ launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } });
 
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
   await page.goto("/en");
@@ -110,9 +110,10 @@ for (const locale of ["en", "vi"] as const)
       await expect(first.playLabel).toBeVisible();
       const label = await first.playLabel.boundingBox();
       expect(label!.height).toBeLessThanOrEqual(size.compactLabel);
+      // The artwork leads; the name, artist and Play sit beneath it.
       const art = await first.art.boundingBox();
       const description = await first.description.boundingBox();
-      expect(art!.x + art!.width).toBeLessThan(description!.x);
+      expect(art!.y + art!.height).toBeLessThanOrEqual(description!.y);
       await expectNoHorizontalOverflow(page);
       await expect(shell.gardenCanvas).toHaveCount(0);
     });
@@ -274,17 +275,23 @@ test.describe("WebGL lifecycle", () => {
     // The scene runtime and the GSAP layer load on demand; offline, or after a newer deploy, the
     // request fails. Decoration is optional, so the page must carry on with the poster.
     const lazy = [graphicsMarkers.host.marker, graphicsMarkers.motion.marker];
-    let refused = 0;
+    const refused = new Set<string>();
     await page.route(chunkRoute, async (route) => {
       const response = await route.fetch();
       const body = await response.text();
-      if (!lazy.some((marker) => body.includes(marker))) return route.fulfill({ response, body });
-      refused++;
+      const marker = lazy.find((candidate) => body.includes(candidate));
+      if (!marker) return route.fulfill({ response, body });
+      refused.add(marker);
       return route.abort("failed");
     });
     await page.goto("/en");
-    await expect.poll(() => refused).toBe(lazy.length);
+    // Both were attempted. Next's chunk loader retries a failed chunk once after a short random
+    // delay, so the number of refused requests says nothing; which modules were refused does.
+    await expect.poll(() => lazy.filter((marker) => refused.has(marker))).toEqual(lazy);
+    // Then both gave up for good, retries included, so no load is still pending when the checks
+    // below run or when the test closes the page.
     await shell.expectGardenState("still");
+    await expectMotionUnavailable(page);
     await expect(shell.gardenCanvas).toHaveCount(0);
     await new Recordings(page).featuredPlay.click();
     await expectPlaying(page);

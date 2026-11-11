@@ -7,28 +7,14 @@ import {
 } from "./support/test";
 import { paginateTracks } from "../../src/lib/catalog-query";
 import type { Track } from "@/lib/types";
-import { preparedCatalogue } from "./support/catalogue";
+import { syntheticCatalogue } from "./support/catalogue";
 import { Binaural } from "./support/pages";
 
-async function catalogue() {
-  const template = (await preparedCatalogue())[0];
-  return Array.from({ length: 348 }, (_, index): Track => ({
-    ...template,
-    id: `80000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
-    title: {
-      en: `Instrumental ${index + 1}`,
-      vi: index === 347 ? "Đàn bầu bên dòng sông" : `Nhạc không lời ${index + 1}`,
-    },
-    artist: "Synthetic catalogue fixture",
-    status: "published",
-    position: index,
-    category: "instrumental",
-    source: { kind: "hosted", path: "synthetic.mp3" },
-    goals: ["relax"],
-    genres: [index % 2 ? "folk" : "classical"],
-    instruments: [index % 2 ? "strings" : "piano"],
-    traditions: ["vietnamese"],
-  }));
+/** The production-sized catalogue; the last recording has a diacritic-rich Vietnamese name. */
+function catalogue(): Promise<Track[]> {
+  return syntheticCatalogue(348, (track, index) =>
+    index === 347 ? { ...track, title: { ...track.title, vi: "Đàn bầu bên dòng sông" } } : track,
+  );
 }
 test("all 348 recordings are reachable with bounded pages, a final page and previous navigation", async ({
   page,

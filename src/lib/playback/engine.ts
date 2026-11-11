@@ -18,6 +18,8 @@ export interface AudioOutput extends EventTarget {
   readonly duration: number;
   readonly error: unknown;
   src: string;
+  volume: number;
+  muted: boolean;
   play(): Promise<void>;
   pause(): void;
   load(): void;
@@ -51,6 +53,9 @@ export type PlayerState = Readonly<{
   /** Set while the binaural page owns the screen and the player bar stays out of the way. */
   controlsHidden: boolean;
   external: ExternalRequest | null;
+  /** 0 to 1, applied to the element; kept for the visit, across routes and recordings. */
+  volume: number;
+  muted: boolean;
 }>;
 
 /** A start waiting for the optional mood check-in before listening. */
@@ -110,6 +115,8 @@ const initialState: PlayerState = {
   error: "",
   controlsHidden: false,
   external: null,
+  volume: 1,
+  muted: false,
 };
 
 export function createPlaybackEngine(deps: PlaybackDeps) {
@@ -362,6 +369,9 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
      */
     attach(element: AudioOutput, page: EventTarget = document) {
       audio = element;
+      const { volume, muted } = state.getSnapshot();
+      element.volume = volume;
+      element.muted = muted;
       const listeners: [string, () => void][] = [
         [
           "play",
@@ -421,6 +431,21 @@ export function createPlaybackEngine(deps: PlaybackDeps) {
     },
     toggleRepeat() {
       patch({ repeat: !state.getSnapshot().repeat });
+    },
+    /** The volume slider, 0 to 1; raising it above silence also ends a mute. */
+    setVolume(value: number) {
+      const volume = Math.min(1, Math.max(0, Number.isFinite(value) ? value : 1));
+      const muted = volume > 0 ? false : state.getSnapshot().muted;
+      patch({ volume, muted });
+      if (audio) {
+        audio.volume = volume;
+        audio.muted = muted;
+      }
+    },
+    toggleMute() {
+      const muted = !state.getSnapshot().muted;
+      patch({ muted });
+      if (audio) audio.muted = muted;
     },
     setTimer: timer.set,
 
