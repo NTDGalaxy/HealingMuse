@@ -219,9 +219,10 @@ const bottom = ({ y, height }: { y: number; height: number }) => y + height;
 const right = ({ x, width }: { x: number; width: number }) => x + width;
 
 // Home's featured composition by width while a recording plays: stacked on phones, the cover
-// beside its name with up next full width below on tablets, and up next beside the cover on
-// desktops. On tablets Listen and the first line up next stay in the first view, above the
-// docked mini player or the player bar.
+// beside its name with up next full width below on tablets, up next beside the cover under the
+// name on desktops, and the cover, the name and up next in three columns on wide screens. On
+// tablets and wide screens Listen and up next stay in the first view, above the docked mini
+// player or the player bar.
 for (const { width, height, composition } of [
   { width: layout.featuredBesideMinWidth - 1, height: 1000, composition: "stacked" },
   { width: layout.featuredBesideMinWidth, height: 900, composition: "beside" },
@@ -230,6 +231,9 @@ for (const { width, height, composition } of [
   { width: 1000, height: 800, composition: "beside" },
   { width: layout.featuredColumnMinWidth - 1, height: 768, composition: "beside" },
   { width: layout.featuredColumnMinWidth, height: 768, composition: "column" },
+  { width: layout.featuredWideMinWidth - 1, height: 900, composition: "column" },
+  { width: layout.featuredWideMinWidth, height: 900, composition: "wide" },
+  { width: 1920, height: 1080, composition: "wide" },
 ] as const) {
   test(`Home at ${width}x${height} lays its featured recording out ${composition}`, async ({
     page,
@@ -255,10 +259,18 @@ for (const { width, height, composition } of [
       const playerTop = (await box(player.bar)).y;
       expect(bottom(await box(recordings.featured.play))).toBeLessThanOrEqual(playerTop);
       expect(bottom(next)).toBeLessThanOrEqual(playerTop);
-    } else {
+    } else if (composition === "column") {
       expect(name.x).toBeGreaterThanOrEqual(right(art));
       expect(next.x).toBeGreaterThanOrEqual(right(art));
       expect(next.y).toBeLessThan(bottom(art));
+    } else {
+      // Up next has its own column beside the name's, level with the cover.
+      expect(name.x).toBeGreaterThanOrEqual(right(art));
+      expect(next.x).toBeGreaterThanOrEqual(right(name));
+      expect(next.y).toBeLessThan(bottom(art));
+      const playerTop = (await box(player.bar)).y;
+      expect(bottom(await box(recordings.featured.play))).toBeLessThanOrEqual(playerTop);
+      expect(bottom(await box(recordings.moreCards.last()))).toBeLessThanOrEqual(playerTop);
     }
     await expectNoHorizontalOverflow(page);
   });

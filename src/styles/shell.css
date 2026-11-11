@@ -319,10 +319,11 @@
     color: var(--text);
     font-weight: 700;
   }
+  /* The page fills the space beside the sidebar, with the top bar's gutters, so their edges meet;
+     text, forms and the featured recording keep their own widths. */
   main {
     flex: 1;
     width: 100%;
-    max-width: calc(var(--content) + var(--gutter) * 2);
     padding: 12px var(--gutter) 56px;
   }
   main:focus {

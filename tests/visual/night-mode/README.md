@@ -62,7 +62,24 @@ Below 700 px Home stays stacked, and from 1024 px up next moves beside the cover
 
 At 1000 by 800 and 1023 by 768, where the sidebar and the player bar take their room, the stacked layout put Listen below the fold.
 Beside the name it ends at 454 px at 1000 by 800, and the first line up next ends above the player bar.
-A name column narrower than 350 px (700 to about 780 px and 900 to about 1010 px) takes the compact Listen pill, as at 1024 px.
+A name column narrower than 350 px (700 to about 780 px, and 900 to 1023 px with a desktop scrollbar) takes the compact Listen pill, as at 1024 px.
+
+## Wide screens
+
+| A 1280 px column at the left (1920 by 911, with a desktop scrollbar) | The page fills the width, the owner's choice |
+| --- | --- |
+| ![Home at 1920 px: the content stops 297 px short of the top bar's controls, and Listen's actions sit 482 px from it](before-wide-en-home-night.webp) | ![Home at 1920 px: cover, name and up next in three columns, search beside the moments, edges aligned with the top bar](after-wide-en-home-night.webp) |
+| ![Settings at 1920 px: 1230 px selects and a Calm switch far from its name](before-wide-en-settings-night.webp) | ![Settings at 1920 px: field-width selects and the switch beside its name, panels side by side](after-wide-en-settings-night.webp) |
+
+On a 1920 px window the page stopped 1280 px wide at the left while the top bar's controls sat at the window's edge, so their edges missed by 297 px, and controls drifted from what they act on: Listen's favourite, download and details sat 482 px from it, and Settings' selects were 1230 px wide.
+The owner chose filling the width on 2026-11-12.
+The page now fills the space beside the sidebar with the top bar's gutters, and from 1600 px Home sets the cover, the name and up next in three columns, with its search beside the moments to listen for.
+Fields grow to 32rem at most, a setting's switch stays within that width, Settings sits in three columns from 1600 px, and Listen's actions follow it wherever the name sits beside the cover.
+
+![Explore at 1920 px: seven tiles a row, with the search, the kinds and the filters as one block](after-wide-en-explore-night.webp)
+
+Explore shows seven tiles a row at 1920 px, and its search, the kinds and Listening filters form one block of at most 880 px; the filters open from the kinds' row.
+Beside the sidebar the document keeps room for a desktop scrollbar on every page, so the top bar no longer moves 15 px between a page that scrolls and one that does not.
 
 ## Binaural
 
@@ -72,7 +89,7 @@ Band names stay, with Hz ranges and sound descriptors that make no claim about a
 
 ## Evidence and limits
 
-The regression suites are [mobile-player.spec.ts](../../e2e/mobile-player.spec.ts) for touch, pointer, narrow and downloaded lines and for Home's featured composition from 699 to 1024 px, [navigation.spec.ts](../../e2e/navigation.spec.ts) for the 320 px tabs, and [personal-features.spec.ts](../../e2e/personal-features.spec.ts) for a saved heart on a narrow line.
+The regression suites are [mobile-player.spec.ts](../../e2e/mobile-player.spec.ts) for touch, pointer, narrow and downloaded lines and for Home's featured composition from 699 to 1920 px, [wide-layout.spec.ts](../../e2e/wide-layout.spec.ts) for wide screens (the frame, the scrollbar gutter, Listen's actions, Explore's controls and field widths), [navigation.spec.ts](../../e2e/navigation.spec.ts) for the 320 px tabs, and [personal-features.spec.ts](../../e2e/personal-features.spec.ts) for a saved heart on a narrow line, a release's manifest digest inside its review and the mood tables' last row.
 [navigation.spec.ts](../../e2e/navigation.spec.ts) also holds the sidebar's one-line destinations and its legal links, and [typography.test.ts](../../unit/typography.test.ts) keeps the type to two weights.
 Each new test was run against the build without its fix and failed for the defect it names.
 The full Playwright suite passes against the real local catalogue.

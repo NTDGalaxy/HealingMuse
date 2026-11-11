@@ -329,6 +329,19 @@
     color: var(--text);
     font-size: var(--step-0);
   }
+  /* Beside the sidebar, room for a desktop scrollbar is kept whether or not a page scrolls, so the
+     top bar and the page never shift sideways between a long page and a short one. Phones and
+     tablets draw overlay scrollbars that take no width. */
+  @media (min-width: 901px) {
+    html {
+      scrollbar-gutter: stable;
+    }
+  }
+  /* A field grows with its column up to 32rem, so a choice stays near its label on a wide screen. */
+  input:not([type="checkbox"], [type="radio"], [type="range"]),
+  select {
+    max-width: 32rem;
+  }
   textarea {
     min-height: 120px;
     resize: vertical;
@@ -408,12 +421,14 @@
     transform: translateX(22px);
     background: var(--on-lav);
   }
+  /* A setting's name and its control share a field's width, so the switch stays near its name. */
   .setting-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     min-height: 56px;
+    max-width: 32rem;
   }
   .setting-row > span {
     display: grid;
@@ -454,6 +469,7 @@
     color: var(--muted);
   }
   .search-box input {
+    max-width: none;
     border: 0;
     min-height: 44px;
     padding: 0;
@@ -524,7 +540,8 @@
     text-align: left;
     border-bottom: 1px solid var(--line);
   }
-  .table-wrap tr:last-child td {
+  /* The last row draws no rule, under its row header as under its cells. */
+  .table-wrap tbody tr:last-child > * {
     border-bottom: 0;
   }
   progress {

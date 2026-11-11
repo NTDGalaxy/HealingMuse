@@ -241,6 +241,10 @@ export const size = {
   tabLabelGap: 8,
   /** A sidebar destination's row: one line of 16 px text, so taller means its name wrapped. */
   sideNavItem: 48,
+  /** The widest a form field grows (32rem), so a choice reads with its label on a wide screen. */
+  fieldMax: 512,
+  /** The most space between controls that belong together, such as Listen and its actions. */
+  nearGap: 24,
 } as const;
 
 /** Settings layout: panels sit side by side from `twoColumnMinWidth`, separated by `panelGap`. */
@@ -251,6 +255,8 @@ export const layout = {
   featuredBesideMinWidth: 700,
   /** From this width Home's up next moves beside the featured cover, under the name. */
   featuredColumnMinWidth: 1024,
+  /** From this width Home sets the cover, the name and up next in three columns. */
+  featuredWideMinWidth: 1600,
   twoColumnMinWidth: 1100,
   panelGap: 24,
   /** The minimum space between the two buttons of a settings action group. */

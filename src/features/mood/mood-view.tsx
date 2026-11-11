@@ -49,7 +49,8 @@ export function MoodView() {
             </Button>
           </div>
         ) : (
-          <>
+          // The history keeps one readable width, so Delete stays beside the tables it clears.
+          <div className="mood-history">
             <MoodTrends checkins={personal.checkins} />
             <div className="section-heading">
               <h2>{t("mood.recent")}</h2>
@@ -93,7 +94,7 @@ export function MoodView() {
             ) : (
               <EmptyState title={t("mood.empty")} text={t("mood.emptyText")} />
             )}
-          </>
+          </div>
         )}
         <p className="privacy-note">{t("mood.retention")}</p>
         {!online && <p className="info-panel">{t("mood.offline")}</p>}

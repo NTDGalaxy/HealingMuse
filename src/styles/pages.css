@@ -121,11 +121,18 @@
       transform: scaleY(1);
     }
   }
-  .binaural-preset-row,
   .binaural-session-options {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
+    align-items: end;
+  }
+  /* The favourite button follows the preset it saves. */
+  .binaural-preset-row {
+    display: grid;
+    grid-template-columns: minmax(0, 32rem) auto;
+    justify-content: start;
+    gap: 12px;
     align-items: end;
   }
   .binaural-preset-row label,
@@ -223,6 +230,10 @@
   .binaural-catalogue-selection {
     font-weight: 700;
   }
+  /* A choice chip keeps its own width, like the kinds beside it. */
+  .binaural-tones-only {
+    justify-self: start;
+  }
   .binaural-tracks {
     margin: 0;
     padding: 0;
@@ -303,7 +314,10 @@
     justify-self: start;
   }
 
-  /* Mood */
+  /* Mood: the history keeps a readable width, so its tables and Delete read as one block. */
+  .mood-history {
+    max-width: 64rem;
+  }
   .consent-panel,
   .privacy-note {
     display: grid;
@@ -389,7 +403,11 @@
     background: var(--surface);
     border: 1px solid var(--line);
   }
-  .review-filter,
+  /* A labelled field: its name above it, as every field reads. */
+  .review-filter {
+    display: grid;
+    gap: 8px;
+  }
   .review-actions {
     display: flex;
     flex-wrap: wrap;
@@ -402,15 +420,22 @@
     display: grid;
     gap: 16px;
   }
+  /* The counts sit at their own widths; the manifest digest, one 64-character word, takes its own
+     line and breaks where it must. */
   .release-facts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 32px;
   }
   .manifest-fact {
+    flex-basis: 100%;
+    min-width: 0;
     padding: 12px 14px;
     border-radius: var(--radius-art);
     background: var(--surface-2);
+  }
+  .manifest-fact code {
+    overflow-wrap: anywhere;
   }
   .release-item {
     display: grid;
@@ -462,6 +487,19 @@
   @media (max-width: 1100px) {
     .binaural-modes {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  /* Wide screens: appearance, account and private check-ins side by side, each a field's width. */
+  @media (min-width: 1600px) {
+    .settings-stack {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+    }
+    .settings-appearance {
+      grid-column: auto;
+    }
+    .settings-account-guest {
+      grid-column: span 2;
     }
   }
   /* Settings panels sit side by side only where each keeps a comfortable reading width. */

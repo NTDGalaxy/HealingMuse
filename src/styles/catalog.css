@@ -446,37 +446,46 @@
     font-size: var(--step--1);
   }
 
-  /* Explore */
-  .catalog-filter-details {
-    margin-top: 16px;
+  /* Explore: search, the kinds and the filters stay one block, a search field's width on wide
+     screens; the filters open from the kinds' row and their panel spans the block. */
+  .catalog-controls {
+    display: grid;
+    gap: 16px;
+    max-width: 880px;
   }
-  .catalog-filter-details summary {
+  .catalog-control-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+  }
+  .catalog-filter-toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     min-height: 44px;
+    margin-left: auto;
     padding: 0 18px;
     border-radius: var(--radius-pill);
     border: 1.5px solid var(--line-strong);
+    background: transparent;
+    color: inherit;
     font-weight: 700;
-    cursor: pointer;
-    list-style: none;
   }
-  .catalog-filter-details summary::-webkit-details-marker {
-    display: none;
-  }
-  .catalog-filter-details[open] summary {
+  .catalog-filter-toggle[aria-expanded="true"] {
     background: var(--surface-2);
   }
   .catalog-facets {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
-    margin-top: 16px;
     padding: 20px;
     border-radius: var(--radius-card);
     background: var(--surface);
     border: 1px solid var(--line);
+  }
+  .catalog-facets[hidden] {
+    display: none;
   }
   .catalog-facets label {
     display: grid;
@@ -574,7 +583,7 @@
   }
   @media (min-width: 1024px) {
     .loading-covers {
-      grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+      grid-template-columns: minmax(300px, 440px) minmax(320px, 1fr);
       grid-template-rows: 1fr auto auto auto;
       column-gap: clamp(32px, 4vw, 64px);
       align-items: end;
@@ -628,11 +637,17 @@
     .featured-section > .home-more-recordings {
       grid-area: next;
     }
+    /* Favourite, download and details follow Listen rather than the column's far edge. */
+    .track-feature .track-actions {
+      margin-left: 0;
+    }
   }
   @media (min-width: 1024px) {
-    /* Desktop: a larger artwork, with up next under the name in the same column. */
+    /* Desktop: a larger artwork, with up next under the name in the same column. The name's column
+       keeps 320 px, so on a narrow desktop (with its scrollbar) the cover gives way first and a
+       line up next still leaves its name 140 px. */
     .featured-section {
-      grid-template-columns: minmax(300px, 440px) minmax(0, 1fr);
+      grid-template-columns: minmax(300px, 440px) minmax(320px, 1fr);
       grid-template-areas:
         "art info"
         "art next";
@@ -643,6 +658,35 @@
     .featured-section .track-feature > .track-description {
       align-self: end;
       padding-top: 24px;
+    }
+  }
+  @media (min-width: 1600px) {
+    /* Wide screens: the cover, the name and up next in three columns, level with the cover. */
+    .featured-section {
+      grid-template-columns: minmax(300px, 440px) minmax(360px, 1fr) minmax(360px, 560px);
+      grid-template-areas: "art info next";
+      grid-template-rows: auto;
+      align-items: center;
+    }
+    .featured-section .track-feature > .track-description {
+      align-self: center;
+      padding-top: 0;
+    }
+    /* Search and the moments to listen for share the row under it. */
+    .home-shelves {
+      display: grid;
+      grid-template-columns: minmax(0, 720px) minmax(0, 1fr);
+      column-gap: 64px;
+      align-items: start;
+    }
+    .home-shelves > * {
+      grid-column: 1 / -1;
+    }
+    .home-shelves > .home-discovery {
+      grid-column: 1;
+    }
+    .home-shelves > .listening-paths {
+      grid-column: 2;
     }
   }
   @media (max-width: 1100px) {
