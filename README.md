@@ -118,13 +118,14 @@ Content administrators do not gain access to another user's mood data through th
 ## Design and accessibility
 
 HealingMuse looks like a music app after dark: a plum-night interface with a lavender-white day twin.
-It keeps its lavender, plum and jade identity, logo and self-hosted Be Vietnam Pro typography.
+It keeps its lavender, plum and jade identity, logo and self-hosted Be Vietnam Pro typography, in two weights only: regular and bold.
 Neon jade is reserved for listening: the Play control, the playing state and progress.
 While a recording plays, the top of the screen takes on that recording's colours and cross-fades when the recording changes.
 Every recording has its own generated cover, drawn in code from its identifier, artwork family and colour, so covers need no image requests or photographs.
-Home leads with one named recording that plays in one tap, with what to hear next beside or below it.
-Cards use 16-pixel corners, covers and fields 12-pixel corners, and controls are pills with a round Play.
+Cards use 16-pixel corners, covers and fields 12-pixel corners, and controls are pills.
+Recordings play from a round Play, and the featured recording from a labelled Listen pill.
 Glass is limited to the top bar and the dialog veil; content panels are solid.
+The tokens, type scale, components and layout rules, with the decisions behind them, are in [DESIGN.md](DESIGN.md).
 
 | Page              | Route after `/vi` or `/en` | Light scene      |
 | ----------------- | -------------------------- | ---------------- |
@@ -145,6 +146,23 @@ Each scene is one of seven light forms drawn by a shared interpreter; scenes tha
 Scene ids keep their earlier route keys, which the posters, service worker and route registry use.
 Authentication dialogs keep the current route's scene, and the offline shell uses a still.
 The scenes are decorative and move slowly; nothing pulses with the music or the binaural beat.
+
+### Layout across screen sizes
+
+Home leads with one named recording that plays in one tap, and its composition follows the screen:
+
+| Width             | Home's featured recording                                             |
+| ----------------- | --------------------------------------------------------------------- |
+| Below 700 px      | Stacked: the cover, then the name and Listen, then up next            |
+| 700 to 1023 px    | The cover beside the name and Listen, with up next across the width   |
+| 1024 to 1599 px   | The cover beside the name, with up next under the name                |
+| 1600 px and wider | The cover, the name and up next in three columns                      |
+
+Above 900 px, beside the sidebar, the page fills the available width with the same gutters as the top bar, so their edges meet at any window size.
+What is read or operated keeps its own width instead of stretching.
+Fields grow to 32 rem at most, reading pages stay at 760 px, the Mood history at 64 rem, and Explore's search, kinds and filters form one block of at most 880 px.
+The document keeps room for a desktop scrollbar, so the top bar does not move between a page that scrolls and one that does not.
+At 900 px and below the sidebar gives way to mobile navigation and a docked mini player.
 
 ### Appearance and motion
 
@@ -260,7 +278,7 @@ Keep service credentials and database connection strings private, and never past
 | -------------------------------------- | -------------------------------------------------- | -------------------------------------------- |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Existing Supabase project origin                   | Public build configuration                   |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key, with RLS enforced        | Public build configuration                   |
-| `NEXT_PUBLIC_SITE_URL`                 | Canonical application origin                       | Public build configuration                   |
+| `NEXT_PUBLIC_SITE_URL`                 | Canonical origin; the application does not read it | Public build configuration                   |
 | `SUPABASE_SECRET_KEY`                  | Trusted server operations and private audio grants | Server only                                  |
 | `RATE_LIMIT_SALT`                      | Salt for server request-rate identities            | Server only                                  |
 | `LOCAL_CATALOG_ENABLED`                | Explicit local catalogue opt-in                    | `false` in Production and configured Preview |
@@ -330,8 +348,8 @@ tests/                   Unit, browser, integration and visual evidence
 ```
 
 `media/`, `.local/`, credentials and evidence artifacts are intentionally excluded from Git or deployment as appropriate.
-Documentation and local design context may also be excluded by this workspace's ignore policy.
-The README is the tracked entry point for application setup and behavior.
+The README is the tracked entry point for application setup and behavior, and [DESIGN.md](DESIGN.md) is the tracked reference for the design system.
+`PRODUCT.md` and `docs/` hold local product and operations notes that this workspace's ignore policy keeps out of Git.
 
 ## Content administration and releases
 
@@ -405,6 +423,7 @@ The synthetic-fixture script overwrites local prepared data and must never run o
 Authenticated browser journeys use synthetic Auth/API fixtures to test real components without sending email or editing production data.
 
 Browser coverage includes discovery and final-page pagination, search and filters, playback and seeking, queues, locale changes, playlists, downloads, offline recovery, dialogs and personal forms.
+Layout tests check Home's composition and the page frame from phone widths to 1920 px, one of them in a Chromium that shows desktop scrollbars, because headless Chromium hides them.
 Binaural signal tests render the real browser OfflineAudioContext and inspect stereo frequency amplitudes and leakage.
 Those tests verify generated audio signals, without claiming brainwave synchronization or physical headphone output.
 Graphics tests cover renderer failure, context loss, unsupported workers, slow rendering, preference changes and cleanup.
@@ -497,6 +516,25 @@ Retain the previous deployment for recovery and distinguish application rollback
 Content publication remains an administrator-controlled action, independent of code deployment.
 Never create a duplicate Vercel project or force-push to repair deployment settings.
 
+### Previews and the first production check
+
+A preview build has Supabase only when Preview environment variables are set.
+When none are set, as in this project today, a preview runs without Supabase: it shows an empty catalogue and a local-preview notice, `/api/me` answers 503, and no recording can play.
+Use such a preview to check navigation, layout, scenes, appearance and Binaural tones, and keep catalogue playback for the production check.
+
+After the owner merges, check guest playback on `healingmuse.vercel.app` straight away.
+First confirm that the domain serves a deployment built from the merge commit.
+Then check play, pause and resume, seeking by slider and by keyboard, Next, the queue, the docked mini player at 390 and 820 px, and audio that continues across tabs and a language switch.
+
+### Rollback
+
+If production playback or navigation breaks, roll back from the Vercel dashboard before diagnosing.
+Open the project's Overview, choose Instant Rollback on the Production Deployment tile, select the previous production deployment, then choose Continue and Confirm Rollback.
+On the Hobby plan the previous production deployment is the only target.
+A rollback restores code only; it does not change environment variables, the database or published content.
+Afterwards Vercel stops assigning new production deployments automatically, so pushes to `main` do not go live until the rollback is undone.
+To undo it, choose Manage on the same tile, select a deployment to promote and confirm.
+
 ## Troubleshooting
 
 | Symptom                           | Check                                                                                                                             |
@@ -512,6 +550,7 @@ Never create a duplicate Vercel project or force-push to repair deployment setti
 | Scene stays still                 | Check Calm, reduced motion, Still, Save-Data, graphics support and automatic quality fallback.                                    |
 | Download disappeared              | Check device/browser storage, eviction and whether the same browser profile is being used.                                        |
 | Preview asks for a Vercel login   | Use the owning-account preview session; this gate is separate from HealingMuse authentication.                                    |
+| CI stops at `playwright install`  | The runner could not reach Ubuntu's package archives (apt exits 100 before any test); re-run it; other failed steps are real.     |
 
 Share error codes and visible states when reporting a problem.
 Do not share credentials, email codes, full authentication links, private signed audio URLs or database connection strings.
@@ -519,7 +558,7 @@ Do not share credentials, email codes, full authentication links, private signed
 ## Contributing and licensing
 
 Preserve recording IDs, publication requirements, attribution and patient-data policies.
-Keep playback independent of decorative effects, and test reduced motion, both themes, both languages and small screens when changing the interface.
+Keep playback independent of decorative effects, and test reduced motion, both themes, both languages, phones, tablets and a wide desktop window with a visible scrollbar when changing the interface.
 Reproduce a bug through the closest available end-user journey before implementing its fix.
 Use the existing component and icon systems, keep credentials and artifacts ignored, and regenerate files through their source workflows.
 Do not manually edit generated files or changelogs, and do not add agent coauthors to commits.
