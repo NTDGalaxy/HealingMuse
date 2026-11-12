@@ -17,6 +17,9 @@ import { describe, expect, it } from "vitest";
 // - assert a class or an id (toHaveClass or toHaveId with a literal, toHaveAttribute("class") or
 //   toHaveAttribute("id")): a class name may only come from contracts.ts as data;
 // - call waitForTimeout: wait for the state the test needs instead;
+// - hold or count requests (holdRequests, holdChunk, watchChunk) in a spec that does not block
+//   service workers with test.use({ serviceWorkers: "block" }): page.route does not see a request once
+//   a service worker controls the page, so the hold is missed and the test waits out its timeout;
 // - name an element by literal interface copy: a string, regular expression or template literal
 //   with text as the `name` of getByRole, the text of getByText, getByLabel, getByPlaceholder,
 //   getByAltText or getByTitle, or a hasText or hasNotText filter. Copy comes from the message
@@ -246,6 +249,45 @@ function copyFindings(path: string, text: string): string[] {
 }
 
 /** The element types a selector uses, or null when the text is not shaped like a selector. */
+/** Spec helpers that hold or count requests through page.route. */
+const interceptingHelpers = new Set(["holdRequests", "holdChunk", "watchChunk"]);
+
+/**
+ * page.route does not see a request once a service worker controls the page, and the worker takes
+ * over about half a second after the app loads. A spec that holds requests must block service
+ * workers, or the hold is missed now and then (about one run in forty on a busy machine) and its
+ * test waits out the whole timeout on a request that never reaches the route.
+ */
+function serviceWorkerFindings(path: string, text: string): string[] {
+  const source = parse(path, text);
+  const holds: ts.CallExpression[] = [];
+  let blocked = false;
+  visit(source, (node) => {
+    if (!ts.isCallExpression(node)) return;
+    const name = calledName(node);
+    if (name && interceptingHelpers.has(name)) holds.push(node);
+    if (
+      name === "use" &&
+      node.arguments.some(
+        (argument) =>
+          ts.isObjectLiteralExpression(argument) &&
+          argument.properties.some(
+            (property) =>
+              ts.isPropertyAssignment(property) &&
+              property.name.getText(source) === "serviceWorkers" &&
+              literalText(property.initializer) === "block",
+          ),
+      )
+    )
+      blocked = true;
+  });
+  return blocked
+    ? []
+    : holds.map(
+        (call) =>
+          `${where(source, call)} holds requests without test.use({ serviceWorkers: "block" })`,
+      );
+}
 function elementTypes(selector: string): string[] | null {
   const compounds = selector
     .trim()
@@ -289,6 +331,10 @@ describe("end-to-end specs reach markup only through tests/e2e/support", () => {
       const text = read(path);
       expect([...selectorFindings(path, text), ...copyFindings(path, text)]).toEqual([]);
     });
+  for (const path of specs)
+    it(`${path} blocks service workers if it holds requests`, () => {
+      expect(serviceWorkerFindings(path, read(path))).toEqual([]);
+    });
   for (const path of support)
     it(`${path} takes its selectors from contracts.ts and its copy from the messages`, () => {
       const text = read(path);
@@ -311,6 +357,23 @@ describe("contracts.ts names no styling hook", () => {
 });
 
 describe("the convention checks themselves", () => {
+  it("flag a spec that holds requests without blocking service workers", () => {
+    const hold = `await holdRequests(page, "**/api/x");`;
+    expect(serviceWorkerFindings("sample.ts", hold)).not.toEqual([]);
+    expect(serviceWorkerFindings("sample.ts", `await holdChunk(page, "marker");`)).not.toEqual([]);
+    expect(serviceWorkerFindings("sample.ts", `await watchChunk(page, "marker");`)).not.toEqual([]);
+    // Allowing them, or blocking something else, is no block.
+    expect(
+      serviceWorkerFindings("sample.ts", `test.use({ serviceWorkers: "allow" }); ${hold}`),
+    ).not.toEqual([]);
+    expect(serviceWorkerFindings("sample.ts", `test.use({ locale: "vi" }); ${hold}`)).not.toEqual(
+      [],
+    );
+    expect(
+      serviceWorkerFindings("sample.ts", `test.use({ serviceWorkers: "block" }); ${hold}`),
+    ).toEqual([]);
+    expect(serviceWorkerFindings("sample.ts", `await page.goto("/en");`)).toEqual([]);
+  });
   it("flag class, id and structural selectors and accept data-part, roles and data", () => {
     const flagged = [
       `const a = ".track-card";`,

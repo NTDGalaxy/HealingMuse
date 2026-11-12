@@ -346,6 +346,10 @@ export type HeldRequests = {
 /**
  * Holds requests matching `url` (after letting the first `pass` through) until `release` runs.
  * A request the page cancelled meanwhile is dropped quietly.
+ *
+ * page.route does not see a request once a service worker controls the page, so a spec that holds
+ * requests blocks service workers with `test.use({ serviceWorkers: "block" })`; the conventions
+ * test in tests/unit/e2e-conventions.test.ts enforces it.
  */
 export async function holdRequests(
   page: Page,
