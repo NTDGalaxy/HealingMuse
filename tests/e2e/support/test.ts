@@ -172,6 +172,17 @@ export function rulesBeneath(locator: Locator) {
   );
 }
 
+/**
+ * Puts the page at its top, where no content scrolls under the sticky top bar. Axe judges which
+ * targets another element covers at the current scroll offset, so a scan after a resize or an
+ * earlier step depends on where a control happened to stop: a row of buttons half under the bar
+ * fails target-size, although nothing is wrong when the page is at rest.
+ */
+export async function scrollToTop(page: Page) {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+}
+
 /** Whether the document is taller than the viewport, so the page scrolls. */
 export function pageScrolls(page: Page) {
   return page.evaluate(() => document.documentElement.scrollHeight > innerHeight);
@@ -346,6 +357,10 @@ export type HeldRequests = {
 /**
  * Holds requests matching `url` (after letting the first `pass` through) until `release` runs.
  * A request the page cancelled meanwhile is dropped quietly.
+ *
+ * page.route does not see a request once a service worker controls the page, so a spec that holds
+ * requests blocks service workers with `test.use({ serviceWorkers: "block" })`; the conventions
+ * test in tests/unit/e2e-conventions.test.ts enforces it.
  */
 export async function holdRequests(
   page: Page,
