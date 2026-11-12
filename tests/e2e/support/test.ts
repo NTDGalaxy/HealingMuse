@@ -154,6 +154,29 @@ export async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow, "elements reaching past the viewport").toEqual([]);
 }
 
+/** An element's content box (its border box less borders and padding), in viewport pixels. */
+export function contentBox(locator: Locator) {
+  return locator.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const left = box.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+    const right = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+    return { left, right };
+  });
+}
+
+/** The width of the rule drawn beneath each element `locator` matches. */
+export function rulesBeneath(locator: Locator) {
+  return locator.evaluateAll((elements) =>
+    elements.map((element) => getComputedStyle(element).borderBottomWidth),
+  );
+}
+
+/** Whether the document is taller than the viewport, so the page scrolls. */
+export function pageScrolls(page: Page) {
+  return page.evaluate(() => document.documentElement.scrollHeight > innerHeight);
+}
+
 /** Whether a person can see the element (rendered, CSS-visible, no fully transparent ancestor). */
 function seen(locator: Locator) {
   return locator.evaluate((element) =>

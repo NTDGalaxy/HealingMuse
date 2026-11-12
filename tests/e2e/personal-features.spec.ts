@@ -9,6 +9,7 @@ import {
   expectSameListeningSession,
   markListeningSession,
   personalReads,
+  rulesBeneath,
 } from "./support/test";
 import type { PersonalData, Playlist, Track } from "@/lib/types";
 import { paginateTracks } from "../../src/lib/catalog-query";
@@ -336,6 +337,73 @@ test("named release review checks delivery, records confirmations and reports a 
   );
   await expectAccessible(page);
 });
+test("a release's manifest hash wraps inside its review on a phone and a desktop", async ({
+  page,
+}) => {
+  const ui = screens(page);
+  const release = {
+    id,
+    title: "Synthetic release",
+    // A SHA-256 digest is one 64-character word with nowhere to break.
+    manifestHash: "033dcc51af0491520e4442d9ce4b32b97ed323e230ae6141b88b09bef28ecc40",
+    expectedCount: 62,
+    matchingCount: 62,
+    deliveredCount: 62,
+    publishedAt: new Date().toISOString(),
+    reviewerName: "Synthetic human reviewer",
+  };
+  await page.route("**/api/me", (route) =>
+    route.fulfill({ json: personalData({ isAdmin: true }) }),
+  );
+  await emptyStudio(page);
+  await page.route("**/api/admin/releases", (route) =>
+    route.fulfill({ json: { items: [release] } }),
+  );
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await ui.open();
+    await ui.show("admin");
+    const review = page.getByRole("region", { name: ui.t("admin.release.title"), exact: true });
+    const hash = review.getByText(release.manifestHash, { exact: true });
+    await expect(hash).toBeVisible();
+    const reviewBox = (await review.boundingBox())!;
+    const hashBox = (await hash.boundingBox())!;
+    expect(hashBox.x + hashBox.width).toBeLessThanOrEqual(reviewBox.x + reviewBox.width);
+    await expectNoHorizontalOverflow(page);
+  }
+});
+
+test("the last row of each mood table draws no rule beneath it", async ({ page }) => {
+  const ui = screens(page);
+  const day = 24 * 60 * 60 * 1000;
+  const at = (daysAgo: number, minutes: number) =>
+    new Date(Date.now() - daysAgo * day + minutes * 60000).toISOString();
+  await page.route("**/api/me", (route) =>
+    route.fulfill({
+      json: {
+        ...personalData({ consent: at(6, 0) }),
+        checkins: [
+          { id: "c1", session_id: "s1", phase: "before", score: 2, created_at: at(3, 0) },
+          { id: "c2", session_id: "s1", phase: "after", score: 4, created_at: at(3, 20) },
+          { id: "c3", session_id: "s2", phase: "before", score: 3, created_at: at(1, 0) },
+          { id: "c4", session_id: "s2", phase: "after", score: 3, created_at: at(1, 25) },
+        ],
+      },
+    }),
+  );
+  await ui.open();
+  await ui.show("mood");
+  // The seven-day summary and the paired check-ins: each row's date is its row header.
+  const tables = page.getByRole("table");
+  await expect(tables).toHaveCount(2);
+  for (const table of await tables.all()) {
+    const last = table.getByRole("row").last();
+    const cells = last.getByRole("rowheader").or(last.getByRole("cell"));
+    await expect(cells).toHaveCount(3);
+    expect(await rulesBeneath(cells)).toEqual(["0px", "0px", "0px"]);
+  }
+});
+
 test("synthetic accounts manage a library, paired check-ins, erasure, and sign-out", async ({
   page,
 }) => {

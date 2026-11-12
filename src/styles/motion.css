@@ -33,7 +33,8 @@
   .icon-button[aria-pressed="true"] svg {
     animation: choice-confirm 260ms var(--ease-out);
   }
-  details[open] > :is(.catalog-facets, .binaural-frequencies) {
+  details[open] > .binaural-frequencies,
+  .catalog-facets:not([hidden]) {
     animation: disclosure-arrive 240ms var(--ease-out);
   }
 

@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { explore } from "../contracts";
+import { explore, shell } from "../contracts";
 import {
   pattern,
   t,
@@ -55,6 +55,14 @@ export class Explore {
   async searchFor(query: string, options: { exact?: boolean } = {}) {
     await this.search(options).fill(query);
     await this.search(options).press("Enter");
+  }
+  /** The search form, with its field and submit button. */
+  get searchField() {
+    return this.region.locator(shell.searchField);
+  }
+  /** The row of recording kinds (All, Instrumentals, Nature sounds). */
+  get kinds() {
+    return this.region.getByRole("group", { name: this.t("catalog.title"), exact: true });
   }
   get anySearchbox() {
     return this.scope.getByRole("searchbox");

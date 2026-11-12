@@ -103,6 +103,10 @@ export class Binaural {
   get preset() {
     return this.page.getByRole("combobox", { name: pattern(this.locale, "binaural.preset") });
   }
+  /** The button that saves the selected preset as a favourite. */
+  get favoritePreset() {
+    return this.page.getByRole("button", { name: this.t("binaural.favoritePreset"), exact: true });
+  }
   get duration() {
     return this.page.getByRole("combobox", { name: pattern(this.locale, "binaural.duration") });
   }
