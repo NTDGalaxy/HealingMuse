@@ -13,6 +13,12 @@ import {
 import { recordings as prepared, size, uniqueSearchTerm } from "./support/contracts";
 import { Explore, Recordings, Shell } from "./support/pages";
 import type { SideNavRoute } from "./support/pages/shell";
+
+// These tests hold requests with page.route, which does not see a request once a service worker
+// controls the page. The worker takes over about half a second after the app loads, so on a busy
+// machine a held request was missed now and then and its test waited out the whole timeout.
+// None of them needs the worker.
+test.use({ serviceWorkers: "block" });
 test("switching language preserves the native listening session", async ({ page }) => {
   await page.goto("/en");
   await new Recordings(page).listen(prepared.first.title.en).click();

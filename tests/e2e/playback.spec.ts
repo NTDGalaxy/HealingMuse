@@ -13,6 +13,12 @@ import {
 import { playbackGrantPath, recordings as prepared } from "./support/contracts";
 import { Player, Recordings, Shell, TrackCard } from "./support/pages";
 
+// These tests hold requests with page.route, which does not see a request once a service worker
+// controls the page. The worker takes over about half a second after the app loads, so on a busy
+// machine a held request was missed now and then and its test waited out the whole timeout.
+// None of them needs the worker.
+test.use({ serviceWorkers: "block" });
+
 test("offline Downloads queues only the recordings it shows and never streams", async ({
   page,
   context,

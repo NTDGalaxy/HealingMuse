@@ -4,6 +4,7 @@ import {
   expectAccessible,
   expectNoHorizontalOverflow,
   isPaused,
+  scrollToTop,
 } from "./support/test";
 import { paginateTracks } from "../../src/lib/catalog-query";
 import type { Track } from "@/lib/types";
@@ -145,6 +146,9 @@ for (const locale of ["en", "vi"] as const)
       await page.setViewportSize({ width, height: 844 });
       expect((await section.anySearchbox.boundingBox())!.width).toBeGreaterThanOrEqual(140);
       await expectNoHorizontalOverflow(page);
+      // A resize leaves the page where the earlier steps stopped, and axe fails a control that
+      // sits half under the sticky top bar there; scan from the top, where nothing does.
+      await scrollToTop(page);
       await expectAccessible(page);
       await binaural.background.screenshot({
         path: `test-results/binaural-catalogue-${locale}-${width}.png`,

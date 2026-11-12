@@ -32,6 +32,12 @@ import {
 import { Binaural, Explore, Player, Recordings, Shell, TrackCard } from "./support/pages";
 import { graphicsMarkers } from "../../src/lib/garden/budget-markers";
 
+// These tests hold requests with page.route, which does not see a request once a service worker
+// controls the page. The worker takes over about half a second after the app loads, so on a busy
+// machine a held request was missed now and then and its test waited out the whole timeout.
+// None of them needs the worker.
+test.use({ serviceWorkers: "block" });
+
 test("home discovery does not promote unavailable nature recordings", async ({ page }) => {
   await page.goto("/en");
   await expect(new Explore(page).mainCategoryLink("nature")).toHaveCount(0);
